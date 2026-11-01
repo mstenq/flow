@@ -1,0 +1,44 @@
+{
+  "version": 1,
+  "rulesVersion": 1,
+  "id": "peanut-butter",
+  "name": "Peanut Butter",
+  "width": 32,
+  "height": 32,
+  "palette": ["#ff7a1a","#2f7bff","#ffd0a0","#4f5590","#5cc8ff","#9299b0","#f4f1ff","#a0431a"],
+  "cells": "............................................................................33333333......................311111111113...................31111111111113.................3111444444441113................3411114444111143................3144111111114413................3111444444441113................7111111111111117...............307111111111111703.............30007111111111170003............30202077777777020003............32002200000000022003............32022000000000002223............32222000000000002203............32222220000002222203............32244202222220054203............32544455555555544503............32546666655522244503............32564466666622144503............32566661646121244503............32546661441111244503............32044461141111144203............30024455545555542203............30002200000000000003.............002000000000000000..............300222222222220003...............3000000000000003.................30000000000003....................3333333333...........................................",
+  "keys": [],
+  "lanes": 3,
+  "tickMs": 80,
+  "columns": [
+    [{"id":7,"color":1,"capacity":64},{"id":8,"color":0,"capacity":2},{"id":9,"color":3,"capacity":21},{"id":10,"color":4,"capacity":15},{"id":11,"color":2,"capacity":10},{"id":12,"color":4,"capacity":24},{"id":13,"color":3,"capacity":15},{"id":14,"color":2,"capacity":23},{"id":15,"color":6,"capacity":6,"hidden":true},{"id":17,"color":1,"capacity":2}],
+    [{"id":1,"color":0,"capacity":32},{"id":3,"color":2,"capacity":25},{"id":4,"color":5,"capacity":15},{"id":16,"color":1,"capacity":15},{"id":18,"color":0,"capacity":14},{"id":20,"color":2,"capacity":15},{"id":21,"color":5,"capacity":1,"hidden":true},{"id":22,"color":0,"capacity":37,"hidden":true},{"id":23,"color":3,"capacity":20},{"id":24,"color":1,"capacity":23},{"id":25,"color":6,"capacity":8}],
+    [{"id":2,"color":0,"capacity":52},{"id":5,"color":5,"capacity":15},{"id":6,"color":7,"capacity":6,"hidden":true},{"id":19,"color":4,"capacity":20},{"id":26,"color":7,"capacity":5},{"id":27,"color":6,"capacity":8,"hidden":true},{"id":28,"color":3,"capacity":12},{"id":29,"color":7,"capacity":3,"hidden":true}]
+  ],
+  "solution": [1,2,1,1,2,2,0,0,0,0,0,0,0,0,0,1,0,1,2,1,1,1,1,1,1,2,2,2,2],
+  "meta": {
+    "seed": 1498494281,
+    "targetDifficulty": 0.46,
+    "difficulty": 0.466,
+    "stats": {
+      "randomWinRate": 0.313,
+      "greedyWinRate": 0.643,
+      "deadEndRatio": 0.027,
+      "minLanes": 2,
+      "branching": 2.45,
+      "hiddenShare": 0.207,
+      "lockCount": 0,
+      "pairCount": 0,
+      "overflowPods": 3,
+      "peakStalled": 2,
+      "fastGreedyWinRate": 0.55,
+      "fastRandomWinRate": 0.315,
+      "maxPodCapacity": 64,
+      "medianPodCapacity": 15,
+      "longestDrainSec": 5.12,
+      "minLanesProven": true
+    },
+    "generatorVersion": "gen-2.0.0",
+    "sourceHash": "c1f9c15b2ee4eab5"
+  }
+}

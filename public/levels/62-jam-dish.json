@@ -1,0 +1,46 @@
+{
+  "version": 1,
+  "rulesVersion": 1,
+  "id": "62-jam-dish",
+  "name": "Jam Dish",
+  "width": 32,
+  "height": 32,
+  "palette": ["#f4f1ff","#ffd0a0","#ff2950","#ffb000","#4f5590","#ffe600","#a0431a","#ff7a1a"],
+  "cells": "...........................................................................................................................................3333333333...................3330000000000333..............43000000000000000034...........4100000033366660000014.........410001333366222266600014.......01001331177222222226600010......00013111171222222222273000.....0001311117112222222222573000....0003111122222222222225573000...400011102222222222222253110004..400111072222222222222533111004..400310712222222222225333113004..400317111222222222153336113004..400316511122222221533361013004..400316555111122215333610011004..400116555551111333336110011004..400011655555553333361000111004...4001116555555333361000011004....4001110115555333610000110004.....00011001166666110000011000......11001100000000000000110011.......110011100000000001110011.........1100001111111111000011...........10000000000000000001..............0040000000000000...................4444444444...........................................................................",
+  "keys": [{"id":1,"x":10,"y":18}],
+  "lanes": 3,
+  "tickMs": 75,
+  "columns": [
+    [{"id":2,"color":3,"capacity":26},{"id":18,"color":5,"capacity":16,"lock":1},{"id":25,"color":6,"capacity":7,"link":24}],
+    [{"id":9,"color":3,"capacity":15},{"id":20,"color":5,"capacity":12,"hidden":true},{"id":21,"color":2,"capacity":16},{"id":23,"color":4,"capacity":13}],
+    [{"id":1,"color":1,"capacity":21},{"id":3,"color":0,"capacity":89},{"id":5,"color":3,"capacity":22,"hidden":true},{"id":6,"color":1,"capacity":34,"hidden":true},{"id":17,"color":2,"capacity":17,"hidden":true},{"id":19,"color":0,"capacity":129,"hidden":true},{"id":22,"color":4,"capacity":13,"hidden":true}],
+    [{"id":4,"color":4,"capacity":11},{"id":8,"color":6,"capacity":10,"hidden":true},{"id":11,"color":2,"capacity":33},{"id":14,"color":1,"capacity":43,"hidden":true},{"id":16,"color":1,"capacity":39,"hidden":true},{"id":26,"color":5,"capacity":7,"hidden":true}],
+    [{"id":7,"color":7,"capacity":8},{"id":10,"color":6,"capacity":11},{"id":12,"color":3,"capacity":9},{"id":13,"color":2,"capacity":27},{"id":15,"color":7,"capacity":2},{"id":24,"color":2,"capacity":10,"link":25}]
+  ],
+  "solution": [2,0,2,3,2,2,4,3,1,4,3,4,4,3,4,3,2,0,2,1,1,2,1,4,3],
+  "meta": {
+    "seed": 1129419391,
+    "targetDifficulty": 0.79,
+    "difficulty": 0.781,
+    "stats": {
+      "randomWinRate": 0.01,
+      "greedyWinRate": 0.17,
+      "deadEndRatio": 0.135,
+      "minLanes": 2,
+      "branching": 4.04,
+      "hiddenShare": 0.385,
+      "lockCount": 1,
+      "pairCount": 1,
+      "overflowPods": 9,
+      "peakStalled": 2,
+      "fastGreedyWinRate": 0.12,
+      "fastRandomWinRate": 0.02,
+      "maxPodCapacity": 129,
+      "medianPodCapacity": 16,
+      "longestDrainSec": 9.68,
+      "minLanesProven": true
+    },
+    "generatorVersion": "gen-2.0.0",
+    "sourceHash": "d61825c72569dbdf"
+  }
+}

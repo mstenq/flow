@@ -1,0 +1,44 @@
+{
+  "version": 1,
+  "rulesVersion": 1,
+  "id": "12-bun-dish",
+  "name": "Bun Dish",
+  "width": 32,
+  "height": 32,
+  "palette": ["#ff7a1a","#ffd0a0","#f4f1ff","#a0431a","#4f5590","#ffb000"],
+  "cells": "...........................................................................................................................................3333333333...................3331111111111133..............43333333111111111134...........4133000000001111111114.........413000000000551111111114.......11300000000000551111111111......11300000000000051111111111.....1110000000000000551111111111....1110000000000000531111111111...411300000000000333333111111114..411300000000033000000331111114..411130000005350000000003111114..411113300003500000000000111114..411111333333000000000000111114..422112222230000000000000511224..422112222230000000000000511224..422212222235000000000005031224...4221122223055000000005053224....4221112221300000000000532224.....22211222213355555555331222......11221122221333333333112211.......112211122222222221112211.........1122221111111111222211...........12222222222222222221..............2242222222222222...................4444444444...........................................................................",
+  "keys": [],
+  "lanes": 3,
+  "tickMs": 55,
+  "columns": [
+    [{"id":3,"color":3,"capacity":45},{"id":4,"color":1,"capacity":41},{"id":11,"color":3,"capacity":4},{"id":12,"color":0,"capacity":70},{"id":13,"color":1,"capacity":43},{"id":21,"color":1,"capacity":1},{"id":22,"color":4,"capacity":9}],
+    [{"id":6,"color":5,"capacity":6},{"id":14,"color":5,"capacity":5},{"id":15,"color":5,"capacity":2},{"id":16,"color":0,"capacity":37},{"id":19,"color":5,"capacity":7},{"id":20,"color":3,"capacity":22},{"id":23,"color":5,"capacity":5,"hidden":true},{"id":24,"color":2,"capacity":30},{"id":25,"color":0,"capacity":49},{"id":26,"color":0,"capacity":3,"hidden":true},{"id":27,"color":0,"capacity":34}],
+    [{"id":1,"color":2,"capacity":22},{"id":2,"color":2,"capacity":39,"hidden":true},{"id":5,"color":5,"capacity":3,"hidden":true},{"id":7,"color":1,"capacity":62,"hidden":true},{"id":8,"color":4,"capacity":15,"hidden":true},{"id":9,"color":4,"capacity":13,"hidden":true},{"id":10,"color":1,"capacity":44},{"id":17,"color":2,"capacity":26},{"id":18,"color":3,"capacity":3}]
+  ],
+  "solution": [2,2,0,0,2,1,2,2,2,2,0,0,0,1,1,1,2,2,1,1,0,0,1,1,1,1,1],
+  "meta": {
+    "seed": 3035642221,
+    "targetDifficulty": 0.35,
+    "difficulty": 0.355,
+    "stats": {
+      "randomWinRate": 0.22,
+      "greedyWinRate": 0.903,
+      "deadEndRatio": 0,
+      "minLanes": 2,
+      "branching": 2.48,
+      "hiddenShare": 0.259,
+      "lockCount": 0,
+      "pairCount": 0,
+      "overflowPods": 4,
+      "peakStalled": 1,
+      "fastGreedyWinRate": 0.915,
+      "fastRandomWinRate": 0.16,
+      "maxPodCapacity": 70,
+      "medianPodCapacity": 22,
+      "longestDrainSec": 3.85,
+      "minLanesProven": true
+    },
+    "generatorVersion": "gen-2.0.0",
+    "sourceHash": "80dd9e7231b37329"
+  }
+}

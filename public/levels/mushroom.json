@@ -1,0 +1,44 @@
+{
+  "version": 1,
+  "rulesVersion": 1,
+  "id": "mushroom",
+  "name": "Mushroom",
+  "width": 16,
+  "height": 16,
+  "palette": ["#ff2950","#4f5590","#f4f1ff","#ffd0a0","#9b5cff"],
+  "cells": ".....111111........1100000011.....100222000001...10022222002201..10022222002221.10000222000022011000000000000001102220000222000112222200222220011222220022222001.11111111111111.....13333331........13443441........13443441........13333331.........111111.....",
+  "keys": [],
+  "lanes": 3,
+  "tickMs": 90,
+  "columns": [
+    [{"id":1,"color":1,"capacity":28},{"id":2,"color":0,"capacity":12},{"id":3,"color":2,"capacity":12},{"id":4,"color":0,"capacity":17},{"id":7,"color":2,"capacity":16},{"id":13,"color":3,"capacity":7},{"id":14,"color":0,"capacity":12},{"id":15,"color":3,"capacity":3}],
+    [{"id":6,"color":0,"capacity":10},{"id":8,"color":4,"capacity":3},{"id":16,"color":4,"capacity":2},{"id":18,"color":4,"capacity":2}],
+    [{"id":5,"color":3,"capacity":4},{"id":9,"color":0,"capacity":10},{"id":10,"color":2,"capacity":15},{"id":11,"color":4,"capacity":1},{"id":12,"color":1,"capacity":26},{"id":17,"color":2,"capacity":6},{"id":19,"color":3,"capacity":2}]
+  ],
+  "solution": [0,0,0,0,2,1,0,1,2,2,2,2,0,0,0,1,2,1,2],
+  "meta": {
+    "seed": 3469920567,
+    "targetDifficulty": 0.2,
+    "difficulty": 0.198,
+    "stats": {
+      "randomWinRate": 0.447,
+      "greedyWinRate": 1,
+      "deadEndRatio": 0,
+      "minLanes": 1,
+      "branching": 2.74,
+      "hiddenShare": 0,
+      "lockCount": 0,
+      "pairCount": 0,
+      "overflowPods": 0,
+      "peakStalled": 0,
+      "fastGreedyWinRate": 1,
+      "fastRandomWinRate": 0.485,
+      "maxPodCapacity": 28,
+      "medianPodCapacity": 10,
+      "longestDrainSec": 2.52,
+      "minLanesProven": true
+    },
+    "generatorVersion": "gen-2.0.0",
+    "sourceHash": "766026be245009e0"
+  }
+}

@@ -1,0 +1,45 @@
+{
+  "version": 1,
+  "rulesVersion": 1,
+  "id": "potatochip-green",
+  "name": "Potato Chip Green",
+  "width": 32,
+  "height": 32,
+  "palette": ["#00ffa8","#00b39b","#4f5590","#f4f1ff","#a0431a","#ffe600","#ffd0a0","#ffb000","#c8ff1a","#ff7a1a"],
+  "cells": "........................................2222222222222222...........22211100000000000001111222......20000011100000000000333332......20000000000000000000333332.......000000000033330000033333........000000033555555500033333........001100344444455550000003.........1110344444334955000111..........2110344443439399330112..........2110344443433399930012..........2110343444344399930002..........2100043344434344430002..........2100037555433444400002..........2100007555574444400002..........2110007755577777000112..........2010000077777770000112..........2011000003333000001112..........2001100000000000001112..........2111111000000000001112..........2888811100000000000112..........2886610010000000000112..........2866880100000000000012..........2866886610000000000111..........00666686100000000001111........000066660100000000000111........000106601100001110000011........0000111101111111110000002......20000011111111111111100002......22221100000000000000011222............222222222222222........................................",
+  "keys": [{"id":1,"x":15,"y":27}],
+  "lanes": 2,
+  "tickMs": 90,
+  "columns": [
+    [{"id":1,"color":1,"capacity":120},{"id":2,"color":3,"capacity":16},{"id":3,"color":0,"capacity":289},{"id":15,"color":9,"capacity":4},{"id":16,"color":4,"capacity":16},{"id":17,"color":6,"capacity":5}],
+    [{"id":7,"color":8,"capacity":5},{"id":10,"color":4,"capacity":30,"hidden":true},{"id":11,"color":8,"capacity":5,"hidden":true},{"id":12,"color":8,"capacity":3,"hidden":true},{"id":13,"color":9,"capacity":3,"hidden":true},{"id":14,"color":6,"capacity":8}],
+    [{"id":8,"color":5,"capacity":9},{"id":9,"color":7,"capacity":17},{"id":22,"color":9,"capacity":3},{"id":23,"color":2,"capacity":18}],
+    [{"id":4,"color":3,"capacity":44},{"id":5,"color":6,"capacity":6,"hidden":true},{"id":6,"color":2,"capacity":27,"lock":1},{"id":18,"color":0,"capacity":4,"hidden":true},{"id":19,"color":2,"capacity":35,"hidden":true},{"id":20,"color":5,"capacity":11,"link":21},{"id":21,"color":5,"capacity":3,"link":20}]
+  ],
+  "solution": [0,0,0,3,3,3,1,2,2,1,1,1,1,1,0,0,0,3,3,3,2,2],
+  "meta": {
+    "seed": 1839910038,
+    "targetDifficulty": 0.79,
+    "difficulty": 0.79,
+    "stats": {
+      "randomWinRate": 0.013,
+      "greedyWinRate": 0.1,
+      "deadEndRatio": 0.075,
+      "minLanes": 2,
+      "branching": 3.32,
+      "hiddenShare": 0.304,
+      "lockCount": 1,
+      "pairCount": 1,
+      "overflowPods": 3,
+      "peakStalled": 1,
+      "fastGreedyWinRate": 0.085,
+      "fastRandomWinRate": 0.015,
+      "maxPodCapacity": 289,
+      "medianPodCapacity": 9,
+      "longestDrainSec": 26.01,
+      "minLanesProven": true
+    },
+    "generatorVersion": "gen-2.0.0",
+    "sourceHash": "8a933cf9a5d9504d"
+  }
+}

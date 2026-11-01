@@ -21,9 +21,17 @@
         "noUnusedLocals": true,
         "noUnusedParameters": true,
         "noFallthroughCasesInSwitch": true,
-        "noUncheckedSideEffectImports": true
+        "noUncheckedSideEffectImports": true,
+        "types": ["bun", "vite/client"],
+        "baseUrl": ".",
+        "paths": {
+            "@game/*": ["src/game/*"],
+            "@data/*": ["src/data/*"]
+        }
     },
     "include": [
-        "src"
+        "src",
+        "tools",
+        "tests"
     ]
 }

@@ -1,0 +1,46 @@
+{
+  "version": 1,
+  "rulesVersion": 1,
+  "id": "sunset",
+  "name": "Sunset",
+  "width": 32,
+  "height": 24,
+  "palette": ["#2f7bff","#9b5cff","#ff2bd6","#ffe600","#ff7a1a","#f4f1ff","#00b39b"],
+  "cells": "111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111122222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222223333332222222222222222222222222333333332222222222224444444444433333333334444444444444444444443333333333334444664444444444444433333333333344466664444444444444333333333333446666664400000000003333333333330666666660000000000000000000000000000000000000000000033333333330000000000000000000000000000000000000000000555500000003333333333000000555500000000000000000000000000000000000000000000033333333000000000000000000555500000055550000005555000000000000000333333000000000000000000000000000000000000000000000",
+  "keys": [],
+  "lanes": 3,
+  "tickMs": 44,
+  "columns": [
+    [{"id":2,"color":4,"capacity":24,"link":1},{"id":5,"color":0,"capacity":43,"hidden":true},{"id":9,"color":1,"capacity":49},{"id":18,"color":0,"capacity":39}],
+    [{"id":7,"color":5,"capacity":12},{"id":11,"color":2,"capacity":32},{"id":19,"color":1,"capacity":21},{"id":20,"color":4,"capacity":13},{"id":25,"color":0,"capacity":55,"hidden":true},{"id":26,"color":0,"capacity":40}],
+    [{"id":3,"color":1,"capacity":55},{"id":4,"color":6,"capacity":9},{"id":10,"color":4,"capacity":16},{"id":15,"color":3,"capacity":36},{"id":27,"color":0,"capacity":25}],
+    [{"id":1,"color":5,"capacity":5,"link":2},{"id":6,"color":3,"capacity":29},{"id":12,"color":2,"capacity":42},{"id":17,"color":2,"capacity":27,"hidden":true},{"id":21,"color":5,"capacity":3},{"id":22,"color":3,"capacity":16}],
+    [{"id":8,"color":6,"capacity":11},{"id":13,"color":1,"capacity":35},{"id":14,"color":2,"capacity":45},{"id":16,"color":3,"capacity":25},{"id":23,"color":0,"capacity":44},{"id":24,"color":4,"capacity":17,"hidden":true}]
+  ],
+  "solution": [3,2,2,0,3,1,4,0,2,1,3,4,4,2,4,3,0,1,1,3,3,4,4,1,1,2],
+  "meta": {
+    "seed": 886784263,
+    "targetDifficulty": 0.5,
+    "difficulty": 0.512,
+    "stats": {
+      "randomWinRate": 0.133,
+      "greedyWinRate": 0.7,
+      "deadEndRatio": 0.088,
+      "minLanes": 2,
+      "branching": 4.31,
+      "hiddenShare": 0.148,
+      "lockCount": 0,
+      "pairCount": 1,
+      "overflowPods": 5,
+      "peakStalled": 2,
+      "fastGreedyWinRate": 0.51,
+      "fastRandomWinRate": 0.075,
+      "maxPodCapacity": 55,
+      "medianPodCapacity": 27,
+      "longestDrainSec": 2.42,
+      "minLanesProven": true
+    },
+    "generatorVersion": "gen-2.0.0",
+    "sourceHash": "a661bb52fa75ae38"
+  }
+}

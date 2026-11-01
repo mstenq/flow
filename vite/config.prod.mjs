@@ -1,23 +1,35 @@
 import { defineConfig } from 'vite';
+import { fileURLToPath } from 'node:url';
+import { readdirSync, rmSync } from 'node:fs';
 
-const phasermsg = () => {
-    return {
-        name: 'phasermsg',
-        buildStart() {
-            process.stdout.write(`Building for production...\n`);
-        },
-        buildEnd() {
-            const line = "---------------------------------------------------------";
-            const msg = `❤️❤️❤️ Tell us about your game! - games@phaser.io ❤️❤️❤️`;
-            process.stdout.write(`${line}\n${msg}\n${line}\n`);
-            
-            process.stdout.write(`✨ Done ✨\n`);
+const r = (p) => fileURLToPath(new URL(p, import.meta.url));
+
+/** The dev-only test levels (`public/levels/dev-*.json`) are not part of the game: drop them from `dist/levels/`. */
+const stripDevLevels = () => ({
+    name: 'strip-dev-levels',
+    apply: 'build',
+    closeBundle() {
+        const dir = r('../dist/levels');
+        let files = [];
+        try {
+            files = readdirSync(dir);
+        } catch {
+            return;
         }
-    }
-}   
+        for (const f of files) {
+            if (f.startsWith('dev-') && f.endsWith('.json')) rmSync(`${dir}/${f}`);
+        }
+    },
+});
 
 export default defineConfig({
     base: './',
+    resolve: {
+        alias: {
+            '@game': r('../src/game'),
+            '@data': r('../src/data')
+        }
+    },
     logLevel: 'warning',
     build: {
         rollupOptions: {
@@ -41,7 +53,5 @@ export default defineConfig({
     server: {
         port: 8080
     },
-    plugins: [
-        phasermsg()
-    ]
+    plugins: [stripDevLevels()]
 });

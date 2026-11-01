@@ -1,0 +1,46 @@
+{
+  "version": 1,
+  "rulesVersion": 1,
+  "id": "06-apple-pie-dish",
+  "name": "Apple Pie Dish",
+  "width": 32,
+  "height": 32,
+  "palette": ["#f4f1ff","#ffb000","#ffd0a0","#ffe600","#ff7a1a","#ff2950","#4f5590","#a0431a"],
+  "cells": "..................................................................................555..........................5551115.....................55551333115.............555555551333133344442..........533311133313314443415226........5133333131114411131115226.......54133314441114111311115226......541144411111111111133335222......54111111114111113311444522.....5551111144411111111333115222....5551112224444114433311335522...625511122233311444411131155226..625771222333331220011113335226..624711111331221320023313332226..624333177711222332223337112226..622444411117777333222231772226..600222244441111113222223422006..600202222224444111112223422006..600000022222222444111777440006...6002200022222222244411444006....6002000022000211222244442006.....00000000000011100000002000......00002000000011100000020000.......000022000000000000220000.........0000000000000000000000...........00000000000000000000..............0000000000000000...................6666666666...........................................................................",
+  "keys": [{"id":1,"x":9,"y":21},{"id":2,"x":13,"y":23}],
+  "lanes": 2,
+  "tickMs": 55,
+  "columns": [
+    [{"id":5,"color":5,"capacity":20},{"id":6,"color":6,"capacity":12,"lock":1},{"id":13,"color":3,"capacity":21,"hidden":true}],
+    [{"id":19,"color":5,"capacity":25}],
+    [{"id":4,"color":0,"capacity":107},{"id":14,"color":3,"capacity":25,"hidden":true},{"id":15,"color":4,"capacity":22},{"id":21,"color":3,"capacity":7,"link":20},{"id":22,"color":1,"capacity":21,"link":23},{"id":23,"color":4,"capacity":1,"link":22}],
+    [{"id":3,"color":4,"capacity":16},{"id":7,"color":2,"capacity":40},{"id":8,"color":1,"capacity":52,"hidden":true},{"id":9,"color":6,"capacity":21,"hidden":true},{"id":10,"color":3,"capacity":25,"lock":2},{"id":11,"color":1,"capacity":40,"hidden":true}],
+    [{"id":1,"color":2,"capacity":46},{"id":2,"color":0,"capacity":54},{"id":12,"color":7,"capacity":16,"hidden":true},{"id":16,"color":4,"capacity":14,"hidden":true},{"id":17,"color":4,"capacity":15,"hidden":true},{"id":18,"color":2,"capacity":33},{"id":20,"color":1,"capacity":33,"link":21}]
+  ],
+  "solution": [4,4,3,2,0,0,3,3,3,3,3,4,0,2,2,4,4,4,1,4,2],
+  "meta": {
+    "seed": 2897010048,
+    "targetDifficulty": 0.9,
+    "difficulty": 0.889,
+    "stats": {
+      "randomWinRate": 0.003,
+      "greedyWinRate": 0,
+      "deadEndRatio": 0.263,
+      "minLanes": 2,
+      "branching": 3.86,
+      "hiddenShare": 0.348,
+      "lockCount": 2,
+      "pairCount": 2,
+      "overflowPods": 3,
+      "peakStalled": 1,
+      "fastGreedyWinRate": 0,
+      "fastRandomWinRate": 0.005,
+      "maxPodCapacity": 107,
+      "medianPodCapacity": 22,
+      "longestDrainSec": 5.89,
+      "minLanesProven": true
+    },
+    "generatorVersion": "gen-2.0.0",
+    "sourceHash": "2dd0df2b99a025d8"
+  }
+}

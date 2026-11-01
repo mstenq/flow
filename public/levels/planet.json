@@ -1,0 +1,45 @@
+{
+  "version": 1,
+  "rulesVersion": 1,
+  "id": "planet",
+  "name": "Ringed Planet",
+  "width": 24,
+  "height": 24,
+  "palette": ["#4f5590","#ff2950","#ffe600","#00f0ff","#ff7a1a","#f4f1ff"],
+  "cells": "000000000000000000000000000000000000000000050000000500000000000000555000005550000000000000050000000500000000000000000000000000000444222000000000000333001444442200000000003333311114444420000000003333221111144444000000000332222211111444400000000033422222111114400000000003344222221111100000000001334442222211100000000001113344422222130000000001111333444222233000000000211113334442333300000000022111113333333300005000002221111100333000055500000222221000000000005000000000000000005000000000000000000500055500000000000000005550005000000000000000000500000000000000000000000000000000",
+  "keys": [],
+  "lanes": 3,
+  "tickMs": 90,
+  "columns": [
+    [{"id":7,"color":4,"capacity":7},{"id":8,"color":1,"capacity":28,"hidden":true},{"id":16,"color":4,"capacity":9,"hidden":true}],
+    [{"id":1,"color":0,"capacity":189},{"id":2,"color":3,"capacity":30,"hidden":true},{"id":3,"color":4,"capacity":4},{"id":4,"color":0,"capacity":176},{"id":5,"color":3,"capacity":16,"hidden":true},{"id":6,"color":2,"capacity":15},{"id":13,"color":1,"capacity":24}],
+    [{"id":10,"color":5,"capacity":9},{"id":11,"color":2,"capacity":9},{"id":12,"color":4,"capacity":11,"hidden":true},{"id":14,"color":5,"capacity":8}],
+    [{"id":9,"color":2,"capacity":25},{"id":15,"color":5,"capacity":8},{"id":17,"color":4,"capacity":8}]
+  ],
+  "solution": [1,1,1,1,1,1,0,0,3,2,2,2,1,2,3,0,3],
+  "meta": {
+    "seed": 2224108531,
+    "targetDifficulty": 0.3,
+    "difficulty": 0.286,
+    "stats": {
+      "randomWinRate": 0.34,
+      "greedyWinRate": 0.963,
+      "deadEndRatio": 0,
+      "minLanes": 1,
+      "branching": 3.53,
+      "hiddenShare": 0.294,
+      "lockCount": 0,
+      "pairCount": 0,
+      "overflowPods": 2,
+      "peakStalled": 1,
+      "fastGreedyWinRate": 0.935,
+      "fastRandomWinRate": 0.295,
+      "maxPodCapacity": 189,
+      "medianPodCapacity": 11,
+      "longestDrainSec": 17.01,
+      "minLanesProven": true
+    },
+    "generatorVersion": "gen-2.0.0",
+    "sourceHash": "8fe4b734ec10c01a"
+  }
+}

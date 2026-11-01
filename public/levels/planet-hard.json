@@ -1,0 +1,45 @@
+{
+  "version": 1,
+  "rulesVersion": 1,
+  "id": "planet-hard",
+  "name": "Saturn Night",
+  "width": 24,
+  "height": 24,
+  "palette": ["#4f5590","#ff2950","#ffe600","#00f0ff","#ff7a1a","#f4f1ff"],
+  "cells": "000000000000000000000000000000000000000000050000000500000000000000555000005550000000000000050000000500000000000000000000000000000444222000000000000333001444442200000000003333311114444420000000003333221111144444000000000332222211111444400000000033422222111114400000000003344222221111100000000001334442222211100000000001113344422222130000000001111333444222233000000000211113334442333300000000022111113333333300005000002221111100333000055500000222221000000000005000000000000000005000000000000000000500055500000000000000005550005000000000000000000500000000000000000000000000000000",
+  "keys": [{"id":1,"x":13,"y":16}],
+  "lanes": 3,
+  "tickMs": 75,
+  "columns": [
+    [{"id":1,"color":0,"capacity":117},{"id":2,"color":5,"capacity":10},{"id":3,"color":2,"capacity":17,"hidden":true},{"id":4,"color":5,"capacity":6},{"id":14,"color":5,"capacity":4,"hidden":true},{"id":17,"color":2,"capacity":10}],
+    [{"id":7,"color":1,"capacity":34},{"id":8,"color":3,"capacity":18,"hidden":true},{"id":13,"color":3,"capacity":12,"hidden":true},{"id":15,"color":4,"capacity":1,"hidden":true},{"id":16,"color":2,"capacity":15}],
+    [{"id":6,"color":0,"capacity":146},{"id":9,"color":1,"capacity":18},{"id":10,"color":4,"capacity":38},{"id":11,"color":3,"capacity":16,"hidden":true},{"id":12,"color":0,"capacity":102}],
+    [{"id":5,"color":5,"capacity":5},{"id":18,"color":2,"capacity":7,"lock":1}]
+  ],
+  "solution": [0,0,0,0,3,2,1,1,2,2,2,2,1,0,1,1,0,3],
+  "meta": {
+    "seed": 3803259091,
+    "targetDifficulty": 0.7,
+    "difficulty": 0.698,
+    "stats": {
+      "randomWinRate": 0.183,
+      "greedyWinRate": 0.197,
+      "deadEndRatio": 0.078,
+      "minLanes": 3,
+      "branching": 3.17,
+      "hiddenShare": 0.333,
+      "lockCount": 1,
+      "pairCount": 0,
+      "overflowPods": 4,
+      "peakStalled": 2,
+      "fastGreedyWinRate": 0.52,
+      "fastRandomWinRate": 0.175,
+      "maxPodCapacity": 146,
+      "medianPodCapacity": 16,
+      "longestDrainSec": 10.95,
+      "minLanesProven": true
+    },
+    "generatorVersion": "gen-2.0.0",
+    "sourceHash": "8fe4b734ec10c01a"
+  }
+}

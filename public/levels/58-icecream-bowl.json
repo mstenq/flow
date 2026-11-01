@@ -1,0 +1,45 @@
+{
+  "version": 1,
+  "rulesVersion": 1,
+  "id": "58-icecream-bowl",
+  "name": "Ice Cream Bowl",
+  "width": 32,
+  "height": 32,
+  "palette": ["#ff7a1a","#f4f1ff","#ffe600","#ffd0a0","#a0431a","#ff7ab8","#ff2950","#4f5590","#ffb000","#c8ff1a","#00b39b"],
+  "cells": "..............................................................................................................777777........................7700000077.....................700000000007...................70000000000007...............888700000000000078............8811700000000000047888.........831187400000000000047aaaaa.....8318822740000000000407aa99a....831822227044000000040049999a....81823222240000444400004999aa...111823222224400000004444999aaa..11823322222204444004465649999a..718222332222204644466556649997..718233222322246665655666564997..718223332233246555555655554397..738222322333445555565555554337..733822222222466665655555555337...0308222333345555566565555034....0030822222346566666655550004.....03300222332465555556500334......43331003220046655530013334.......433311300000000003113334.........4313311111111111133134...........41111111111111111134.............411111111111111113................11111111111111.....................44444444............................................................................",
+  "keys": [{"id":1,"x":24,"y":17},{"id":2,"x":28,"y":19}],
+  "lanes": 3,
+  "tickMs": 75,
+  "columns": [
+    [{"id":5,"color":6,"capacity":2},{"id":7,"color":6,"capacity":19,"lock":2},{"id":8,"color":4,"capacity":30,"lock":1},{"id":9,"color":2,"capacity":16,"hidden":true},{"id":10,"color":1,"capacity":43}],
+    [{"id":12,"color":8,"capacity":27,"link":13},{"id":14,"color":9,"capacity":14,"hidden":true},{"id":15,"color":6,"capacity":16},{"id":16,"color":7,"capacity":13,"hidden":true},{"id":17,"color":9,"capacity":8,"hidden":true},{"id":18,"color":2,"capacity":32,"hidden":true},{"id":19,"color":4,"capacity":12,"link":20},{"id":20,"color":10,"capacity":6,"link":19}],
+    [{"id":13,"color":0,"capacity":134,"link":12},{"id":21,"color":3,"capacity":52,"hidden":true},{"id":22,"color":7,"capacity":7,"hidden":true},{"id":23,"color":10,"capacity":3},{"id":24,"color":1,"capacity":39,"hidden":true}],
+    [{"id":1,"color":3,"capacity":15},{"id":2,"color":10,"capacity":6,"hidden":true},{"id":3,"color":7,"capacity":13,"hidden":true},{"id":4,"color":4,"capacity":23,"hidden":true},{"id":6,"color":5,"capacity":62},{"id":11,"color":2,"capacity":23,"hidden":true}]
+  ],
+  "solution": [3,3,3,3,0,3,0,0,0,0,3,1,1,1,1,1,1,1,2,2,2,2],
+  "meta": {
+    "seed": 776873535,
+    "targetDifficulty": 0.9,
+    "difficulty": 0.899,
+    "stats": {
+      "randomWinRate": 0.003,
+      "greedyWinRate": 0,
+      "deadEndRatio": 0.333,
+      "minLanes": 3,
+      "branching": 2.77,
+      "hiddenShare": 0.5,
+      "lockCount": 2,
+      "pairCount": 2,
+      "overflowPods": 6,
+      "peakStalled": 2,
+      "fastGreedyWinRate": 0,
+      "fastRandomWinRate": 0,
+      "maxPodCapacity": 134,
+      "medianPodCapacity": 16,
+      "longestDrainSec": 10.05,
+      "minLanesProven": true
+    },
+    "generatorVersion": "gen-2.0.0",
+    "sourceHash": "e0184889db62d182"
+  }
+}

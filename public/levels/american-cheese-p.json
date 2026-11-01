@@ -1,0 +1,44 @@
+{
+  "version": 1,
+  "rulesVersion": 1,
+  "id": "american-cheese-p",
+  "name": "American Cheese",
+  "width": 32,
+  "height": 32,
+  "palette": ["#ff2950","#ffd0a0","#ff7ab8","#a0431a","#4f5590","#f4f1ff","#ff7a1a"],
+  "cells": ".............................................................................................................................................................................................................................................2223300.......................222330000000..................2223300000000000..............22233000000000001114..........43333000000000001111114........4333000000000001111116124......44332200000030111111661124......443320000003111115111161244....453332200020311116155661124444.4453332200220355661111116124444.455333220022035551611166122.44...4533320220203556511111221244....4533320000203556651122122244.....43332000020355656222222144......4433200002035556622221114........43322200203156662211114.........443222222031116561111............443222220315651111.................2222203155111......................22335551...........................444...............................................................................................................................................",
+  "keys": [],
+  "lanes": 3,
+  "tickMs": 80,
+  "columns": [
+    [{"id":1,"color":5,"capacity":10},{"id":5,"color":4,"capacity":7},{"id":6,"color":1,"capacity":24},{"id":7,"color":3,"capacity":18},{"id":10,"color":3,"capacity":19},{"id":11,"color":0,"capacity":28},{"id":12,"color":3,"capacity":11,"hidden":true},{"id":13,"color":1,"capacity":37},{"id":21,"color":2,"capacity":15,"hidden":true},{"id":22,"color":4,"capacity":12},{"id":24,"color":2,"capacity":26,"hidden":true}],
+    [{"id":4,"color":5,"capacity":25},{"id":8,"color":0,"capacity":32,"hidden":true},{"id":17,"color":4,"capacity":10},{"id":18,"color":3,"capacity":10},{"id":19,"color":6,"capacity":6},{"id":23,"color":4,"capacity":10}],
+    [{"id":2,"color":6,"capacity":3},{"id":3,"color":6,"capacity":13},{"id":9,"color":1,"capacity":27},{"id":14,"color":0,"capacity":25,"hidden":true},{"id":15,"color":4,"capacity":8},{"id":16,"color":2,"capacity":18,"hidden":true},{"id":20,"color":2,"capacity":17},{"id":25,"color":2,"capacity":9},{"id":26,"color":6,"capacity":4,"hidden":true},{"id":27,"color":0,"capacity":15}]
+  ],
+  "solution": [0,2,2,1,0,0,0,1,2,0,0,0,0,2,2,2,1,1,1,2,0,0,1,0,2,2,2],
+  "meta": {
+    "seed": 2558508414,
+    "targetDifficulty": 0.35,
+    "difficulty": 0.337,
+    "stats": {
+      "randomWinRate": 0.647,
+      "greedyWinRate": 0.737,
+      "deadEndRatio": 0,
+      "minLanes": 2,
+      "branching": 2.74,
+      "hiddenShare": 0.259,
+      "lockCount": 0,
+      "pairCount": 0,
+      "overflowPods": 5,
+      "peakStalled": 2,
+      "fastGreedyWinRate": 0.74,
+      "fastRandomWinRate": 0.72,
+      "maxPodCapacity": 37,
+      "medianPodCapacity": 15,
+      "longestDrainSec": 2.96,
+      "minLanesProven": true
+    },
+    "generatorVersion": "gen-2.0.0",
+    "sourceHash": "744b2a72158acded"
+  }
+}

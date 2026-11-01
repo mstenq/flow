@@ -1,0 +1,44 @@
+{
+  "version": 1,
+  "rulesVersion": 1,
+  "id": "tiger",
+  "name": "Tiger",
+  "width": 32,
+  "height": 32,
+  "palette": ["#4f5590","#ff7a1a","#a0431a","#f4f1ff","#ffb000","#ffd0a0","#ff7ab8","#9299b0","#ff2bd6"],
+  "cells": "......................................................................0000.............0000..........044420...........044420........04411120.........04411120......0441111120.......0441111120....04411668112000044044166811120...04116666822440011441666681220...04116666844440011141666682220...02111006004440011110060082220....021100400444001111000002220......0210040044111111100100220........02447704111111117701220.........04477000111111177000120.........04470000111111170000120........0444000001111111000002220.......0444400011333331100022220.......0444111133377333511222220.......0441111337700000352222220.......0411113337000000335222220.......0411133330000000335522220.......0011133333300033355522220........00003333333333355550000.........00003333333333555550000..........001533333333555555220............0115333333555555220.............0221533355555552220..............00215555555552200.................0222555552220....................00222222200.......................0000000............................................",
+  "keys": [{"id":1,"x":11,"y":8}],
+  "lanes": 4,
+  "tickMs": 63,
+  "columns": [
+    [{"id":3,"color":1,"capacity":58},{"id":6,"color":7,"capacity":7},{"id":9,"color":0,"capacity":30,"hidden":true},{"id":12,"color":3,"capacity":45,"hidden":true},{"id":15,"color":6,"capacity":4},{"id":18,"color":8,"capacity":2},{"id":21,"color":5,"capacity":19},{"id":24,"color":6,"capacity":6},{"id":27,"color":6,"capacity":5,"hidden":true}],
+    [{"id":1,"color":0,"capacity":42},{"id":4,"color":8,"capacity":2},{"id":7,"color":4,"capacity":23},{"id":10,"color":4,"capacity":14,"lock":1},{"id":13,"color":7,"capacity":3,"hidden":true},{"id":16,"color":6,"capacity":7},{"id":19,"color":7,"capacity":5},{"id":22,"color":2,"capacity":31,"hidden":true},{"id":25,"color":8,"capacity":3},{"id":28,"color":5,"capacity":7}],
+    [{"id":2,"color":4,"capacity":25},{"id":5,"color":1,"capacity":32},{"id":8,"color":2,"capacity":56,"hidden":true},{"id":11,"color":1,"capacity":29},{"id":14,"color":0,"capacity":63},{"id":17,"color":5,"capacity":13},{"id":20,"color":3,"capacity":27},{"id":23,"color":0,"capacity":49},{"id":26,"color":5,"capacity":14}]
+  ],
+  "solution": [1,2,0,1,2,0,1,2,0,1,2,0,1,2,0,1,2,0,1,2,0,1,2,0,1,2,0,1],
+  "meta": {
+    "seed": 4067471544,
+    "targetDifficulty": 0.57,
+    "difficulty": 0.573,
+    "stats": {
+      "randomWinRate": 0.273,
+      "greedyWinRate": 0.443,
+      "deadEndRatio": 0.012,
+      "minLanes": 3,
+      "branching": 2.89,
+      "hiddenShare": 0.214,
+      "lockCount": 1,
+      "pairCount": 0,
+      "overflowPods": 4,
+      "peakStalled": 2,
+      "fastGreedyWinRate": 0.135,
+      "fastRandomWinRate": 0.195,
+      "maxPodCapacity": 63,
+      "medianPodCapacity": 19,
+      "longestDrainSec": 3.97,
+      "minLanesProven": true
+    },
+    "generatorVersion": "gen-2.0.0",
+    "sourceHash": "ce9ce75004f05c4a"
+  }
+}

@@ -1,0 +1,44 @@
+{
+  "version": 1,
+  "rulesVersion": 1,
+  "id": "cleaning-gloves-p",
+  "name": "Cleaning Gloves (Alt)",
+  "width": 32,
+  "height": 32,
+  "palette": ["#9299b0","#4f5590","#ff2950","#ff7ab8","#f4f1ff","#ffe600","#00b39b","#a0431a"],
+  "cells": "..................................................11111......................1111122221.................111113322222221.................112233111222221.................132233322222221.................132233322225551.................132233555445555.................1454545454555551................1454544477444001................1454455223770001................1454542223220001................1455002223220001................1400222223222001................1044222333322200................10402222333233201...............10400222333233201...............10400223333323201...............10400023333333701...............10045555333333701...............10046666333333701...............16046666333332001...............16046666333332001...............16046666333320001...............16040073333320001...............10040077733370001...............10040000077770001...............1040000000000000................1040000000001111................14000011111.....................11111...................................................",
+  "keys": [{"id":1,"x":15,"y":12}],
+  "lanes": 3,
+  "tickMs": 80,
+  "columns": [
+    [{"id":2,"color":6,"capacity":20},{"id":9,"color":0,"capacity":52,"hidden":true},{"id":10,"color":5,"capacity":8},{"id":11,"color":7,"capacity":10,"hidden":true},{"id":14,"color":1,"capacity":23},{"id":21,"color":5,"capacity":11},{"id":24,"color":3,"capacity":15}],
+    [{"id":4,"color":7,"capacity":6},{"id":6,"color":4,"capacity":12,"hidden":true},{"id":7,"color":1,"capacity":17},{"id":8,"color":2,"capacity":29,"hidden":true},{"id":15,"color":5,"capacity":7,"lock":1},{"id":16,"color":1,"capacity":15,"hidden":true},{"id":17,"color":4,"capacity":15,"hidden":true},{"id":18,"color":3,"capacity":17}],
+    [{"id":1,"color":0,"capacity":51},{"id":3,"color":2,"capacity":23},{"id":5,"color":1,"capacity":14},{"id":12,"color":4,"capacity":13,"hidden":true},{"id":13,"color":2,"capacity":29,"hidden":true},{"id":19,"color":1,"capacity":13},{"id":20,"color":5,"capacity":6,"hidden":true},{"id":22,"color":3,"capacity":30,"hidden":true},{"id":23,"color":3,"capacity":18}]
+  ],
+  "solution": [2,0,2,1,2,1,1,1,0,0,0,2,2,0,1,1,1,1,2,2,0,2,2,0],
+  "meta": {
+    "seed": 3958539794,
+    "targetDifficulty": 0.57,
+    "difficulty": 0.558,
+    "stats": {
+      "randomWinRate": 0.37,
+      "greedyWinRate": 0.48,
+      "deadEndRatio": 0.072,
+      "minLanes": 2,
+      "branching": 2.5,
+      "hiddenShare": 0.417,
+      "lockCount": 1,
+      "pairCount": 0,
+      "overflowPods": 6,
+      "peakStalled": 2,
+      "fastGreedyWinRate": 0.41,
+      "fastRandomWinRate": 0.245,
+      "maxPodCapacity": 52,
+      "medianPodCapacity": 15,
+      "longestDrainSec": 4.16,
+      "minLanesProven": true
+    },
+    "generatorVersion": "gen-2.0.0",
+    "sourceHash": "3fb9fd35e9052095"
+  }
+}

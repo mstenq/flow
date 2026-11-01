@@ -1,0 +1,44 @@
+{
+  "version": 1,
+  "rulesVersion": 1,
+  "id": "49-garlicbread-dish",
+  "name": "Garlic Bread Dish",
+  "width": 32,
+  "height": 32,
+  "palette": ["#f4f1ff","#ffd0a0","#a0431a","#4f5590","#ff2950","#ffe600","#ff7a1a","#ff7ab8","#ffb000"],
+  "cells": "...........................................................................................................................................7777777777...................7770000000000077..............37000000000000000073...........3100000002222220000013.........310001112221111122200013.......11001111281111111122200011......10011102811111111111121001.....1001110028111111111111121001....0001000022811111111555121000...300000222222222111515511820003..300002211111112221551118420003..300122111111115111211184421003..300124111111155111828664211003..300124811551155511182662101003..300124481151111115582221001003..300112468111111151842000001003..300011266441111166442000010003...3001012644446666642000001003....3000101224446666220000010003.....00001000222222200000010000......00000110000000000000100000.......000001100000000001100000.........0000001111111111000000...........00000000000000000000..............0000000000000000...................3333333333...........................................................................",
+  "keys": [{"id":1,"x":23,"y":19}],
+  "lanes": 3,
+  "tickMs": 90,
+  "columns": [
+    [{"id":14,"color":3,"capacity":23},{"id":15,"color":7,"capacity":5,"hidden":true},{"id":16,"color":6,"capacity":9},{"id":19,"color":6,"capacity":10,"hidden":true},{"id":20,"color":4,"capacity":7,"hidden":true}],
+    [{"id":3,"color":2,"capacity":30},{"id":5,"color":5,"capacity":7},{"id":6,"color":1,"capacity":38,"hidden":true},{"id":11,"color":8,"capacity":9},{"id":12,"color":7,"capacity":3,"hidden":true},{"id":13,"color":7,"capacity":4},{"id":17,"color":3,"capacity":13,"lock":1},{"id":18,"color":5,"capacity":5},{"id":25,"color":4,"capacity":7}],
+    [{"id":1,"color":0,"capacity":139},{"id":2,"color":2,"capacity":9},{"id":4,"color":0,"capacity":115},{"id":7,"color":8,"capacity":6},{"id":8,"color":1,"capacity":82},{"id":9,"color":2,"capacity":31,"hidden":true},{"id":10,"color":1,"capacity":67},{"id":21,"color":5,"capacity":3},{"id":22,"color":5,"capacity":5,"hidden":true},{"id":23,"color":4,"capacity":4},{"id":24,"color":7,"capacity":3},{"id":26,"color":7,"capacity":2},{"id":27,"color":4,"capacity":4}]
+  ],
+  "solution": [2,2,1,2,1,1,2,2,2,2,1,1,1,0,0,0,1,1,0,0,2,2,2,2,1,2,2],
+  "meta": {
+    "seed": 1835593806,
+    "targetDifficulty": 0.68,
+    "difficulty": 0.67,
+    "stats": {
+      "randomWinRate": 0.08,
+      "greedyWinRate": 0.32,
+      "deadEndRatio": 0.053,
+      "minLanes": 3,
+      "branching": 2.67,
+      "hiddenShare": 0.259,
+      "lockCount": 1,
+      "pairCount": 0,
+      "overflowPods": 7,
+      "peakStalled": 2,
+      "fastGreedyWinRate": 0.03,
+      "fastRandomWinRate": 0.01,
+      "maxPodCapacity": 139,
+      "medianPodCapacity": 7,
+      "longestDrainSec": 12.51,
+      "minLanesProven": true
+    },
+    "generatorVersion": "gen-2.0.0",
+    "sourceHash": "13964f6c30630bfd"
+  }
+}
