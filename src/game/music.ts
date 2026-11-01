@@ -114,13 +114,14 @@ export interface LayerMix {
     bass: number;
     arp: number;
     hats: number;
-    tension: number;
     /** Play the arp every N steps (4 = quarters, 2 = eighths, 1 = sixteenths). */
     arpEvery: 1 | 2 | 4;
     hatsEvery: 1 | 2;
-    /** Music lowpass cutoff in Hz and resonance Q. Full lanes sweep it open and make it bite. */
+    /**
+     * Music lowpass cutoff in Hz. Full lanes get no extra layer, resonance or drone: with only 2-3 lanes they fill
+     * constantly, so "full" is just the top of the same ramp (busiest arp/hats, brightest filter).
+     */
     cutoffHz: number;
-    resonance: number;
 }
 
 export function lanePressure(i: IntensityInput): number {
@@ -130,17 +131,14 @@ export function lanePressure(i: IntensityInput): number {
 
 export function intensityLayers(i: IntensityInput): LayerMix {
     const p = lanePressure(i);
-    const full = i.lanesFull;
     return {
         pad: 0.7,
         bass: 0.6 + 0.2 * p,
         arp: 0.3 + 0.5 * p,
         hats: p < 0.34 ? 0 : p < 0.67 ? 0.4 : 0.7,
-        tension: full ? 1 : p > 0.8 ? 0.35 : 0,
         arpEvery: p < 0.25 ? 4 : p < 0.6 ? 2 : 1,
         hatsEvery: p < 0.67 ? 2 : 1,
-        cutoffHz: full ? 9000 : 900 + 3600 * p,
-        resonance: full ? 7 : 1,
+        cutoffHz: 900 + 3600 * p,
     };
 }
 

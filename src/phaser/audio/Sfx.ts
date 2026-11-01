@@ -11,6 +11,8 @@ export class Sfx {
     private readonly limiter = new ClaimLimiter(25, 5);
     /** Splash ticks come with every claim; keep them a light texture. */
     private readonly tickLimiter = new ClaimLimiter(14, 3);
+    /** Lanes fill constantly on 2-3 lane levels: at most one full-lanes nudge every 6 s. */
+    private readonly lanesFullLimiter = new ClaimLimiter(1 / 6, 1);
     private claimVoices: Voice[] = [];
     private key: MusicKey = chooseKey(0);
 
@@ -34,7 +36,7 @@ export class Sfx {
             case 'lockShatter': return this.lockShatter(dest);
             case 'reveal': return this.reveal(dest);
             case 'denied': return this.denied(dest);
-            case 'lanesFullWarning': return this.lanesFull(dest);
+            case 'lanesFullWarning': return this.lanesFullLimiter.tryAcquire(ctx.currentTime) ? this.lanesFull(dest) : undefined;
             case 'overload': return this.overload(dest);
             case 'win': return this.win(dest);
             case 'uiClick': return this.uiClick(dest);
@@ -110,9 +112,9 @@ export class Sfx {
         tone(this.e(), d, { freq: 110, endFreq: 90, dur: 0.18, type: 'sawtooth', vol: 0.14 });
     }
 
+    /** A soft in-key low note: a nudge, not an alarm. */
     private lanesFull(d: AudioNode): void {
-        tone(this.e(), d, { freq: 70, dur: 0.22, type: 'sine', vol: 0.25, attack: 0.02 });
-        tone(this.e(), d, { freq: 70, dur: 0.22, type: 'sine', vol: 0.2, attack: 0.02, delay: 0.25 });
+        tone(this.e(), d, { freq: midiToHz(this.key.rootMidi + 12), dur: 0.3, type: 'triangle', vol: 0.08, attack: 0.02 });
     }
 
     private overload(d: AudioNode): void {

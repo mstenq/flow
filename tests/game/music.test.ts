@@ -81,14 +81,12 @@ describe('intensity -> layers', () => {
         expect(a.arpEvery).toBeGreaterThan(b.arpEvery);
         expect(b.arpEvery).toBeGreaterThan(c.arpEvery);
         expect(c.arp).toBeGreaterThan(a.arp);
-        expect(a.tension).toBe(0);
+        expect(c.cutoffHz).toBeGreaterThan(a.cutoffHz);
     });
-    test('full lanes add tension and open the filter', () => {
-        const near = at(5);
-        const full = at(6, 6, true);
-        expect(full.tension).toBe(1);
-        expect(full.cutoffHz).toBeGreaterThan(near.cutoffHz);
-        expect(full.resonance).toBeGreaterThan(near.resonance);
+    test('full lanes are just the top of the ramp (no extra harsh layer)', () => {
+        expect(at(6, 6, true)).toEqual(at(6, 6, false));
+        expect(at(2, 2, true)).toEqual(at(6, 6, true));
+        expect(at(6, 6, true).cutoffHz).toBeLessThanOrEqual(4500);
     });
     test('zero lanes does not divide by zero', () => {
         expect(at(0, 0).arp).toBeGreaterThan(0);

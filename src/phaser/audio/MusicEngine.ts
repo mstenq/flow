@@ -1,6 +1,6 @@
 /**
  * Generative music: lookahead step sequencer (timer fires every ~25 ms, schedules notes up to 100 ms ahead on the
- * AudioContext clock). Layers: pad, bass drone, arpeggiated pentatonic lead (with echo), hats, tension drone.
+ * AudioContext clock). Layers: pad, bass, arpeggiated pentatonic lead (with echo), hats.
  * Layer gains and the filter are ramped with setTargetAtTime, so intensity changes never click.
  */
 import {
@@ -26,8 +26,6 @@ interface Session {
     bass: GainNode;
     arp: GainNode;
     hats: GainNode;
-    tension: GainNode;
-    tensionOscs: OscillatorNode[];
     step: number;
     nextTime: number;
     mix: LayerMix;
@@ -74,7 +72,7 @@ export class MusicEngine {
         const filter = ctx.createBiquadFilter();
         filter.type = 'lowpass';
         filter.frequency.value = mix.cutoffHz;
-        filter.Q.value = mix.resonance;
+        filter.Q.value = 1;
         filter.connect(out);
         out.connect(bus);
 
@@ -87,7 +85,6 @@ export class MusicEngine {
         const pad = layer(mix.pad);
         const bass = layer(mix.bass);
         const hats = layer(mix.hats);
-        const tension = layer(mix.tension);
         const arp = layer(mix.arp);
         // Dotted-eighth echo on the arp for width.
         const delay = ctx.createDelay(1);
@@ -102,21 +99,6 @@ export class MusicEngine {
         delay.connect(wet);
         wet.connect(filter);
 
-        // Tension drone: a detuned minor-second pair, silent until lanes fill.
-        const tensionOscs: OscillatorNode[] = [];
-        for (const semis of [24, 25]) {
-            const o = ctx.createOscillator();
-            o.type = 'sawtooth';
-            o.frequency.value = midiToHz(key.rootMidi + semis);
-            const lp = ctx.createBiquadFilter();
-            lp.type = 'lowpass';
-            lp.frequency.value = 900;
-            o.connect(lp);
-            lp.connect(tension);
-            o.start(t);
-            tensionOscs.push(o);
-        }
-
         this.session = {
             key,
             patterns: buildPatterns(seed),
@@ -126,8 +108,6 @@ export class MusicEngine {
             bass,
             arp,
             hats,
-            tension,
-            tensionOscs,
             step: 0,
             nextTime: t + 0.08,
             mix,
@@ -148,9 +128,7 @@ export class MusicEngine {
         s.bass.gain.setTargetAtTime(m.bass * 0.5, t, tc);
         s.arp.gain.setTargetAtTime(m.arp * 0.5, t, tc);
         s.hats.gain.setTargetAtTime(m.hats * 0.5, t, tc);
-        s.tension.gain.setTargetAtTime(m.tension * 0.35, t, 0.6);
-        s.filter.frequency.setTargetAtTime(m.cutoffHz, t, m.tension > 0.5 ? 0.8 : tc);
-        s.filter.Q.setTargetAtTime(m.resonance, t, tc);
+        s.filter.frequency.setTargetAtTime(m.cutoffHz, t, tc);
     }
 
     /** Win: stop the sequencer, ring out a tonic chord, then fade away. */
@@ -161,8 +139,6 @@ export class MusicEngine {
         this.stopTimer();
         const t = ctx.currentTime + 0.05;
         s.filter.frequency.setTargetAtTime(7000, t, 0.3);
-        s.filter.Q.setTargetAtTime(1, t, 0.3);
-        s.tension.gain.setTargetAtTime(0, t, 0.2);
         for (const d of [0, 2, 4, 5, 7]) this.padNote(s, scaleNote(s.key, d, 1), t, 4.5);
         s.out.gain.cancelScheduledValues(t);
         s.out.gain.setValueAtTime(s.out.gain.value, t);
@@ -197,13 +173,6 @@ export class MusicEngine {
 
     dispose(s?: Session): void {
         if (s) {
-            for (const o of s.tensionOscs) {
-                try {
-                    o.stop();
-                } catch {
-                    // already stopped
-                }
-            }
             try {
                 s.out.disconnect();
             } catch {

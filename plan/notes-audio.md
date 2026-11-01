@@ -43,11 +43,11 @@ Singleton `audioDirector`. Every method is a safe no-op before unlock, without W
 `tapped` tap chirp; `claimed` pentatonic blip (color index -> scale degree, pitched in the level key, ~25/s limit + 8-voice stealing); `keyCollected` sparkle arpeggio; `unlocked` lock shatter; `revealed` glitch; `podCompleted` chord stab + whoosh; `won` win; `dead` overload. The mapping table is typed so a new `SimEvent` type fails typecheck until mapped.
 
 ## Music
-Lookahead scheduler (25 ms timer, 100 ms ahead). Layers: pad, bass, arp (+ dotted echo), hats, tension drone. Lanes used / total scales arp rate (quarter -> eighth -> sixteenth), arp gain, hats and filter cutoff. Lanes full opens the filter to 9 kHz with resonance and fades in a minor-second tension drone. All changes use `setTargetAtTime`.
+Lookahead scheduler (25 ms timer, 100 ms ahead). Layers: pad, bass, arp (+ dotted echo), hats. Lanes used / total scales arp rate (quarter -> eighth -> sixteenth), arp gain, hats and filter cutoff. Lanes full is just the top of that ramp: no drone, no resonance (the old minor-second drone + Q 7 sweep was grating, and 2-3 lane levels sit at full constantly). The full-lanes SFX is a soft in-key note, at most once per 6 s. All changes use `setTargetAtTime`.
 
 ## Manual listening checks (no audio here)
 - Levels sound different in key; claim blips match the music key and do not clip in a flood.
-- Intensity transitions: no clicks or pops; hats/arp feel right at 1/3 and 2/3 lanes; tension at full lanes is audible but not harsh.
+- Intensity transitions: no clicks or pops; hats/arp feel right at 1/3 and 2/3 lanes; full lanes sound busier, never harsh.
 - Relative loudness: sfx vs music, win pad, overload sweep, reveal bitcrush, denied buzz.
 - Pause/resume does not burst notes; resolve tail on win fades cleanly; unlock works on a real iOS/Android device.
 - ~~Known limitation: SFX silent while paused~~ fixed in Phase 5: `onPauseChanged` now stops the music scheduler and mutes the music bus (`AudioEngine.setMusicDuck`) while the context keeps running; only a hidden tab suspends it (`onVisibilityChanged`, `installVisibility`).
