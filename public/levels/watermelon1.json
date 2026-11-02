@@ -41,7 +41,7 @@
       "longestDrainSec": 7.11,
       "minLanesProven": true
     },
-    "generatorVersion": "gen-3.1.0",
+    "generatorVersion": "gen-3.2.0",
     "sourceHash": "7ac1f946cd51f696"
   }
 }

@@ -1,0 +1,46 @@
+{
+  "version": 1,
+  "rulesVersion": 1,
+  "id": "captain-america",
+  "name": "Captain America",
+  "width": 17,
+  "height": 17,
+  "palette": ["#4f5590","#2f7bff","#9b5cff","#f4f1ff","#a0431a","#9299b0"],
+  "cells": ".......0000000.........022222220.....0002111113120....0332111133310.....033211131310......02221111110......02200111110......02200111100.......0221111110....000002233330....044440000000....04433440555500...043223405555000..043223400000000..044334400.000.....0444400..00.......0000..........",
+  "keys": [],
+  "lanes": 2,
+  "tickMs": 90,
+  "columns": [
+    [{"id":4,"color":1,"capacity":9},{"id":11,"color":5,"capacity":4,"link":10}],
+    [{"id":7,"color":3,"capacity":19},{"id":9,"color":4,"capacity":14,"hidden":true},{"id":12,"color":5,"capacity":4,"link":13},{"id":13,"color":3,"capacity":3,"link":12},{"id":14,"color":0,"capacity":4}],
+    [{"id":1,"color":2,"capacity":26},{"id":2,"color":0,"capacity":22,"hidden":true},{"id":3,"color":0,"capacity":51,"hidden":true},{"id":6,"color":4,"capacity":6},{"id":8,"color":1,"capacity":8,"hidden":true},{"id":10,"color":1,"capacity":10,"link":11}],
+    [{"id":5,"color":1,"capacity":10}]
+  ],
+  "solution": [2,2,2,0,3,2,1,2,1,2,1,1],
+  "meta": {
+    "seed": 1175024970,
+    "targetDifficulty": 0.79,
+    "difficulty": 0.79,
+    "stats": {
+      "randomWinRate": 0.01,
+      "greedyWinRate": 0.057,
+      "smartWinRate": 0.223,
+      "deadEndRatio": 0.283,
+      "minLanes": 2,
+      "branching": 2.75,
+      "hiddenShare": 0.286,
+      "lockCount": 0,
+      "pairCount": 2,
+      "overflowPods": 1,
+      "peakStalled": 1,
+      "fastGreedyWinRate": 0.03,
+      "fastRandomWinRate": 0.02,
+      "maxPodCapacity": 51,
+      "medianPodCapacity": 10,
+      "longestDrainSec": 4.59,
+      "minLanesProven": true
+    },
+    "generatorVersion": "gen-3.2.0",
+    "sourceHash": "7baf21f329ded7ee"
+  }
+}

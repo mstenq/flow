@@ -17,7 +17,7 @@ Order equals level order. `id` is derived from the filename. CLI flags (`--diffi
 
 ### 1. `png.ts`: import
 - Read with `pngjs` (pure JS). Alpha < 128 means an empty cell.
-- Reject boards larger than 48 in either dimension, and reject zero cells.
+- Reject boards larger than 64 in either dimension (the game's `MAX_DIM`), and reject zero cells.
 
 ### 2. `palette.ts`: color merge + neon remap
 - Convert to CIELAB. Greedily cluster colors within ΔE < `tolerance` (default 10), weighted by pixel count.

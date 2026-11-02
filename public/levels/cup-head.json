@@ -1,0 +1,46 @@
+{
+  "version": 1,
+  "rulesVersion": 1,
+  "id": "cup-head",
+  "name": "Cup Head",
+  "width": 24,
+  "height": 24,
+  "palette": ["#f4f1ff","#ffd0a0","#4f5590","#ff7a1a","#9299b0","#a0431a","#ffe600","#ff2950"],
+  "cells": "...003330..................0033000.................0033000.....................333.....................333...................11777444444444440.....4411111000000010000....44411111002200012200....44611111000200012200....44611111002200011200....44661111100000011000.....444111211000011100.......44411221111111111...........117772111111...........2222222222222..........222622222226222.........220662222226612.........200003222223311...........000333333331............000333333311.............0333333311............55000...11155..........555555...555555.........555555...555555...",
+  "keys": [{"id":0,"x":13,"y":17},{"id":1,"x":11,"y":6},{"id":2,"x":19,"y":8}],
+  "lanes": 3,
+  "tickMs": 90,
+  "columns": [
+    [{"id":1,"color":0,"capacity":60},{"id":12,"color":3,"capacity":9,"lock":1},{"id":14,"color":3,"capacity":16,"link":13},{"id":15,"color":1,"capacity":29,"link":16},{"id":17,"color":3,"capacity":13,"hidden":true}],
+    [{"id":6,"color":4,"capacity":28},{"id":8,"color":0,"capacity":17},{"id":11,"color":7,"capacity":6},{"id":18,"color":5,"capacity":6,"hidden":true},{"id":19,"color":5,"capacity":4,"hidden":true}],
+    [{"id":3,"color":6,"capacity":7},{"id":4,"color":2,"capacity":11},{"id":5,"color":2,"capacity":3,"hidden":true},{"id":9,"color":1,"capacity":44,"lock":2},{"id":13,"color":5,"capacity":9,"link":14}],
+    [{"id":2,"color":2,"capacity":33},{"id":7,"color":2,"capacity":8,"lock":0},{"id":10,"color":6,"capacity":3,"hidden":true},{"id":16,"color":5,"capacity":9,"link":15}]
+  ],
+  "solution": [0,3,2,2,2,1,3,1,2,3,1,0,2,0,0,1,1],
+  "meta": {
+    "seed": 1162626992,
+    "targetDifficulty": 0.79,
+    "difficulty": 0.791,
+    "stats": {
+      "randomWinRate": 0.223,
+      "greedyWinRate": 0.227,
+      "smartWinRate": 0.077,
+      "deadEndRatio": 0.122,
+      "minLanes": 2,
+      "branching": 2.65,
+      "hiddenShare": 0.263,
+      "lockCount": 3,
+      "pairCount": 2,
+      "overflowPods": 3,
+      "peakStalled": 2,
+      "fastGreedyWinRate": 0.12,
+      "fastRandomWinRate": 0.395,
+      "maxPodCapacity": 60,
+      "medianPodCapacity": 9,
+      "longestDrainSec": 5.4,
+      "minLanesProven": true
+    },
+    "generatorVersion": "gen-3.2.0",
+    "sourceHash": "b9b20ed1764c0d3b"
+  }
+}

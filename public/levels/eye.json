@@ -1,0 +1,47 @@
+{
+  "version": 1,
+  "rulesVersion": 1,
+  "id": "eye",
+  "name": "Eye",
+  "width": 16,
+  "height": 16,
+  "palette": ["#ffb000","#4f5590","#ff2950","#f4f1ff","#7dff3a"],
+  "cells": "2200111000000222221100000000022211100002221110221000222000222111200200000111111120200011111111112200011113344111200111144334411220111333444441220011333334441202011333333311200211333333331200020000001111200022000000000000002200000000000002220000000000000222",
+  "keys": [{"id":0,"x":14,"y":15}],
+  "lanes": 3,
+  "tickMs": 90,
+  "columns": [
+    [{"id":8,"color":0,"capacity":34},{"id":17,"color":4,"capacity":2,"hidden":true}],
+    [{"id":3,"color":0,"capacity":39,"link":2},{"id":9,"color":1,"capacity":11,"hidden":true}],
+    [{"id":6,"color":3,"capacity":10},{"id":7,"color":3,"capacity":17},{"id":16,"color":4,"capacity":4}],
+    [{"id":1,"color":2,"capacity":33},{"id":2,"color":2,"capacity":4,"link":3},{"id":4,"color":0,"capacity":30,"lock":0},{"id":14,"color":1,"capacity":11,"hidden":true}],
+    [{"id":5,"color":2,"capacity":12},{"id":10,"color":1,"capacity":20,"hidden":true},{"id":11,"color":1,"capacity":11},{"id":12,"color":1,"capacity":10},{"id":13,"color":4,"capacity":5},{"id":15,"color":4,"capacity":3}]
+  ],
+  "solution": [3,3,3,4,2,2,0,1,4,4,4,4,3,4,2,0],
+  "meta": {
+    "seed": 2343103770,
+    "targetDifficulty": 0.38,
+    "difficulty": 0.38,
+    "stats": {
+      "randomWinRate": 0.323,
+      "greedyWinRate": 0.547,
+      "smartWinRate": 0.643,
+      "deadEndRatio": 0.027,
+      "minLanes": 2,
+      "branching": 4.06,
+      "hiddenShare": 0.235,
+      "lockCount": 1,
+      "pairCount": 1,
+      "overflowPods": 3,
+      "peakStalled": 2,
+      "fastGreedyWinRate": 0.655,
+      "fastRandomWinRate": 0.275,
+      "maxPodCapacity": 39,
+      "medianPodCapacity": 11,
+      "longestDrainSec": 3.51,
+      "minLanesProven": true
+    },
+    "generatorVersion": "gen-3.2.0",
+    "sourceHash": "e1ceecea32629fb3"
+  }
+}

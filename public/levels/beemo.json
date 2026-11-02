@@ -1,0 +1,46 @@
+{
+  "version": 1,
+  "rulesVersion": 1,
+  "id": "beemo",
+  "name": "Beemo",
+  "width": 17,
+  "height": 17,
+  "palette": ["#00b39b","#9299b0","#ffd0a0"],
+  "cells": "...................1111111111111....1000000000001....1022222222201....1022222222201....1022222222201....1022211122201....1022222222201....1022222222201....1000000000001....1011111000001....1000000000001....1002000000001....1022200000001....1002000000001....1000000000001....1111111111111..",
+  "keys": [{"id":0,"x":11,"y":4},{"id":1,"x":6,"y":5},{"id":2,"x":13,"y":13}],
+  "lanes": 2,
+  "tickMs": 52,
+  "columns": [
+    [{"id":6,"color":1,"capacity":28}],
+    [{"id":5,"color":1,"capacity":15,"link":4}],
+    [{"id":1,"color":1,"capacity":19},{"id":4,"color":2,"capacity":23,"link":5}],
+    [{"id":2,"color":2,"capacity":19,"link":3},{"id":3,"color":0,"capacity":27,"link":2},{"id":7,"color":2,"capacity":14,"lock":1},{"id":8,"color":0,"capacity":40,"lock":0},{"id":9,"color":0,"capacity":23,"lock":2}]
+  ],
+  "solution": [2,3,2,0,3,3,3],
+  "meta": {
+    "seed": 2918708667,
+    "targetDifficulty": 0.91,
+    "difficulty": 0.911,
+    "stats": {
+      "randomWinRate": 0.057,
+      "greedyWinRate": 0.1,
+      "smartWinRate": 0,
+      "deadEndRatio": 0.417,
+      "minLanes": 2,
+      "branching": 2.29,
+      "hiddenShare": 0,
+      "lockCount": 3,
+      "pairCount": 2,
+      "overflowPods": 1,
+      "peakStalled": 1,
+      "fastGreedyWinRate": 0,
+      "fastRandomWinRate": 0,
+      "maxPodCapacity": 40,
+      "medianPodCapacity": 23,
+      "longestDrainSec": 2.08,
+      "minLanesProven": true
+    },
+    "generatorVersion": "gen-3.2.0",
+    "sourceHash": "249c5fa8e98c31ca"
+  }
+}

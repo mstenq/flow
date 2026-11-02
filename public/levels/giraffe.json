@@ -11,11 +11,11 @@
   "lanes": 2,
   "tickMs": 48,
   "columns": [
-    [{"id":10,"color":4,"capacity":8},{"id":11,"color":7,"capacity":9,"hidden":true},{"id":12,"color":1,"capacity":26,"hidden":true},{"id":14,"color":2,"capacity":27,"lock":2},{"id":15,"color":3,"capacity":21,"hidden":true},{"id":20,"color":4,"capacity":1,"link":21}],
-    [{"id":2,"color":0,"capacity":58,"link":1},{"id":4,"color":0,"capacity":48,"hidden":true},{"id":7,"color":4,"capacity":21,"hidden":true},{"id":9,"color":0,"capacity":41},{"id":22,"color":5,"capacity":2,"hidden":true}],
+    [{"id":10,"color":4,"capacity":8},{"id":11,"color":7,"capacity":9},{"id":12,"color":1,"capacity":26,"hidden":true},{"id":14,"color":2,"capacity":27,"lock":2},{"id":15,"color":3,"capacity":21,"hidden":true},{"id":20,"color":4,"capacity":1,"link":21}],
+    [{"id":2,"color":0,"capacity":58,"link":1},{"id":4,"color":0,"capacity":48},{"id":7,"color":4,"capacity":21,"hidden":true},{"id":9,"color":0,"capacity":41,"hidden":true},{"id":22,"color":5,"capacity":2,"hidden":true}],
     [{"id":3,"color":4,"capacity":23},{"id":8,"color":0,"capacity":47,"lock":0},{"id":13,"color":3,"capacity":24}],
     [{"id":17,"color":1,"capacity":22},{"id":18,"color":6,"capacity":25,"link":19},{"id":19,"color":3,"capacity":27,"link":18},{"id":21,"color":2,"capacity":20,"link":20}],
-    [{"id":1,"color":1,"capacity":103,"link":2},{"id":5,"color":5,"capacity":49},{"id":6,"color":7,"capacity":6,"lock":1},{"id":16,"color":2,"capacity":31}]
+    [{"id":1,"color":1,"capacity":103,"link":2},{"id":5,"color":5,"capacity":49,"hidden":true},{"id":6,"color":7,"capacity":6,"lock":1},{"id":16,"color":2,"capacity":31}]
   ],
   "solution": [4,2,1,4,4,1,2,1,0,0,0,2,0,0,4,3,3,0,1],
   "meta": {
@@ -41,7 +41,7 @@
       "longestDrainSec": 4.94,
       "minLanesProven": true
     },
-    "generatorVersion": "gen-3.1.0",
+    "generatorVersion": "gen-3.2.0",
     "sourceHash": "83af9e2b168c10c2"
   }
 }

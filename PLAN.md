@@ -48,7 +48,7 @@ generator are right, everything else is presentation.
 | Image input | **PNG, 1 px = 1 cell.** Transparent = empty. Near-duplicate colors get merged. |
 | Colors | **Remapped to a curated neon palette** (about 10 distinct hues). |
 | Mechanic placement | **Fully automatic.** No per-level overrides. Your only inputs are the PNG, name, and difficulty. |
-| Max board | About **48×48**. |
+| Max board | **64×64** (the generator and the game share the limit; bigger cells get too small to read). |
 | Board look | **Crisp glowing tiles at rest.** Cells melt into goo blobs that stream along the path into the pod. |
 | Lose | **Overload → retry** when nothing can progress. |
 | v1 meta | **Level select + saved progress**, **audio** (synth SFX + generative music). |

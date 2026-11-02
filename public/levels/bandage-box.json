@@ -9,21 +9,21 @@
   "cells": ".........................................................................................................1111...........................100001111......................10000000001111.................18880000000000011111............18888877000000000001............18888660777700000041............18882666770077770441............18822666222400074421............18822666262240074221............10044226656224402221............10433342252622222221............14333334256562622221............14333334222526522221............14333334422555522221............14333334042222222221............14333334004222222241............14333334000422222441............14333334055550004441............14333334066555074441............14333334055666074441............14333334055555074551............14333334066555074541............14333334055665074441............11133334055556074441................111100005507441.....................1110000741..........................11111.........................................................................",
   "keys": [{"id":0,"x":7,"y":25},{"id":1,"x":21,"y":10}],
   "lanes": 3,
-  "tickMs": 86,
+  "tickMs": 75,
   "columns": [
-    [{"id":20,"color":4,"capacity":14,"link":21},{"id":21,"color":5,"capacity":14,"link":20},{"id":25,"color":4,"capacity":14,"hidden":true}],
-    [{"id":12,"color":0,"capacity":14},{"id":22,"color":6,"capacity":17,"lock":0},{"id":23,"color":3,"capacity":30},{"id":24,"color":4,"capacity":16}],
-    [{"id":5,"color":7,"capacity":7},{"id":6,"color":7,"capacity":4},{"id":7,"color":6,"capacity":4,"hidden":true},{"id":8,"color":5,"capacity":25,"hidden":true},{"id":9,"color":2,"capacity":29,"lock":1},{"id":10,"color":0,"capacity":34},{"id":11,"color":7,"capacity":11}],
-    [{"id":1,"color":0,"capacity":37},{"id":2,"color":6,"capacity":9,"hidden":true},{"id":3,"color":2,"capacity":43},{"id":4,"color":8,"capacity":8,"hidden":true}],
-    [{"id":13,"color":4,"capacity":23},{"id":14,"color":1,"capacity":23},{"id":15,"color":8,"capacity":11},{"id":16,"color":1,"capacity":13,"hidden":true},{"id":17,"color":1,"capacity":13},{"id":18,"color":3,"capacity":37},{"id":19,"color":1,"capacity":27,"hidden":true}]
+    [{"id":20,"color":4,"capacity":16,"link":21},{"id":21,"color":5,"capacity":14,"link":20},{"id":25,"color":4,"capacity":14}],
+    [{"id":12,"color":0,"capacity":14},{"id":22,"color":6,"capacity":17,"lock":0},{"id":23,"color":3,"capacity":30,"hidden":true},{"id":24,"color":4,"capacity":16}],
+    [{"id":5,"color":7,"capacity":7},{"id":6,"color":7,"capacity":4},{"id":7,"color":6,"capacity":4,"hidden":true},{"id":8,"color":5,"capacity":25},{"id":9,"color":2,"capacity":29,"lock":1},{"id":10,"color":0,"capacity":34,"hidden":true},{"id":11,"color":7,"capacity":11,"hidden":true}],
+    [{"id":1,"color":0,"capacity":37},{"id":2,"color":6,"capacity":9},{"id":3,"color":2,"capacity":43},{"id":4,"color":8,"capacity":8}],
+    [{"id":13,"color":4,"capacity":21},{"id":14,"color":1,"capacity":23,"hidden":true},{"id":15,"color":8,"capacity":11,"hidden":true},{"id":16,"color":1,"capacity":13},{"id":17,"color":1,"capacity":13},{"id":18,"color":3,"capacity":37,"hidden":true},{"id":19,"color":1,"capacity":27}]
   ],
   "solution": [3,3,3,3,2,2,2,2,2,2,2,1,4,4,4,4,4,4,4,0,1,1,1,0],
   "meta": {
     "seed": 1805246421,
     "targetDifficulty": 0.9,
-    "difficulty": 0.899,
+    "difficulty": 0.9,
     "stats": {
-      "randomWinRate": 0.007,
+      "randomWinRate": 0.003,
       "greedyWinRate": 0.02,
       "smartWinRate": 0,
       "deadEndRatio": 0.051,
@@ -34,14 +34,14 @@
       "pairCount": 1,
       "overflowPods": 6,
       "peakStalled": 2,
-      "fastGreedyWinRate": 0.185,
-      "fastRandomWinRate": 0.04,
+      "fastGreedyWinRate": 0.225,
+      "fastRandomWinRate": 0.05,
       "maxPodCapacity": 43,
-      "medianPodCapacity": 14,
-      "longestDrainSec": 3.7,
+      "medianPodCapacity": 16,
+      "longestDrainSec": 3.23,
       "minLanesProven": true
     },
-    "generatorVersion": "gen-3.1.0",
+    "generatorVersion": "gen-3.2.0",
     "sourceHash": "0ab96bc6dc4869b7"
   }
 }

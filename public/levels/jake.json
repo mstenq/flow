@@ -1,0 +1,46 @@
+{
+  "version": 1,
+  "rulesVersion": 1,
+  "id": "jake",
+  "name": "Jake",
+  "width": 16,
+  "height": 16,
+  "palette": ["#ffb000","#4f5590","#ff7a1a","#f4f1ff"],
+  "cells": "...1111111111.....100000000001...10000000000001..10011000011001.1001331001331001100133100133100110001121121100011010020000200101.11020022002011...100220022001....100000000001....100000000001....100000000001.....1001111001......101....101......111....111...",
+  "keys": [{"id":0,"x":2,"y":4},{"id":1,"x":14,"y":5}],
+  "lanes": 2,
+  "tickMs": 90,
+  "columns": [
+    [{"id":5,"color":2,"capacity":3},{"id":7,"color":3,"capacity":3},{"id":9,"color":2,"capacity":2}],
+    [{"id":11,"color":0,"capacity":31,"link":12}],
+    [{"id":12,"color":2,"capacity":5,"link":11},{"id":13,"color":2,"capacity":2,"hidden":true}],
+    [{"id":1,"color":1,"capacity":11},{"id":2,"color":0,"capacity":33,"hidden":true},{"id":3,"color":0,"capacity":14},{"id":4,"color":1,"capacity":29},{"id":6,"color":1,"capacity":32,"lock":0},{"id":8,"color":0,"capacity":28,"hidden":true},{"id":10,"color":3,"capacity":5,"lock":1}]
+  ],
+  "solution": [3,3,3,3,0,3,0,3,0,3,1,2],
+  "meta": {
+    "seed": 275195160,
+    "targetDifficulty": 0.65,
+    "difficulty": 0.652,
+    "stats": {
+      "randomWinRate": 0.067,
+      "greedyWinRate": 0.32,
+      "smartWinRate": 0.33,
+      "deadEndRatio": 0.2,
+      "minLanes": 2,
+      "branching": 2.83,
+      "hiddenShare": 0.231,
+      "lockCount": 2,
+      "pairCount": 1,
+      "overflowPods": 1,
+      "peakStalled": 1,
+      "fastGreedyWinRate": 0.5,
+      "fastRandomWinRate": 0.065,
+      "maxPodCapacity": 33,
+      "medianPodCapacity": 11,
+      "longestDrainSec": 2.97,
+      "minLanesProven": true
+    },
+    "generatorVersion": "gen-3.2.0",
+    "sourceHash": "fb5210c165ee31bc"
+  }
+}

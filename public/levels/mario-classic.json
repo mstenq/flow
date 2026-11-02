@@ -1,0 +1,46 @@
+{
+  "version": 1,
+  "rulesVersion": 1,
+  "id": "mario-classic",
+  "name": "Mario Classic",
+  "width": 16,
+  "height": 16,
+  "palette": ["#ff2950","#ffd0a0","#4f5590","#a0431a","#9299b0","#ffb000","#ff7a1a"],
+  "cells": ".....00000..........000000000.......666666000......3355111111......33551144111.....35551144441......311110044.......00000000.......0002002000.....000022220000....110222222011....111222222111....112222222211....112222222211.....3333..3333.....33333..33333..",
+  "keys": [{"id":0,"x":5,"y":6},{"id":1,"x":3,"y":3},{"id":2,"x":7,"y":10}],
+  "lanes": 2,
+  "tickMs": 90,
+  "columns": [
+    [{"id":3,"color":2,"capacity":19},{"id":8,"color":5,"capacity":3,"link":9},{"id":9,"color":4,"capacity":3,"link":8},{"id":11,"color":4,"capacity":2,"lock":1}],
+    [{"id":6,"color":5,"capacity":3},{"id":7,"color":3,"capacity":7,"hidden":true},{"id":12,"color":0,"capacity":14,"link":13}],
+    [{"id":1,"color":3,"capacity":6},{"id":2,"color":0,"capacity":31,"hidden":true},{"id":10,"color":5,"capacity":1,"hidden":true},{"id":13,"color":1,"capacity":36,"link":12},{"id":14,"color":6,"capacity":1,"hidden":true},{"id":15,"color":4,"capacity":3,"link":16},{"id":16,"color":6,"capacity":3,"link":15},{"id":17,"color":6,"capacity":2,"lock":0}],
+    [{"id":4,"color":3,"capacity":11},{"id":5,"color":2,"capacity":15,"lock":2}]
+  ],
+  "solution": [2,2,0,3,3,1,1,0,2,0,1,2,2,2],
+  "meta": {
+    "seed": 321949334,
+    "targetDifficulty": 0.9,
+    "difficulty": 0.9,
+    "stats": {
+      "randomWinRate": 0.267,
+      "greedyWinRate": 0,
+      "smartWinRate": 0,
+      "deadEndRatio": 0.265,
+      "minLanes": 2,
+      "branching": 2.64,
+      "hiddenShare": 0.235,
+      "lockCount": 3,
+      "pairCount": 3,
+      "overflowPods": 1,
+      "peakStalled": 1,
+      "fastGreedyWinRate": 0.075,
+      "fastRandomWinRate": 0.29,
+      "maxPodCapacity": 36,
+      "medianPodCapacity": 3,
+      "longestDrainSec": 3.24,
+      "minLanesProven": true
+    },
+    "generatorVersion": "gen-3.2.0",
+    "sourceHash": "da73030906b6e87e"
+  }
+}

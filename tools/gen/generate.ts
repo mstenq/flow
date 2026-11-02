@@ -14,7 +14,7 @@ import { DEFAULT_MIN_REGION, maxColorsForDifficulty, simplifyImage } from './pal
 import type { Board, Layout, Trace } from './board.ts';
 import { boardFromCells, podCount, replay, toLevel, traceSolution } from './board.ts';
 import type { Knobs } from './knobs.ts';
-import { keyCountFor, knobsSummary, mechanicCaps, sampleKnobs } from './knobs.ts';
+import { MAX_POD, fewColorBoost, keyCountFor, knobsSummary, mechanicCaps, sampleKnobs } from './knobs.ts';
 import { construct } from './construct.ts';
 import { addLock, applyMechanics, hideShare } from './mechanics.ts';
 import type { Plan } from './plan.ts';
@@ -38,9 +38,9 @@ export interface GenerateInput {
     candidates?: number;
     /** Hill-climb iterations (default 15). */
     climb?: number;
-    /** Safety-net time budget in ms (default 24000). Normal runs stop on count limits well before it, which keeps output deterministic. */
+    /** Safety-net time budget in ms (default 30000). Normal runs stop on count limits well before it, which keeps output deterministic. */
     budgetMs?: number;
-    /** Cap on pod capacity during construction and mutation (default: none). */
+    /** Cap on pod capacity during construction and mutation (default and ceiling: `MAX_POD`). */
     maxPod?: number;
     /** Lighter measures everywhere (tests). */
     quick?: boolean;
@@ -122,6 +122,32 @@ function topUpKeys(board: Board, plan: Plan, want: number, rng: Rng): Plan {
     return out;
 }
 
+/** Each key a level ends up short of costs this much in `bestTopUp`. */
+const MISSING_KEY_COST = 0.05;
+
+/**
+ * The climbed plan with keys topped up to `want`. A late lock can strip every losing move (small boards end up with
+ * one forced order), so a few placements are measured and the one nearest the target wins. The plan without the
+ * extra keys stays an option, so a level is never made unlosable just to reach the key count.
+ */
+function bestTopUp(board: Board, best: Candidate, want: number, target: number, rng: Rng, measureLayout: (layout: Layout) => Measurement): Plan {
+    if (best.plan.keys.length >= want) return best.plan;
+    const cost = (m: Measurement, plan: Plan, lanes: number) => distance(m, target, lanes) + MISSING_KEY_COST * (want - plan.keys.length);
+    let pick = best.plan;
+    let pickCost = cost(best.m, best.plan, best.layout.lanes);
+    for (let k = 0; k < 6; k++) {
+        const plan = topUpKeys(board, best.plan, want, rng);
+        if (plan.keys.length === best.plan.keys.length) continue;
+        const layout = toLayout(plan);
+        if (!layout) continue;
+        const c = cost(measureLayout(layout), plan, layout.lanes);
+        if (c >= pickCost) continue;
+        pick = plan;
+        pickCost = c;
+    }
+    return pick;
+}
+
 export function generateLevel(input: GenerateInput): GenerateResult {
     const t0 = performance.now();
     const timings: Record<string, number> = {};
@@ -134,13 +160,19 @@ export function generateLevel(input: GenerateInput): GenerateResult {
     };
     const elapsed = () => performance.now() - t0;
     const target = Math.max(0, Math.min(1, input.difficulty));
-    const budgetMs = input.budgetMs ?? 24_000;
+    const budgetMs = input.budgetMs ?? 30_000;
     const quick = input.quick ?? false;
 
     const maxColors = input.maxColors ?? maxColorsForDifficulty(target);
     const simplified = simplifyImage(input.image, { maxColors, minRegion: input.minRegion ?? DEFAULT_MIN_REGION });
     const board = boardFromCells(simplified.width, simplified.height, simplified.cells, simplified.palette);
     lap('simplify');
+
+    // Few colors means few real choices: search above the target and force keys and pairs (see `fewColorBoost`).
+    const boost = fewColorBoost(board.numColors, target);
+    const searchTarget = Math.min(1, target + boost.target);
+    const maxPod = Math.min(MAX_POD, input.maxPod ?? MAX_POD);
+    if (boost.target > 0) log.push(`few colors (${board.numColors}): search target ${searchTarget.toFixed(2)}, ≥${boost.minKeys} key(s), ≥${boost.minPairs} pair(s)`);
 
     const rng = new Rng(input.seed);
     const screen: MeasureOptions = { ...SCREEN_MEASURE, seed: input.seed, ...(quick ? { rollouts: 40, trapBudget: 0 } : {}) };
@@ -149,13 +181,12 @@ export function generateLevel(input: GenerateInput): GenerateResult {
 
     // 1. Candidates (up to 3x as many while none of them can be lost).
     const maxCandidates = input.candidates ?? 40;
-    const wantKeys = keyCountFor(target, input.seed);
+    const wantKeys = keyCountFor(target, input.seed, boost);
     const pool: Candidate[] = [];
     for (let i = 0; i < maxCandidates * 3; i++) {
         if (i >= maxCandidates && pool.some((c) => isLosable(c.m.stats))) break;
         const r = rng.fork();
-        const knobs = sampleKnobs(target, r, wantKeys);
-        if (input.maxPod !== undefined) knobs.maxPod = input.maxPod;
+        const knobs = { ...sampleKnobs(target, r, wantKeys, boost), maxPod };
         const built = construct(board, knobs, r);
         // Hidden pods are dealt after the search (see step 4): they don't change the score.
         const placed = applyMechanics(board, planFromLayout(built.layout), { ...knobs, hiddenShare: 0 }, r);
@@ -167,14 +198,14 @@ export function generateLevel(input: GenerateInput): GenerateResult {
         const m = measure(level, screen);
         lap('screen');
         pool.push({ plan: placed.plan, layout, knobs, m, note: `cand ${i}` });
-        const best = Math.min(...pool.map((c) => distance(c.m, target, c.layout.lanes)));
+        const best = Math.min(...pool.map((c) => distance(c.m, searchTarget, c.layout.lanes)));
         if (i >= 11 && best < 0.03) break;
         if (elapsed() > budgetMs * 0.35) {
             log.push(`WARNING: time budget ended screening after ${i + 1} candidates (output may differ on other machines)`);
             break;
         }
     }
-    pool.sort((a, b) => distance(a.m, target, a.layout.lanes) - distance(b.m, target, b.layout.lanes));
+    pool.sort((a, b) => distance(a.m, searchTarget, a.layout.lanes) - distance(b.m, searchTarget, b.layout.lanes));
     log.push(`screened ${pool.length} candidates, best screen score ${pool[0].m.score.toFixed(3)} (${knobsSummary(pool[0].knobs)})`);
 
     // 2. Finalists get the climb-grade measure.
@@ -182,13 +213,13 @@ export function generateLevel(input: GenerateInput): GenerateResult {
         const m = measure(toLevel(board, c.layout, { id: input.id, name: input.name }), climbOpts);
         return { ...c, m };
     });
-    finalists.sort((a, b) => distance(a.m, target, a.layout.lanes) - distance(b.m, target, b.layout.lanes));
+    finalists.sort((a, b) => distance(a.m, searchTarget, a.layout.lanes) - distance(b.m, searchTarget, b.layout.lanes));
     let best = finalists[0];
     lap('finalists');
     log.push(`finalists: ${finalists.map((f) => f.m.score.toFixed(3)).join(', ')}`);
 
     // 3. Hill-climb.
-    const caps = mechanicCaps(target);
+    const caps = mechanicCaps(target, boost);
     const rules: MutationRules = {
         // Hidden pods stay as the knobs placed them: they are not part of the score, so the climb leaves them alone.
         hidden: false,
@@ -197,10 +228,11 @@ export function generateLevel(input: GenerateInput): GenerateResult {
         pairs: caps.pairs > 0,
         maxHiddenShare: caps.hiddenShare,
         maxLocks: wantKeys,
+        minPairs: boost.minPairs,
         maxPairs: caps.pairs,
         minLanes: 2,
         maxLanes: 4,
-        maxPod: input.maxPod,
+        maxPod,
     };
     // Deterministic work limit (count, not time) scaled to board size: measures cost roughly ∝ cells.
     const cells = board.counts.reduce((a, b) => a + b, 0);
@@ -229,7 +261,7 @@ export function generateLevel(input: GenerateInput): GenerateResult {
             log.push(`WARNING: time budget ended the hill-climb after ${tried} tries (output may differ on other machines)`);
             break;
         }
-        if (distance(best.m, target, best.layout.lanes) < 0.015) break;
+        if (distance(best.m, searchTarget, best.layout.lanes) < 0.015) break;
         // Stuck: continue from the next finalist (the global best is kept).
         if (sinceGain >= stagnationLimit && finalistIdx + 1 < finalists.length) {
             finalistIdx++;
@@ -240,13 +272,13 @@ export function generateLevel(input: GenerateInput): GenerateResult {
             // Still nothing losable: try more of the screened candidates as starting points.
             const c = pool[poolIdx++];
             base = { ...c, m: measure(toLevel(board, c.layout, { id: input.id, name: input.name }), climbOpts) };
-            if (distance(base.m, target, base.layout.lanes) < distance(best.m, target, best.layout.lanes)) best = base;
+            if (distance(base.m, searchTarget, base.layout.lanes) < distance(best.m, searchTarget, best.layout.lanes)) best = base;
             sinceGain = 0;
             restarts++;
         }
-        const direction = base.m.score < target ? 1 : -1;
+        const direction = base.m.score < searchTarget ? 1 : -1;
         // Far from the target: compound a few mutations before paying for validation + measurement.
-        const far = distance(base.m, target, base.layout.lanes) > 0.08;
+        const far = distance(base.m, searchTarget, base.layout.lanes) > 0.08;
         const steps = far ? 1 + rng.below(3) : 1;
         let plan = base.plan;
         const kinds: string[] = [];
@@ -262,17 +294,17 @@ export function generateLevel(input: GenerateInput): GenerateResult {
         const ok = validate(board, plan, quick ? 3000 : 20_000);
         if (!ok) continue;
         const m = measure(toLevel(board, ok.layout, { id: input.id, name: input.name }), climbOpts);
-        if (distance(m, target, ok.layout.lanes) >= distance(base.m, target, base.layout.lanes)) continue;
+        if (distance(m, searchTarget, ok.layout.lanes) >= distance(base.m, searchTarget, base.layout.lanes)) continue;
         base = { plan: ok.plan, layout: ok.layout, knobs: base.knobs, m, note: `${base.note} +${kinds.join('+')}${ok.resolved ? '(re-solved)' : ''}` };
         sinceGain = 0;
         accepted++;
-        if (distance(base.m, target, base.layout.lanes) < distance(best.m, target, best.layout.lanes)) best = base;
+        if (distance(base.m, searchTarget, base.layout.lanes) < distance(best.m, searchTarget, best.layout.lanes)) best = base;
     }
     lap('climb');
     log.push(`hill-climb: ${tried} tries, ${accepted} accepted, ${restarts} restart(s) → ${best.note}`);
 
     // 4. Top up keys a placement or the rescue climb dropped, hide a fixed share of pods, then the final measure and output.
-    const keyed = topUpKeys(board, best.plan, wantKeys, rng.fork());
+    const keyed = bestTopUp(board, best, wantKeys, searchTarget, rng.fork(), (layout) => measure(toLevel(board, layout, { id: input.id, name: input.name }), climbOpts));
     if (keyed.keys.length < wantKeys) log.push(`keys: placed ${keyed.keys.length} of ${wantKeys}`);
     const hidden = toLayout(hideShare(keyed, best.knobs.hiddenShare, rng.fork()));
     if (!hidden) throw new Error('internal: hiding pods broke the layout');
@@ -287,7 +319,7 @@ export function generateLevel(input: GenerateInput): GenerateResult {
         name: input.name,
         tickMs,
         seed: input.seed,
-        targetDifficulty: Math.round(target * 1000) / 1000,
+        targetDifficulty: Math.round(searchTarget * 1000) / 1000,
         difficulty: Math.round(finalM.score * 1000) / 1000,
         stats,
         sourceHash: input.sourceHash ?? '',
@@ -296,6 +328,6 @@ export function generateLevel(input: GenerateInput): GenerateResult {
     const trace = traceSolution(level, true);
     lap('trace');
     timings.total = performance.now() - t0;
-    log.push(`pods ${podCount(best.layout)}, final score ${finalM.score.toFixed(3)} (target ${target.toFixed(2)})`);
+    log.push(`pods ${podCount(best.layout)}, final score ${finalM.score.toFixed(3)} (target ${searchTarget.toFixed(2)})`);
     return { level, board, simplified, trace, knobs: best.knobs, timings, log, stats };
 }

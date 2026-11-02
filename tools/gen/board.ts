@@ -9,7 +9,7 @@ import { cellColor, cellsToString } from '@game/grid';
 import { Sim } from '@game/sim';
 
 /** Bump whenever generator output for the same inputs changes (invalidates the gen:all cache). */
-export const GENERATOR_VERSION = 'gen-3.1.0';
+export const GENERATOR_VERSION = 'gen-3.2.0';
 
 export interface Board {
     width: number;

@@ -18,12 +18,15 @@ export interface Knobs {
     hiddenShare: number;
     keys: number;
     pairs: number;
-    /** Hard cap on pod capacity (set by `--max-pod`; undefined = no cap). */
+    /** Hard cap on pod capacity (`MAX_POD`, or lower via `--max-pod`; undefined = no cap). */
     maxPod?: number;
 }
 
 /** Below this target a level gets no mechanics at all. */
 export const EASY_CUTOFF = 0.25;
+
+/** Largest pod any level may have. A per-entry `maxPod` can only lower it. */
+export const MAX_POD = 120;
 
 /**
  * Added to the target before picking the structural knobs (lanes, columns, pod sizes, stalls). The difficulty score
@@ -37,16 +40,40 @@ export interface MechanicCaps {
     pairs: number;
 }
 
+/**
+ * Extra pressure for levels with few colors. A board with 3-4 colors offers few real choices, so a level that
+ * scores on target still plays easy. Such levels get a key floor, more pairs and a higher search target.
+ */
+export interface FewColorBoost {
+    /** Fewest keys the level gets. */
+    minKeys: number;
+    /** Fewest pairs every candidate starts with (also the floor the climb can't unpair below). */
+    minPairs: number;
+    /** Added to the pair cap from `mechanicCaps`, so the climb may add more. */
+    extraPairs: number;
+    /** Added to the search target. Hidden pods still follow the raw target. */
+    target: number;
+}
+
+const NO_BOOST: FewColorBoost = { minKeys: 0, minPairs: 0, extraPairs: 0, target: 0 };
+
+export function fewColorBoost(numColors: number, target: number): FewColorBoost {
+    if (target < EASY_CUTOFF || numColors > 5) return NO_BOOST;
+    if (numColors <= 3) return { minKeys: 2, minPairs: 2, extraPairs: 2, target: 0.12 };
+    if (numColors === 4) return { minKeys: 1, minPairs: 1, extraPairs: 1, target: 0.08 };
+    return { minKeys: 1, minPairs: 0, extraPairs: 0, target: 0.03 };
+}
+
 /** Most keys (locked pods) any level gets. The count is random per level, not tied to difficulty (see `keyCountFor`). */
 export const MAX_KEYS = 3;
 
 /**
- * Keys a level should carry: uniform 0..MAX_KEYS from the level seed (its own stream, so it does not shift the
- * search), none below the easy cutoff. The search keeps this count fixed; the score adapts around it.
+ * Keys a level should carry: uniform minKeys..MAX_KEYS from the level seed (its own stream, so it does not shift
+ * the search), none below the easy cutoff. The search keeps this count fixed; the score adapts around it.
  */
-export function keyCountFor(target: number, seed: number): number {
+export function keyCountFor(target: number, seed: number, boost: FewColorBoost = NO_BOOST): number {
     if (target < EASY_CUTOFF) return 0;
-    return new Rng(seed ^ 0x6b657973).int(0, MAX_KEYS);
+    return new Rng(seed ^ 0x6b657973).int(boost.minKeys, MAX_KEYS);
 }
 
 /**
@@ -54,11 +81,11 @@ export function keyCountFor(target: number, seed: number): number {
  * of difficulty: pairs are strong trap generators and the search would otherwise pile them on. Keys are not capped
  * by difficulty (see `keyCountFor`).
  */
-export function mechanicCaps(target: number): MechanicCaps {
+export function mechanicCaps(target: number, boost: FewColorBoost = NO_BOOST): MechanicCaps {
     if (target < EASY_CUTOFF) return { hiddenShare: 0, pairs: 0 };
-    if (target < 0.45) return { hiddenShare: 0.35, pairs: 1 };
-    if (target < 0.8) return { hiddenShare: 0.45, pairs: 2 };
-    return { hiddenShare: 0.5, pairs: 3 };
+    if (target < 0.45) return { hiddenShare: 0.35, pairs: 1 + boost.extraPairs };
+    if (target < 0.8) return { hiddenShare: 0.45, pairs: 2 + boost.extraPairs };
+    return { hiddenShare: 0.5, pairs: 3 + boost.extraPairs };
 }
 
 /**
@@ -80,9 +107,9 @@ function jitter(rng: Rng, sd: number): number {
 }
 
 /** `keys` is the level's fixed key count (`keyCountFor`), not sampled per candidate. */
-export function sampleKnobs(target: number, rng: Rng, keys = 0): Knobs {
-    const caps = mechanicCaps(target);
-    const t = clamp01(target + STRUCTURE_BOOST + jitter(rng, 0.12));
+export function sampleKnobs(target: number, rng: Rng, keys = 0, boost: FewColorBoost = NO_BOOST): Knobs {
+    const caps = mechanicCaps(target, boost);
+    const t = clamp01(target + boost.target + STRUCTURE_BOOST + jitter(rng, 0.12));
     let lanes: number;
     if (t < 0.3) lanes = rng.chance(0.5) ? 3 : 4;
     else if (t < 0.6) lanes = 3;
@@ -106,7 +133,8 @@ export function sampleKnobs(target: number, rng: Rng, keys = 0): Knobs {
     const hiddenShare = hiddenShareFor(target);
     let pairs = 0;
     if (t >= 0.35) pairs = Math.min(caps.pairs, t < 0.6 ? rng.int(0, 1) : t < 0.8 ? rng.int(1, 2) : rng.int(1, 3));
-    return { lanes, columns, podsPerColor: [lo, hi], overflowRate, parkRate, maxStalled, deal, hiddenShare, keys, pairs };
+    pairs = Math.min(caps.pairs, Math.max(pairs, boost.minPairs));
+    return { lanes, columns, podsPerColor: [lo, hi], overflowRate, parkRate, maxStalled, deal, hiddenShare, keys, pairs, maxPod: MAX_POD };
 }
 
 export function knobsSummary(k: Knobs): string {

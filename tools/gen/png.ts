@@ -1,5 +1,6 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { PNG } from 'pngjs';
+import { MAX_DIM } from '@game/level';
 
 export interface RgbaImage {
     width: number;
@@ -8,10 +9,11 @@ export interface RgbaImage {
     data: Uint8Array;
 }
 
-export const MAX_BOARD_SIZE = 48;
+/** Same as the game's `MAX_DIM`. */
+export const MAX_BOARD_SIZE = MAX_DIM;
 export const ALPHA_THRESHOLD = 128;
 
-/** Reads a PNG. Throws if it is larger than 48 in either dimension or has no opaque pixel (alpha >= 128). */
+/** Reads a PNG. Throws if it is larger than `MAX_BOARD_SIZE` (64) in either dimension or has no opaque pixel (alpha >= 128). */
 export function readPng(path: string): RgbaImage {
     const png = PNG.sync.read(readFileSync(path));
     const { width, height } = png;

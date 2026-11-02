@@ -6,8 +6,8 @@ import { Zobrist } from './hash';
 
 /** Bump when sim rules change; `bun run verify` re-checks levels. */
 export const RULES_VERSION = 1;
-/** Largest supported board dimension (the generator caps at 48). */
-export const MAX_DIM = 128;
+/** Largest supported board dimension (the generator reads PNGs up to this size too). Bigger boards are too small to read. */
+export const MAX_DIM = 64;
 /** Cell strings encode colors as one base-36 character (see `CELL_CHARS` in grid.ts). */
 export const MAX_COLORS = 36;
 

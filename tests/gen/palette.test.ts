@@ -388,13 +388,19 @@ describe('simplifyImage', () => {
 describe('png io', () => {
     const dir = mkdtempSync(join(tmpdir(), 'flow-png-'));
 
-    test('rejects images larger than 48 in either dimension', () => {
+    test('rejects images larger than 64 in either dimension', () => {
         const wide = join(dir, 'wide.png');
-        writePng(wide, makeImage(49, 10, () => [255, 0, 0, 255]));
-        expect(() => readPng(wide)).toThrow(/49x10/);
+        writePng(wide, makeImage(65, 10, () => [255, 0, 0, 255]));
+        expect(() => readPng(wide)).toThrow(/65x10/);
         const tall = join(dir, 'tall.png');
-        writePng(tall, makeImage(10, 49, () => [255, 0, 0, 255]));
+        writePng(tall, makeImage(10, 65, () => [255, 0, 0, 255]));
         expect(() => readPng(tall)).toThrow();
+    });
+
+    test('accepts a 64x64 image', () => {
+        const max = join(dir, 'max.png');
+        writePng(max, makeImage(64, 64, () => [255, 0, 0, 255]));
+        expect(readPng(max).width).toBe(64);
     });
 
     test('rejects an all-transparent image', () => {

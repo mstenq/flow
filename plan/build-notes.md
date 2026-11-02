@@ -59,3 +59,20 @@ is completely buried, and a player who taps "whatever is showing" won most level
   3 per level. Locks and colors are unchanged (colors are limited by the source art).
 - **Hidden pods are not part of the score.** They are dealt after the search at a fixed share (`hiddenShareFor`:
   0 below 0.25, then ~0.22–0.27, the same as gen-2 levels had). The climb never hides or unhides.
+- **Pod cap (gen-3.2):** no pod holds more than `MAX_POD` = 120 cells (`knobs.ts`). A per-entry `maxPod` can only
+  lower it. Before the cap, big single-color areas became one huge pod (Moon had a 1029-cell pod), which played trivially.
+- **Few colors (gen-3.2):** at or above the easy cutoff, `fewColorBoost` raises the search target and forces mechanics:
+  3 colors: +0.12, 2–3 keys, ≥2 pairs (cap +2). 4 colors: +0.08, 1–3 keys, ≥1 pair (cap +1). 5 colors: +0.03, 1–3 keys.
+  Floors are best-effort: a pair needs 2 free lanes, so tight layouts may get fewer. The climb can't unpair below the floor.
+  Stacking pairs on top (4 pairs on 2 lanes) killed stalling and made levels easier, so the boost is a floor, not an add.
+  `meta.targetDifficulty` stores the boosted target.
+- **Key top-up:** keys the climbed plan is short of are added at the end. A late lock can leave one forced order (Coffee
+  Bag went 0.44 → 0.00), so `bestTopUp` measures 6 placements and keeps the nearest to target (0.05 per missing key).
+
+## Big boards (2026-11-02)
+- Boards go up to 64×64 (`MAX_DIM` in `src/game/level.ts`; the generator's `MAX_BOARD_SIZE` is the same constant). It
+  used to be 48. 128×128 was tried (Demon) and dropped: cells got too small to see and to judge "is there enough of
+  this color". `levels:add` skips bigger PNGs (it lists them as skipped).
+- The search's safety-net time budget went from 24s to 30s (`generate.ts`).
+- Lane experiments: more colors don't make 5 lanes hard (our art simplifies to at most ~10–12 colors). Big boards with
+  pairs and keys make 4 lanes losable; 5 lanes stays almost never losable for the smart player.

@@ -29,6 +29,8 @@ export interface MutationRules {
     pairs: boolean;
     maxHiddenShare: number;
     maxLocks: number;
+    /** Fewest pairs the climb may unpair down to. */
+    minPairs: number;
     maxPairs: number;
     minLanes: number;
     maxLanes: number;
@@ -170,7 +172,7 @@ function apply(kind: MutationKind, board: Board, plan: Plan, rng: Rng, rules: Mu
             return addPair(board, plan, rng);
         case 'unpair': {
             const options = plan.order.filter((p) => p.link !== undefined);
-            if (options.length === 0) return false;
+            if (options.length / 2 <= rules.minPairs) return false;
             const p = rng.pick(options);
             const q = plan.order.find((o) => o.id === p.link);
             delete p.link;

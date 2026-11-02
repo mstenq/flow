@@ -2,7 +2,7 @@ import { describe, expect, test } from 'bun:test';
 import { Rng } from '@game/rng';
 import { replay, toLevel, traceSolution } from '../../tools/gen/board';
 import { construct, deal } from '../../tools/gen/construct';
-import { sampleKnobs } from '../../tools/gen/knobs';
+import { EASY_CUTOFF, MAX_KEYS, MAX_POD, fewColorBoost, keyCountFor, mechanicCaps, sampleKnobs } from '../../tools/gen/knobs';
 import { fixtureBoards } from './fixtures';
 
 describe('construct', () => {
@@ -49,5 +49,31 @@ describe('construct', () => {
         const knobs = { ...sampleKnobs(0, rng), overflowRate: 0, parkRate: 0 };
         const built = construct(board, knobs, rng);
         expect(built.order.every((p) => p.kind === 'fit')).toBe(true);
+    });
+
+    test('no pod exceeds MAX_POD', () => {
+        for (const { board } of fixtureBoards()) {
+            const rng = new Rng(3);
+            const knobs = { ...sampleKnobs(0.9, rng), maxPod: 10 };
+            expect(sampleKnobs(0.5, rng).maxPod).toBe(MAX_POD);
+            const built = construct(board, knobs, rng);
+            expect(Math.max(...built.order.map((p) => p.capacity))).toBeLessThanOrEqual(10);
+        }
+    });
+
+    test('few-color levels get a key and pair floor above the easy cutoff', () => {
+        expect(fewColorBoost(4, EASY_CUTOFF - 0.01).minKeys).toBe(0);
+        expect(fewColorBoost(8, 0.6).minKeys).toBe(0);
+        for (const colors of [3, 4]) {
+            const boost = fewColorBoost(colors, 0.5);
+            for (let seed = 0; seed < 50; seed++) {
+                const keys = keyCountFor(0.5, seed, boost);
+                expect(keys).toBeGreaterThanOrEqual(boost.minKeys);
+                expect(keys).toBeLessThanOrEqual(MAX_KEYS);
+                const pairs = sampleKnobs(0.5, new Rng(seed), keys, boost).pairs;
+                expect(pairs).toBeGreaterThanOrEqual(boost.minPairs);
+                expect(pairs).toBeLessThanOrEqual(mechanicCaps(0.5, boost).pairs);
+            }
+        }
     });
 });
