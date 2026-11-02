@@ -11,35 +11,35 @@
   "lanes": 2,
   "tickMs": 270,
   "columns": [
-    [{"id":12,"color":3,"capacity":4},{"id":13,"color":0,"capacity":47}],
-    [{"id":1,"color":3,"capacity":3},{"id":2,"color":0,"capacity":15},{"id":3,"color":0,"capacity":9},{"id":4,"color":1,"capacity":6},{"id":5,"color":1,"capacity":15}],
-    [{"id":6,"color":1,"capacity":1},{"id":7,"color":2,"capacity":3},{"id":8,"color":2,"capacity":2},{"id":9,"color":1,"capacity":31},{"id":10,"color":0,"capacity":20},{"id":11,"color":0,"capacity":21},{"id":14,"color":2,"capacity":3}]
+    [{"id":1,"color":0,"capacity":28},{"id":5,"color":1,"capacity":7},{"id":9,"color":1,"capacity":6},{"id":10,"color":1,"capacity":3},{"id":14,"color":2,"capacity":2},{"id":18,"color":2,"capacity":2},{"id":22,"color":2,"capacity":2}],
+    [{"id":2,"color":3,"capacity":2},{"id":3,"color":3,"capacity":4},{"id":4,"color":0,"capacity":23},{"id":11,"color":0,"capacity":5},{"id":12,"color":0,"capacity":6},{"id":13,"color":0,"capacity":13},{"id":15,"color":0,"capacity":13},{"id":17,"color":3,"capacity":1},{"id":20,"color":1,"capacity":11},{"id":21,"color":2,"capacity":1}],
+    [{"id":6,"color":1,"capacity":6},{"id":7,"color":0,"capacity":24},{"id":8,"color":2,"capacity":1},{"id":16,"color":1,"capacity":9},{"id":19,"color":1,"capacity":11}]
   ],
-  "solution": [1,1,1,1,1,2,2,2,2,2,2,0,0,2],
+  "solution": [0,1,1,1,0,2,2,2,0,0,1,1,1,0,1,2,1,0,2,1,1,0],
   "meta": {
     "seed": 810309342,
     "targetDifficulty": 0.15,
-    "difficulty": 0.147,
+    "difficulty": 0.157,
     "stats": {
-      "randomWinRate": 0.157,
-      "greedyWinRate": 0.963,
-      "smartWinRate": 0.917,
-      "deadEndRatio": 0.077,
-      "minLanes": 2,
-      "branching": 2.29,
+      "randomWinRate": 0.657,
+      "greedyWinRate": 0.883,
+      "smartWinRate": 0.833,
+      "deadEndRatio": 0.016,
+      "minLanes": 1,
+      "branching": 2.82,
       "hiddenShare": 0,
       "lockCount": 0,
       "pairCount": 0,
       "overflowPods": 2,
       "peakStalled": 1,
-      "fastGreedyWinRate": 0.73,
-      "fastRandomWinRate": 0.105,
-      "maxPodCapacity": 47,
-      "medianPodCapacity": 9,
-      "longestDrainSec": 12.69,
+      "fastGreedyWinRate": 0.895,
+      "fastRandomWinRate": 0.7,
+      "maxPodCapacity": 28,
+      "medianPodCapacity": 6,
+      "longestDrainSec": 7.56,
       "minLanesProven": true
     },
-    "generatorVersion": "gen-3.3.1",
+    "generatorVersion": "gen-3.5.1",
     "sourceHash": "51005d22138cee6a"
   }
 }

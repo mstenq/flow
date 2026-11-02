@@ -131,6 +131,10 @@ export interface RunOptions {
     maxColors?: number;
     minRegion?: number;
     maxPod?: number;
+    /** Force the outline ring on or off (default: random per level seed). */
+    outline?: boolean;
+    /** Force the background fill on or off (default: random per level seed). */
+    background?: boolean;
     report: boolean;
     /** Override the output directory (tests). */
     outDir?: string;
@@ -163,6 +167,8 @@ export function runOne(opts: RunOptions): RunResult {
         maxColors: opts.maxColors,
         minRegion: opts.minRegion,
         maxPod: opts.maxPod,
+        outline: opts.outline,
+        background: opts.background,
         sourceHash: sourceHash(opts.png),
         quick: opts.quick,
     });

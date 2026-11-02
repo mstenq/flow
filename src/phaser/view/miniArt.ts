@@ -2,13 +2,13 @@
  * Mini renders of a level image for the level select: one canvas texture per (level, kind), drawn once and cached in
  * the game-global texture manager (never redrawn per frame).
  *   color  the full neon image (deep base, core fill, a bright top highlight; bloom does the glow)
- *   wire   cell outlines only, in a neutral violet (a silhouette of what is waiting to be collected)
+ *   dim    the same image, faded toward the tile and without highlights (what is waiting to be collected)
  */
 import type { Scene } from 'phaser';
 import { cellColor } from '@game/grid';
 import { colorVariants, cssColor, hexToNum } from '@data/themeColors';
 
-export type MiniKind = 'color' | 'wire';
+export type MiniKind = 'color' | 'dim';
 
 export interface MiniArt {
     key: string;
@@ -49,8 +49,7 @@ export function ensureMini(scene: Scene, src: MiniSource, kind: MiniKind): MiniA
     const tex = scene.textures.createCanvas(key, w, h);
     if (!tex) return { key, w, h };
     const ctx = tex.context;
-    if (kind === 'color') drawColor(ctx, src, px);
-    else drawWire(ctx, src, px);
+    drawColor(ctx, src, px, kind === 'dim');
     tex.refresh();
     return { key, w, h };
 }
@@ -67,8 +66,12 @@ function colorAt(src: MiniSource, i: number): number {
     return miniColorAt(src.cells, src.palette.length, i);
 }
 
-function drawColor(ctx: CanvasRenderingContext2D, src: MiniSource, px: number): void {
+/** Opacity of a `dim` mini over the dark tile. */
+const DIM_ALPHA = 0.32;
+
+function drawColor(ctx: CanvasRenderingContext2D, src: MiniSource, px: number, dim: boolean): void {
     const inset = Math.max(0.5, px * 0.07);
+    ctx.globalAlpha = dim ? DIM_ALPHA : 1;
     const variants = src.palette.map((hex) => colorVariants(hexToNum(hex)));
     for (let y = 0; y < src.height; y++) {
         for (let x = 0; x < src.width; x++) {
@@ -81,24 +84,9 @@ function drawColor(ctx: CanvasRenderingContext2D, src: MiniSource, px: number): 
             ctx.fillRect(cx, cy, px, px);
             ctx.fillStyle = cssColor(v.core);
             ctx.fillRect(cx + inset, cy + inset, px - inset * 2, px - inset * 2);
+            if (dim) continue;
             ctx.fillStyle = 'rgba(255,255,255,0.28)';
             ctx.fillRect(cx + inset, cy + inset, px - inset * 2, Math.max(1, (px - inset * 2) * 0.32));
-        }
-    }
-}
-
-function drawWire(ctx: CanvasRenderingContext2D, src: MiniSource, px: number): void {
-    const line = Math.max(1, px * 0.09);
-    ctx.lineWidth = line;
-    ctx.strokeStyle = 'rgba(140,146,230,0.55)';
-    ctx.fillStyle = 'rgba(120,126,210,0.07)';
-    for (let y = 0; y < src.height; y++) {
-        for (let x = 0; x < src.width; x++) {
-            if (colorAt(src, y * src.width + x) < 0) continue;
-            const cx = x * px + line / 2;
-            const cy = y * px + line / 2;
-            ctx.fillRect(cx, cy, px - line, px - line);
-            ctx.strokeRect(cx, cy, px - line, px - line);
         }
     }
 }

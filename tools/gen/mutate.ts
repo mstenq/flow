@@ -34,8 +34,8 @@ export interface MutationRules {
     maxPairs: number;
     minLanes: number;
     maxLanes: number;
-    /** Hard cap on pod capacity (undefined = none). */
-    maxPod?: number;
+    /** Largest pod per color (`podCaps`; undefined = no cap). */
+    podCaps?: number[];
     /** Set once the climb relaxed the mechanic caps to make an unlosable level losable. */
     rescue?: boolean;
 }
@@ -105,7 +105,7 @@ function apply(kind: MutationKind, board: Board, plan: Plan, rng: Rng, rules: Mu
             if (b.capacity < 2) return false;
             const delta = rng.int(1, Math.max(1, Math.round(b.capacity * 0.4)));
             if (b.capacity - delta < 1) return false;
-            if (a.capacity + delta > (rules.maxPod ?? Infinity)) return false;
+            if (a.capacity + delta > (rules.podCaps?.[color] ?? Infinity)) return false;
             a.capacity += delta;
             b.capacity -= delta;
             return true;
@@ -124,7 +124,7 @@ function apply(kind: MutationKind, board: Board, plan: Plan, rng: Rng, rules: Mu
             const i = rng.below(Math.max(1, n - 1));
             if (i + 1 >= n || !plainIdx(plan, i) || !plainIdx(plan, i + 1)) return false;
             if (plan.order[i].color !== plan.order[i + 1].color) return false;
-            if (plan.order[i].capacity + plan.order[i + 1].capacity > (rules.maxPod ?? Infinity)) return false;
+            if (plan.order[i].capacity + plan.order[i + 1].capacity > (rules.podCaps?.[plan.order[i].color] ?? Infinity)) return false;
             plan.order[i].capacity += plan.order[i + 1].capacity;
             plan.order.splice(i + 1, 1);
             plan.col.splice(i + 1, 1);

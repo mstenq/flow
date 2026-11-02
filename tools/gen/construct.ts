@@ -13,6 +13,7 @@ import type { PodSpec } from '@game/types';
 import type { Rng } from '@game/rng';
 import type { Board, Layout } from './board.ts';
 import type { DealStyle, Knobs } from './knobs.ts';
+import { SEAL_PARK_RATE, podCaps } from './knobs.ts';
 import { PlaySim } from './playsim.ts';
 
 export interface PlannedPod {
@@ -75,15 +76,15 @@ function tryTap(sim: PlaySim, color: number, capacity: number): PlaySim | null {
 export function planPods(board: Board, knobs: Knobs, rng: Rng): PlannedPod[] {
     const { numColors, counts } = board;
     const lanes = knobs.lanes;
-    const cap = knobs.maxPod ?? Infinity;
+    const caps = podCaps(counts, knobs.maxPod);
     const maxStalled = Math.max(0, Math.min(lanes - 1, knobs.maxStalled));
-    const typical = counts.map((total) => {
+    const typical = counts.map((total, c) => {
         const wanted = rng.int(knobs.podsPerColor[0], knobs.podsPerColor[1]);
-        const n = Math.max(1, Math.min(total, Math.max(wanted, Math.ceil(total / cap))));
+        const n = Math.max(1, Math.min(total, Math.max(wanted, Math.ceil(total / caps[c]))));
         return total / n;
     });
     const size = (c: number, unassigned: number) =>
-        Math.min(cap, clampSize(desiredSize(counts[c], counts[c] / typical[c], rng), unassigned, typical[c]));
+        Math.min(caps[c], clampSize(desiredSize(counts[c], counts[c] / typical[c], rng), unassigned, typical[c]));
     let sim = PlaySim.create(board, lanes);
     const order: PlannedPod[] = [];
     let last = -1;
@@ -96,8 +97,12 @@ export function planPods(board: Board, knobs: Knobs, rng: Rng): PlannedPod[] {
     for (let iter = 0; sim.cellsLeft > 0 && iter < guard; iter++) {
         const v = view(sim, lanes);
         const canStall = v.stalled < maxStalled && v.free >= 2;
+        // A seal (outline ring, background) that still hides part of the picture: park more, so the seal's pods queue
+        // up behind parked pods.
+        const sealed = board.seals?.some((c) => v.unassigned[c] > 0) ?? false;
+        const parkRate = sealed ? Math.max(knobs.parkRate, SEAL_PARK_RATE) : knobs.parkRate;
 
-        if (canStall && knobs.parkRate > 0 && rng.chance(knobs.parkRate)) {
+        if (canStall && parkRate > 0 && rng.chance(parkRate)) {
             const parkable: number[] = [];
             for (let c = 0; c < numColors; c++) if (v.reach[c] === 0 && v.unassigned[c] > 0) parkable.push(c);
             if (parkable.length > 0) {
@@ -122,7 +127,7 @@ export function planPods(board: Board, knobs: Knobs, rng: Rng): PlannedPod[] {
             if (c >= 0 && rng.chance(knobs.overflowRate)) {
                 const buried = v.unassigned[c] - v.reach[c];
                 const deficit = rng.int(1, Math.max(1, Math.min(buried, Math.round(typical[c]))));
-                const k = Math.min(cap, clampSize(v.reach[c] + deficit, v.unassigned[c], typical[c]));
+                const k = Math.min(caps[c], clampSize(v.reach[c] + deficit, v.unassigned[c], typical[c]));
                 const next = tryTap(sim, c, k);
                 if (next) {
                     push(next, c, k, k > v.reach[c] ? 'overflow' : 'fit');

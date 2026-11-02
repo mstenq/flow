@@ -2,7 +2,7 @@
  * Level select, which doubles as the title screen: "FLOW" and a settings cog on top, a vertically scrolling grid of
  * level tiles below (drag / swipe with inertia, mouse wheel). Each tile shows a mini render of the level image:
  *   locked     dark tile with a padlock
- *   open       dim wireframe silhouette (the current level, the first one not yet cleared, pulses)
+ *   open       the image, dimmed (the current level, the first one not yet cleared, pulses)
  *   cleared    the full neon image, slowly shimmering, with the best time
  * The list is virtualized: only the tiles in or near the viewport exist as display objects (a small pool of
  * `TileView`s, rebound to other levels while scrolling). Mini images are drawn lazily into canvas textures (see
@@ -297,7 +297,7 @@ export class LevelSelect extends Scene {
             entry: null,
             state: 'open',
             current: false,
-            kind: 'wire',
+            kind: 'dim',
             artKey: null,
             shakeX: 0,
             frame,
@@ -344,7 +344,7 @@ export class LevelSelect extends Scene {
         view.entry = entry;
         view.state = this.tileState(entry);
         view.current = entry.id === this.currentId;
-        view.kind = view.state === 'done' ? 'color' : 'wire';
+        view.kind = view.state === 'done' ? 'color' : 'dim';
         view.artKey = null;
         view.shakeX = 0;
         this.bound.set(index, view);

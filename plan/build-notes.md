@@ -62,8 +62,11 @@ is completely buried, and a player who taps "whatever is showing" won most level
   3 per level. Locks and colors are unchanged (colors are limited by the source art).
 - **Hidden pods are not part of the score.** They are dealt after the search at a fixed share (`hiddenShareFor`:
   0 below 0.25, then ~0.22–0.27, the same as gen-2 levels had). The climb never hides or unhides.
-- **Pod cap (gen-3.2):** no pod holds more than `MAX_POD` = 120 cells (`knobs.ts`). A per-entry `maxPod` can only
-  lower it. Before the cap, big single-color areas became one huge pod (Moon had a 1029-cell pod), which played trivially.
+- **Pod cap (gen-3.4, replaces the fixed 120 of gen-3.2):** a pod holds at most `POD_SHARE` = 1/4 of its color's cells,
+  never less than `MIN_POD_CAP` = 10 (`podCaps` in `knobs.ts`). So 1000 white cells allow 250-cell pods while a 100-cell
+  outline allows 25. A per-entry `maxPod` is an extra absolute cap. `MAX_POD_CELLS` = 333 is a pacing ceiling (30s at the fastest tick),
+  reached only by huge single colors such as a background on a 64×64 board. Before any cap, big single-color areas became one
+  huge pod (Moon had a 1029-cell pod), which played trivially. 1/6 was considered; it nearly doubled pods per level.
 - **Few colors (gen-3.2):** at or above the easy cutoff, `fewColorBoost` raises the search target and forces mechanics:
   3 colors: +0.12, 2–3 keys, ≥2 pairs (cap +2). 4 colors: +0.08, 1–3 keys, ≥1 pair (cap +1). 5 colors: +0.03, 1–3 keys.
   Floors are best-effort: a pair needs 2 free lanes, so tight layouts may get fewer. The climb can't unpair below the floor.
@@ -79,6 +82,24 @@ is completely buried, and a player who taps "whatever is showing" won most level
   target in 25 cases.
 - **Key top-up:** keys the climbed plan is short of are added at the end. A late lock can leave one forced order (Coffee
   Bag went 0.44 → 0.00), so `bestTopUp` measures 6 placements and keeps the nearest to target (0.05 per missing key).
+
+- **Outline ring (gen-3.4):** `outlineFor` (seeded, no per-level config) gives some levels a generated one-cell ring in
+  a brand-new neon around the art (`outline-ring.ts`; a frame on full-bleed art, padded by a cell, skipped past 64×64
+  or when no neon is free). The ring seals the picture: nothing inside is reachable until ring pods drain holes in it,
+  nearest the board edge first. Chance (gen-3.4.2, raised at the user's request to ~85% of levels): 0 below the easy cutoff, 0.7→0.95 with the
+  target, always for ≤5 colors. The few-color boost counts the art's colors, not the ring. While the ring has unassigned cells,
+  construction parks pods at `SEAL_PARK_RATE` = 0.6 so ring pods queue behind parked pods; that is what makes it a
+  trap (a ring with ring pods at the front is just a warm-up). Ringed levels are always wide (5 lanes).
+  Experiments (24 levels, 5 lanes): raw layouts without keys or pairs went from ~3% losable to ~5% with a ring and ~19%
+  with ring + parking. Full generation: mean target miss 0.018 → 0.009, fewer pairs needed, ~40% faster.
+  `bun run gen <png> --outline 0|1` forces it.
+- **Background fill (gen-3.5):** `backgroundFor` rolls separately at half the outline chance; a level can have a ring,
+  a background, or both. Every empty cell outside the art (and outside the ring) becomes one more new neon, so the
+  background drains in layers from the board edge inward before the art opens. Enclosed holes stay empty. Skipped when
+  there is no outside empty cell (full-bleed art, or a ring frame that filled the padding). Ring and background are
+  both "seals" (`board.seals`): the park boost applies while any seal has unassigned cells, and sealed levels are
+  always wide. `--background 0|1` forces it. The level select shows open levels as a dimmed color image (not a
+  wireframe), since a filled background would read as a solid block.
 
 ## Big boards (2026-11-02)
 - Boards go up to 64×64 (`MAX_DIM` in `src/game/level.ts`; the generator's `MAX_BOARD_SIZE` is the same constant). It

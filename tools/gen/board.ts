@@ -9,7 +9,7 @@ import { cellColor, cellsToString } from '@game/grid';
 import { Sim } from '@game/sim';
 
 /** Bump whenever generator output for the same inputs changes (invalidates the gen:all cache). */
-export const GENERATOR_VERSION = 'gen-3.3.1';
+export const GENERATOR_VERSION = 'gen-3.5.1';
 
 export interface Board {
     width: number;
@@ -20,6 +20,8 @@ export interface Board {
     numColors: number;
     /** Cells per color. */
     counts: number[];
+    /** Color indexes of the generated seals (outline ring, background; see `outline-ring.ts`), if the level has any. */
+    seals?: number[];
 }
 
 /** The searchable part of a level. `columns[i][0]` is the front; `solution` lists the column tapped per step. */

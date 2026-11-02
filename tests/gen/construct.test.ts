@@ -2,7 +2,7 @@ import { describe, expect, test } from 'bun:test';
 import { Rng } from '@game/rng';
 import { replay, toLevel, traceSolution } from '../../tools/gen/board';
 import { construct, deal } from '../../tools/gen/construct';
-import { EASY_CUTOFF, MAX_KEYS, MAX_POD, WIDE_LANES, fewColorBoost, keyCountFor, laneCountFor, mechanicCaps, sampleKnobs } from '../../tools/gen/knobs';
+import { EASY_CUTOFF, MAX_KEYS, MAX_POD_CELLS, MIN_POD_CAP, POD_SHARE, WIDE_LANES, fewColorBoost, keyCountFor, laneCountFor, mechanicCaps, podCaps, sampleKnobs } from '../../tools/gen/knobs';
 import { fixtureBoards } from './fixtures';
 
 describe('construct', () => {
@@ -51,14 +51,31 @@ describe('construct', () => {
         expect(built.order.every((p) => p.kind === 'fit')).toBe(true);
     });
 
-    test('no pod exceeds MAX_POD', () => {
+    test('no pod exceeds an absolute maxPod', () => {
         for (const { board } of fixtureBoards()) {
             const rng = new Rng(3);
             const knobs = { ...sampleKnobs(0.9, rng), maxPod: 10 };
-            expect(sampleKnobs(0.5, rng).maxPod).toBe(MAX_POD);
+            expect(sampleKnobs(0.5, rng).maxPod).toBeUndefined();
             const built = construct(board, knobs, rng);
             expect(Math.max(...built.order.map((p) => p.capacity))).toBeLessThanOrEqual(10);
         }
+    });
+
+    test('no pod exceeds its color cap (a share of the color, at least MIN_POD_CAP)', () => {
+        for (const { board } of fixtureBoards()) {
+            for (const seed of [1, 2, 3]) {
+                const rng = new Rng(seed);
+                const caps = podCaps(board.counts);
+                const built = construct(board, sampleKnobs(0.1, rng), rng);
+                for (const p of built.order) expect(p.capacity).toBeLessThanOrEqual(caps[p.color]);
+            }
+        }
+    });
+
+    test('podCaps scales with the color size and never drops below MIN_POD_CAP', () => {
+        expect(podCaps([1000, 100, 12])).toEqual([1000 * POD_SHARE, 100 * POD_SHARE, MIN_POD_CAP]);
+        expect(podCaps([1000], 60)).toEqual([60]);
+        expect(podCaps([4000])).toEqual([MAX_POD_CELLS]);
     });
 
     test('about half the levels above the easy cutoff are wide; easy levels never are', () => {

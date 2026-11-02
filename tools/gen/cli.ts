@@ -1,5 +1,5 @@
 /**
- * bun run gen <png> [--difficulty 0.4] [--seed 7] [--name X] [--id X] [--report] [--max-colors N] [--min-region N] [--max-pod N]
+ * bun run gen <png> [--difficulty 0.4] [--seed 7] [--name X] [--id X] [--report] [--max-colors N] [--min-region N] [--max-pod N] [--outline 0|1] [--background 0|1]
  *
  * Writes public/levels/<id>.json, regenerates public/levels/index.json, prints a summary.
  * Defaults come from the matching levels-src/levels.json entry (by id, else by file), then from the file name.
@@ -7,7 +7,7 @@
 import { basename, resolve } from 'node:path';
 import { entryId, idFromFile, loadEntries, runOne, writeIndex } from './output.ts';
 
-const USAGE = 'usage: bun run gen <png> [--difficulty 0.4] [--seed 7] [--name X] [--id X] [--report] [--max-colors N] [--min-region N] [--max-pod N]';
+const USAGE = 'usage: bun run gen <png> [--difficulty 0.4] [--seed 7] [--name X] [--id X] [--report] [--max-colors N] [--min-region N] [--max-pod N] [--outline 0|1] [--background 0|1]';
 
 function parseArgs(argv: string[]): { png: string; flags: Map<string, string | true> } {
     const flags = new Map<string, string | true>();
@@ -64,6 +64,8 @@ function main(): void {
         maxColors: num(flags, '--max-colors') ?? entry?.maxColors,
         minRegion: num(flags, '--min-region') ?? entry?.minRegion,
         maxPod: num(flags, '--max-pod') ?? entry?.maxPod,
+        outline: flags.has('--outline') ? num(flags, '--outline') === 1 : undefined,
+        background: flags.has('--background') ? num(flags, '--background') === 1 : undefined,
         report: flags.has('--report'),
     });
     console.log(run.summary.join('\n'));

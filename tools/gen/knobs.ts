@@ -18,15 +18,32 @@ export interface Knobs {
     hiddenShare: number;
     keys: number;
     pairs: number;
-    /** Hard cap on pod capacity (`MAX_POD`, or lower via `--max-pod`; undefined = no cap). */
+    /** Absolute cap on pod capacity on top of the per-color caps (`--max-pod` / levels.json; undefined = none). */
     maxPod?: number;
 }
 
 /** Below this target a level gets no mechanics at all. */
 export const EASY_CUTOFF = 0.25;
 
-/** Largest pod any level may have. A per-entry `maxPod` can only lower it. */
-export const MAX_POD = 120;
+/**
+ * A pod holds at most this share of its color's cells (so every big color gets at least 1/share pods). A fixed cap
+ * was wrong both ways: 1000 white cells became a pile of small pods, while a 100-cell outline could go in one pod.
+ */
+export const POD_SHARE = 0.25;
+
+/** Per-color caps never go below this, so small colors don't turn into crumbs. */
+export const MIN_POD_CAP = 10;
+
+/**
+ * Pacing ceiling for any pod: at the fastest tick (90ms, `MIN_TICK_MS`) 333 cells take 30s to drain
+ * (`MAX_LONGEST_DRAIN_MS`). Only huge single colors reach it, like a background on a 64x64 board.
+ */
+export const MAX_POD_CELLS = 333;
+
+/** Largest pod per color: `POD_SHARE` of its cells (at least `MIN_POD_CAP`), never above `maxPod`. */
+export function podCaps(counts: readonly number[], maxPod = MAX_POD_CELLS): number[] {
+    return counts.map((total) => Math.min(maxPod, Math.max(MIN_POD_CAP, Math.round(total * POD_SHARE))));
+}
 
 /**
  * Added to the target before picking the structural knobs (lanes, columns, pod sizes, stalls). The difficulty score
@@ -82,6 +99,39 @@ export function laneCountFor(target: number, seed: number): number | null {
     if (target < EASY_CUTOFF) return null;
     return new Rng(seed ^ 0x6c616e65).chance(WIDE_SHARE) ? WIDE_LANES : null;
 }
+
+/**
+ * Chance that a level gets a generated outline ring (see `outline-ring.ts`): none below the easy cutoff, more at
+ * harder targets, and much more on few-color art, which offers the fewest real choices.
+ */
+export function outlineChance(target: number, numColors: number): number {
+    if (target < EASY_CUTOFF) return 0;
+    const base = 0.7 + 0.25 * clamp01((target - EASY_CUTOFF) / (1 - EASY_CUTOFF));
+    const few = numColors <= 5 ? 0.3 : 0;
+    return Math.min(1, base + few);
+}
+
+/** Whether this level gets an outline ring, from the level seed (its own stream, so it does not shift the search). */
+export function outlineFor(target: number, numColors: number, seed: number): boolean {
+    return new Rng(seed ^ 0x72696e67).chance(outlineChance(target, numColors));
+}
+
+/** Chance that a level gets a generated background fill: half the outline chance, rolled on its own. */
+export function backgroundChance(target: number, numColors: number): number {
+    return outlineChance(target, numColors) / 2;
+}
+
+/** Whether this level gets a background fill, from the level seed (its own stream, independent of the outline). */
+export function backgroundFor(target: number, numColors: number, seed: number): boolean {
+    return new Rng(seed ^ 0x62676e64).chance(backgroundChance(target, numColors));
+}
+
+/**
+ * While a seal (outline ring or background) still has cells nobody owns, construction parks a pod at least this
+ * often. Parked pods sit at the front of the columns, so the seal's pods end up behind them: a player has to fill
+ * lanes to dig them out.
+ */
+export const SEAL_PARK_RATE = 0.6;
 
 /** Most keys (locked pods) any level gets. The count is random per level, not tied to difficulty (see `keyCountFor`). */
 export const MAX_KEYS = 3;
@@ -155,7 +205,7 @@ export function sampleKnobs(target: number, rng: Rng, keys = 0, boost: FewColorB
     let pairs = 0;
     if (t >= 0.35) pairs = Math.min(caps.pairs, t < 0.6 ? rng.int(0, 1) : t < 0.8 ? rng.int(1, 2) : rng.int(1, 3));
     pairs = Math.min(caps.pairs, Math.max(pairs, boost.minPairs));
-    return { lanes, columns, podsPerColor: [lo, hi], overflowRate, parkRate, maxStalled, deal, hiddenShare, keys, pairs, maxPod: MAX_POD };
+    return { lanes, columns, podsPerColor: [lo, hi], overflowRate, parkRate, maxStalled, deal, hiddenShare, keys, pairs };
 }
 
 export function knobsSummary(k: Knobs): string {

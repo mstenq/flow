@@ -14,7 +14,8 @@ import { DEFAULT_MIN_REGION, maxColorsForDifficulty, simplifyImage } from './pal
 import type { Board, Layout, Trace } from './board.ts';
 import { boardFromCells, podCount, replay, toLevel, traceSolution } from './board.ts';
 import type { Knobs } from './knobs.ts';
-import { MAX_POD, MAX_SEARCH_LANES, fewColorBoost, keyCountFor, knobsSummary, laneCountFor, mechanicCaps, sampleKnobs } from './knobs.ts';
+import { MAX_SEARCH_LANES, WIDE_LANES, backgroundFor, fewColorBoost, keyCountFor, knobsSummary, laneCountFor, mechanicCaps, outlineFor, podCaps, sampleKnobs } from './knobs.ts';
+import { addBackground, addOutlineRing } from './outline-ring.ts';
 import { construct } from './construct.ts';
 import { addLock, applyMechanics, hideShare } from './mechanics.ts';
 import type { Plan } from './plan.ts';
@@ -40,9 +41,13 @@ export interface GenerateInput {
     climb?: number;
     /** Safety-net time budget in ms (default 30000). Normal runs stop on count limits well before it, which keeps output deterministic. */
     budgetMs?: number;
-    /** Cap on pod capacity during construction and mutation (default and ceiling: `MAX_POD`). */
+    /** Absolute cap on pod capacity, on top of the per-color caps (`podCaps`). */
     maxPod?: number;
-    /** Force this lane count (the climb keeps it). Default: `laneCountFor` (wide levels) or picked by the search. */
+    /** Force an outline ring on or off. Default: `outlineFor` (random per level seed). */
+    outline?: boolean;
+    /** Force a background fill on or off. Default: `backgroundFor` (random per level seed, independent of the ring). */
+    background?: boolean;
+    /** Force this lane count (the climb keeps it). Default: wide for sealed levels and `laneCountFor`, else picked by the search. */
     lanes?: number;
     /** Lighter measures everywhere (tests). */
     quick?: boolean;
@@ -100,11 +105,16 @@ export const MEDIAN_DRAIN_MS = 3600;
 export const MIN_TICK_MS = 90;
 export const MAX_TICK_MS = 270;
 
-/** Median pod drains in `MEDIAN_DRAIN_MS`, clamped to `MIN_TICK_MS`–`MAX_TICK_MS` per cell. */
+/** No pod should take longer than this to drain at 1x (per-color caps allow big pods next to many small ones). */
+export const MAX_LONGEST_DRAIN_MS = 30_000;
+
+/** Median pod drains in `MEDIAN_DRAIN_MS`, but the largest in at most `MAX_LONGEST_DRAIN_MS`; clamped to `MIN_TICK_MS`–`MAX_TICK_MS` per cell. */
 export function chooseTickMs(layout: Layout): number {
     const caps = layout.columns.flat().map((p) => p.capacity).sort((a, b) => a - b);
     const median = caps[Math.floor(caps.length / 2)] ?? 20;
-    return Math.max(MIN_TICK_MS, Math.min(MAX_TICK_MS, Math.round(MEDIAN_DRAIN_MS / median)));
+    const largest = caps[caps.length - 1] ?? 20;
+    const tick = Math.min(MEDIAN_DRAIN_MS / median, MAX_LONGEST_DRAIN_MS / largest);
+    return Math.max(MIN_TICK_MS, Math.min(MAX_TICK_MS, Math.round(tick)));
 }
 
 /** Validate a mutated plan: replay first, else ask the solver (which may produce a new tap order). */
@@ -171,15 +181,34 @@ export function generateLevel(input: GenerateInput): GenerateResult {
     const quick = input.quick ?? false;
 
     const maxColors = input.maxColors ?? maxColorsForDifficulty(target);
-    const simplified = simplifyImage(input.image, { maxColors, minRegion: input.minRegion ?? DEFAULT_MIN_REGION });
+    const art = simplifyImage(input.image, { maxColors, minRegion: input.minRegion ?? DEFAULT_MIN_REGION });
+    // Some levels get seals in new colors around the picture: an outline ring, a background fill, or both (see outline-ring.ts).
+    const seals: number[] = [];
+    let simplified = art;
+    const addSeal = (want: boolean, name: string, add: (img: SimplifiedImage, rng: Rng) => SimplifiedImage | null, salt: number) => {
+        if (!want) return;
+        const sealed = add(simplified, new Rng(input.seed ^ salt));
+        if (!sealed) {
+            log.push(`${name} skipped: no free neon or no room`);
+            return;
+        }
+        seals.push(simplified.palette.length);
+        simplified = sealed;
+        log.push(sealed.log[sealed.log.length - 1]);
+    };
+    addSeal(input.outline ?? outlineFor(target, art.palette.length, input.seed), 'outline ring', addOutlineRing, 0x6e656f6e);
+    addSeal(input.background ?? backgroundFor(target, art.palette.length, input.seed), 'background', addBackground, 0x6e656f6f);
     const board = boardFromCells(simplified.width, simplified.height, simplified.cells, simplified.palette);
+    if (seals.length > 0) board.seals = seals;
     lap('simplify');
 
     // Few colors means few real choices: search above the target and force keys and pairs (see `fewColorBoost`).
-    const boost = fewColorBoost(board.numColors, target);
+    // Counted on the art: seals are pressure of their own, not a reason to drop the boost.
+    const boost = fewColorBoost(art.palette.length, target);
     const searchTarget = Math.min(1, target + boost.target);
-    const maxPod = Math.min(MAX_POD, input.maxPod ?? MAX_POD);
-    if (boost.target > 0) log.push(`few colors (${board.numColors}): search target ${searchTarget.toFixed(2)}, ≥${boost.minKeys} key(s), ≥${boost.minPairs} pair(s)`);
+    const maxPod = input.maxPod;
+    const sizeCaps = podCaps(board.counts, maxPod);
+    if (boost.target > 0) log.push(`few colors (${art.palette.length}): search target ${searchTarget.toFixed(2)}, ≥${boost.minKeys} key(s), ≥${boost.minPairs} pair(s)`);
 
     const rng = new Rng(input.seed);
     const screen: MeasureOptions = { ...SCREEN_MEASURE, seed: input.seed, ...(quick ? { rollouts: 40, trapBudget: 0 } : {}) };
@@ -190,7 +219,8 @@ export function generateLevel(input: GenerateInput): GenerateResult {
     const maxCandidates = input.candidates ?? 40;
     const wantKeys = keyCountFor(target, input.seed, boost);
     // Wide levels have a fixed lane count: the search finds traps that hold with that many lanes instead of cutting lanes.
-    const fixedLanes = input.lanes ?? laneCountFor(target, input.seed);
+    // A seal traps through parked pods, which needs spare lanes: sealed levels are always wide.
+    const fixedLanes = input.lanes ?? (seals.length > 0 ? WIDE_LANES : laneCountFor(target, input.seed));
     if (fixedLanes !== null) log.push(`lanes fixed at ${fixedLanes}`);
     const pool: Candidate[] = [];
     for (let i = 0; i < maxCandidates * 3; i++) {
@@ -242,7 +272,7 @@ export function generateLevel(input: GenerateInput): GenerateResult {
         maxPairs: caps.pairs,
         minLanes: fixedLanes ?? 2,
         maxLanes: fixedLanes ?? MAX_SEARCH_LANES,
-        maxPod,
+        podCaps: sizeCaps,
     };
     // Deterministic work limit (count, not time) scaled to board size: measures cost roughly ∝ cells.
     const cells = board.counts.reduce((a, b) => a + b, 0);
