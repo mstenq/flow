@@ -153,8 +153,17 @@ export class QueueView {
                 seen.add(p.id);
                 this.place(p, column, index);
             });
+        });
+        // A badge turns cyan when it hides the partner of a visible linked pod (its off-screen tether ends there).
+        const tethered = new Set<number>();
+        for (const pv of this.pods.values()) {
+            if (!seen.has(pv.id) || pv.link === null) continue;
+            const partner = this.loc.get(pv.link);
+            if (partner && partner.index >= VISIBLE_PODS) tethered.add(partner.column);
+        }
+        columns.forEach((pods, column) => {
             const extra = pods.length - VISIBLE_PODS;
-            this.badges[column]?.setText(extra > 0 ? `+${extra}` : '');
+            this.badges[column]?.setText(extra > 0 ? `+${extra}` : '').setColor(tethered.has(column) ? '#9ff3ff' : COLORS.dim);
         });
         this.hasLinks = links;
         this.synced = true;
@@ -592,9 +601,14 @@ export class QueueView {
         const w = this.layout.queue.podW;
         const hh = this.layout.queue.podH;
         for (const a of this.pods.values()) {
-            if (a.link === null || a.id > a.link) continue;
+            if (a.link === null) continue;
             const b = this.pods.get(a.link);
-            if (!b) continue;
+            if (!b) {
+                const partner = this.loc.get(a.link);
+                if (partner) this.drawOffscreenLink(g, a, partner.column);
+                continue;
+            }
+            if (a.id > a.link) continue;
             if (a.column === b.column) {
                 const x = a.root.x - (w / 2) * a.root.scaleX - 6;
                 drawLightning(g, x, a.root.y, x, b.root.y, 8, 6, 0x9ff3ff, 2, 1);
@@ -605,6 +619,34 @@ export class QueueView {
             const ax = a.root.x + (b.root.x > a.root.x ? 1 : -1) * (w / 2) * a.root.scaleX;
             const bx = b.root.x + (a.root.x > b.root.x ? 1 : -1) * (w / 2) * b.root.scaleX;
             drawLightning(g, ax, ya, bx, yb, 12, 10, 0x9ff3ff, 2.2, 1);
+        }
+    }
+
+    /**
+     * The partner is below the visible window: the tether runs down the gap beside the partner's column and ends in
+     * an arrowhead at that column's "+n" badge.
+     */
+    private drawOffscreenLink(g: GameObjects.Graphics, a: PodView, column: number): void {
+        const q = this.layout.queue;
+        const cx = q.centers[column];
+        if (cx === undefined) return;
+        const side = a.column === column ? -1 : a.column > column ? 1 : -1;
+        const gapX = a.column === column ? a.root.x - (q.podW / 2) * a.root.scaleX - 6 : cx + (side * q.colW) / 2;
+        const ya = a.root.y - (q.podH / 2) * a.root.scaleY + 6;
+        const ax = a.root.x + (a.column === column ? -1 : -side) * (q.podW / 2) * a.root.scaleX;
+        const tipX = cx + side * 20;
+        const by = q.badgeY;
+        if (Math.abs(gapX - ax) > 2) drawLightning(g, ax, ya, gapX, ya, 6, 6, 0x9ff3ff, 2.2, 1);
+        drawLightning(g, gapX, ya, gapX, by, 10, 5, 0x9ff3ff, 2.2, 1);
+        drawLightning(g, gapX, by, tipX, by, 3, 3, 0x9ff3ff, 2.2, 1);
+        const head = 7;
+        for (let pass = 0; pass < 2; pass++) {
+            g.lineStyle(pass === 0 ? 7 : 2.2, pass === 0 ? 0x9ff3ff : 0xffffff, pass === 0 ? 0.3 : 1);
+            g.beginPath();
+            g.moveTo(tipX + side * head, by - head);
+            g.lineTo(tipX, by);
+            g.lineTo(tipX + side * head, by + head);
+            g.strokePath();
         }
     }
 
