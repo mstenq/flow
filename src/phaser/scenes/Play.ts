@@ -56,7 +56,7 @@ interface PlayData {
 export class Play extends Scene {
     private levelId = '';
     private retry = false;
-    private flags: UrlFlags = { debug: false, autoplay: 'off', speed: 1, introOff: false };
+    private flags: UrlFlags = { debug: false, autoplay: 'off', speed: 1, pace: 1, introOff: false };
     private layout!: Layout;
     private palette: number[] = [];
 
@@ -141,6 +141,7 @@ export class Play extends Scene {
         sceneActions.reset();
         sceneActions.setSpeed(speed);
         gameFacade.setSpeed(speed);
+        gameFacade.setPace(this.flags.pace);
         runActions.setCurrentLevel(level.id);
         runActions.recordAttempt(level.id);
         roundActions.start(level.id);

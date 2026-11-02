@@ -39,7 +39,7 @@
       "longestDrainSec": 8.04,
       "minLanesProven": true
     },
-    "generatorVersion": "gen-3.2.0",
+    "generatorVersion": "gen-3.3.0",
     "sourceHash": "2f5e7b9fda52c2ae"
   }
 }

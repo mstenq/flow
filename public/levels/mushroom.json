@@ -9,7 +9,7 @@
   "cells": ".....111111........1100000011.....100222000001...10022222002201..10022222002221.10000222000022011000000000000001102220000222000112222200222220011222220022222001.11111111111111.....13333331........13443441........13443441........13333331.........111111.....",
   "keys": [],
   "lanes": 3,
-  "tickMs": 90,
+  "tickMs": 270,
   "columns": [
     [{"id":3,"color":3,"capacity":4},{"id":4,"color":1,"capacity":2},{"id":5,"color":1,"capacity":6},{"id":6,"color":2,"capacity":16},{"id":8,"color":4,"capacity":4},{"id":11,"color":3,"capacity":3},{"id":17,"color":3,"capacity":1}],
     [{"id":7,"color":2,"capacity":10}],
@@ -37,10 +37,10 @@
       "fastRandomWinRate": 0.29,
       "maxPodCapacity": 32,
       "medianPodCapacity": 8,
-      "longestDrainSec": 2.88,
+      "longestDrainSec": 8.64,
       "minLanesProven": true
     },
-    "generatorVersion": "gen-3.2.0",
+    "generatorVersion": "gen-3.3.1",
     "sourceHash": "766026be245009e0"
   }
 }

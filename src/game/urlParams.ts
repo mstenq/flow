@@ -11,6 +11,8 @@ export interface UrlFlags {
     autoplay: AutoplayMode;
     /** `?speed=2` starts at 2x (handy for headless runs). */
     speed: 1 | 2;
+    /** `?speed=0.33` (any value in 0.05..1) slows the clock for this session, on top of the 1x/2x toggle (pace playtests). */
+    pace: number;
     /** `?intro=off` never shows the mechanic intro cards this session. */
     introOff: boolean;
 }
@@ -30,8 +32,16 @@ export function parseFlags(search: string): UrlFlags {
         debug: params.get('debug') === '1',
         autoplay: parseAutoplay(params.get('autoplay')),
         speed: params.get('speed') === '2' ? 2 : 1,
+        pace: parsePace(params.get('speed')),
         introOff: params.get('intro') === 'off',
     };
+}
+
+/** Slow-down factor from `?speed=`: a number in [0.05, 1), otherwise 1 (normal pace). */
+function parsePace(value: string | null): number {
+    const n = Number(value);
+    if (value === null || !Number.isFinite(n) || n >= 1 || n < 0.05) return 1;
+    return n;
 }
 
 function parseAutoplay(value: string | null): AutoplayMode {

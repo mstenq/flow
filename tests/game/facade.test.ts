@@ -65,6 +65,21 @@ describe('gameFacade', () => {
         expect(claimsIn(f.advance(40))).toBe(1);
     });
 
+    test('a slow pace stretches the tick and stacks with 2x', () => {
+        const f = new GameFacade();
+        f.load(longLevel());
+        f.tap(0);
+        f.advance(20); // half a tick at 1x
+        f.setPace(0.5);
+        expect(f.stepMs).toBe(80);
+        expect(f.tickAlpha).toBeCloseTo(0.5);
+        expect(claimsIn(f.advance(40))).toBe(1);
+        f.setSpeed(2);
+        expect(f.stepMs).toBe(40);
+        f.setPace(0);
+        expect(f.stepMs).toBe(40);
+    });
+
     test('pause freezes the clock; taps still apply', () => {
         const f = new GameFacade();
         f.load(longLevel());

@@ -11,37 +11,37 @@
   "lanes": 3,
   "tickMs": 30,
   "columns": [
-    [{"id":7,"color":1,"capacity":85},{"id":11,"color":0,"capacity":83,"lock":0},{"id":14,"color":0,"capacity":117,"hidden":true},{"id":22,"color":1,"capacity":99},{"id":27,"color":1,"capacity":118},{"id":28,"color":1,"capacity":80},{"id":33,"color":3,"capacity":52}],
-    [{"id":2,"color":2,"capacity":85},{"id":15,"color":0,"capacity":110,"hidden":true},{"id":18,"color":4,"capacity":6},{"id":30,"color":4,"capacity":8,"hidden":true},{"id":34,"color":2,"capacity":43},{"id":37,"color":0,"capacity":119,"link":38}],
-    [{"id":3,"color":3,"capacity":99},{"id":9,"color":1,"capacity":120},{"id":12,"color":0,"capacity":51},{"id":17,"color":2,"capacity":120},{"id":20,"color":0,"capacity":120,"hidden":true},{"id":25,"color":2,"capacity":113},{"id":31,"color":0,"capacity":72},{"id":38,"color":0,"capacity":120,"link":37}],
-    [{"id":4,"color":1,"capacity":120},{"id":6,"color":2,"capacity":120},{"id":8,"color":2,"capacity":120},{"id":19,"color":2,"capacity":85,"lock":1},{"id":21,"color":3,"capacity":94},{"id":29,"color":2,"capacity":107,"hidden":true},{"id":32,"color":5,"capacity":20},{"id":36,"color":0,"capacity":76,"hidden":true}],
-    [{"id":1,"color":1,"capacity":120},{"id":5,"color":0,"capacity":117,"hidden":true},{"id":10,"color":4,"capacity":8},{"id":13,"color":0,"capacity":41,"hidden":true},{"id":16,"color":1,"capacity":40,"hidden":true},{"id":23,"color":0,"capacity":105},{"id":24,"color":0,"capacity":91},{"id":26,"color":1,"capacity":120},{"id":35,"color":0,"capacity":120,"hidden":true},{"id":39,"color":0,"capacity":3}]
+    [{"id":7,"color":1,"capacity":85},{"id":11,"color":0,"capacity":83,"lock":0},{"id":13,"color":0,"capacity":117,"hidden":true},{"id":21,"color":1,"capacity":99},{"id":26,"color":1,"capacity":118},{"id":27,"color":1,"capacity":80,"hidden":true},{"id":32,"color":3,"capacity":52,"hidden":true}],
+    [{"id":2,"color":2,"capacity":85},{"id":14,"color":0,"capacity":110},{"id":23,"color":0,"capacity":91,"hidden":true},{"id":29,"color":4,"capacity":8,"hidden":true},{"id":33,"color":2,"capacity":43,"hidden":true},{"id":36,"color":0,"capacity":119,"link":37}],
+    [{"id":3,"color":3,"capacity":99},{"id":9,"color":1,"capacity":120},{"id":12,"color":0,"capacity":92},{"id":16,"color":2,"capacity":120},{"id":19,"color":0,"capacity":120,"hidden":true},{"id":24,"color":2,"capacity":113},{"id":30,"color":0,"capacity":72},{"id":37,"color":0,"capacity":120,"link":36}],
+    [{"id":4,"color":1,"capacity":120},{"id":6,"color":2,"capacity":120,"hidden":true},{"id":8,"color":2,"capacity":120},{"id":18,"color":2,"capacity":85,"lock":1},{"id":20,"color":3,"capacity":94},{"id":28,"color":2,"capacity":107},{"id":31,"color":5,"capacity":20},{"id":35,"color":0,"capacity":76}],
+    [{"id":1,"color":1,"capacity":120},{"id":5,"color":0,"capacity":117},{"id":10,"color":4,"capacity":8},{"id":15,"color":1,"capacity":40},{"id":17,"color":4,"capacity":6},{"id":22,"color":0,"capacity":105},{"id":25,"color":1,"capacity":120,"hidden":true},{"id":34,"color":0,"capacity":120,"hidden":true},{"id":38,"color":0,"capacity":3}]
   ],
-  "solution": [4,1,2,3,4,3,0,3,2,4,0,2,4,0,1,4,2,1,3,2,3,0,4,4,2,4,0,0,3,1,2,3,0,1,4,3,1,4],
+  "solution": [4,1,2,3,4,3,0,3,2,4,0,2,0,1,4,2,4,3,2,3,0,4,1,2,4,0,0,3,1,2,3,0,1,4,3,1,4],
   "meta": {
     "seed": 651578321,
     "targetDifficulty": 0.79,
-    "difficulty": 0.754,
+    "difficulty": 0.78,
     "stats": {
-      "randomWinRate": 0.01,
-      "greedyWinRate": 0.143,
-      "smartWinRate": 0.227,
-      "deadEndRatio": 0.155,
+      "randomWinRate": 0.037,
+      "greedyWinRate": 0.103,
+      "smartWinRate": 0.19,
+      "deadEndRatio": 0.139,
       "minLanes": 2,
-      "branching": 4.45,
-      "hiddenShare": 0.256,
+      "branching": 4.46,
+      "hiddenShare": 0.263,
       "lockCount": 2,
       "pairCount": 1,
       "overflowPods": 9,
       "peakStalled": 2,
-      "fastGreedyWinRate": 0.095,
-      "fastRandomWinRate": 0,
+      "fastGreedyWinRate": 0.09,
+      "fastRandomWinRate": 0.005,
       "maxPodCapacity": 120,
       "medianPodCapacity": 99,
       "longestDrainSec": 3.6,
       "minLanesProven": true
     },
-    "generatorVersion": "gen-3.2.0",
+    "generatorVersion": "gen-3.3.0",
     "sourceHash": "dd03389c1751ad8b"
   }
 }

@@ -64,6 +64,25 @@ export function fewColorBoost(numColors: number, target: number): FewColorBoost 
     return { minKeys: 1, minPairs: 0, extraPairs: 0, target: 0.03 };
 }
 
+/** Most lanes the search may pick on its own (it cuts lanes to raise difficulty, so it rarely goes this high). */
+export const MAX_SEARCH_LANES = 4;
+
+/** Lane count of a wide level (see `laneCountFor`). */
+export const WIDE_LANES = 5;
+
+/** Share of levels at or above the easy cutoff that are wide. */
+export const WIDE_SHARE = 0.5;
+
+/**
+ * Fixed lane count for this level, or null to let the search pick (2-4). Wide levels keep `WIDE_LANES` lanes for the
+ * whole search, so their difficulty has to come from traps that more lanes don't fix (keys, pairs, buried colors).
+ */
+export function laneCountFor(target: number, seed: number): number | null {
+    // Without keys and pairs nothing traps a player with 5 lanes, so easy levels stay narrow.
+    if (target < EASY_CUTOFF) return null;
+    return new Rng(seed ^ 0x6c616e65).chance(WIDE_SHARE) ? WIDE_LANES : null;
+}
+
 /** Most keys (locked pods) any level gets. The count is random per level, not tied to difficulty (see `keyCountFor`). */
 export const MAX_KEYS = 3;
 
@@ -107,7 +126,8 @@ function jitter(rng: Rng, sd: number): number {
 }
 
 /** `keys` is the level's fixed key count (`keyCountFor`), not sampled per candidate. */
-export function sampleKnobs(target: number, rng: Rng, keys = 0, boost: FewColorBoost = NO_BOOST): Knobs {
+/** `fixedLanes`: the level's lane count from `laneCountFor` (null = sample it from the target). */
+export function sampleKnobs(target: number, rng: Rng, keys = 0, boost: FewColorBoost = NO_BOOST, fixedLanes: number | null = null): Knobs {
     const caps = mechanicCaps(target, boost);
     const t = clamp01(target + boost.target + STRUCTURE_BOOST + jitter(rng, 0.12));
     let lanes: number;
@@ -115,6 +135,7 @@ export function sampleKnobs(target: number, rng: Rng, keys = 0, boost: FewColorB
     else if (t < 0.6) lanes = 3;
     else if (t < 0.8) lanes = rng.chance(0.5) ? 2 : 3;
     else lanes = rng.chance(0.7) ? 2 : 3;
+    if (fixedLanes !== null) lanes = fixedLanes;
 
     let columns: number;
     if (t < 0.5) columns = rng.int(3, 4);

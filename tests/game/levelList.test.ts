@@ -71,5 +71,11 @@ describe('urlParams flags', () => {
         expect(parseFlags('').autoplay).toBe('off');
         expect(parseFlags('?speed=2').speed).toBe(2);
         expect(parseFlags('?speed=3').speed).toBe(1);
+        expect(parseFlags('').pace).toBe(1);
+        expect(parseFlags('?speed=0.33').pace).toBe(0.33);
+        expect(parseFlags('?speed=0.33').speed).toBe(1);
+        expect(parseFlags('?speed=2').pace).toBe(1);
+        expect(parseFlags('?speed=0.01').pace).toBe(1);
+        expect(parseFlags('?speed=abc').pace).toBe(1);
     });
 });

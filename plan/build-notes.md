@@ -38,6 +38,9 @@ The generator must **never fail on too many colors**. It must simplify automatic
 - `bun run verify`: replays every stored solution.
 - `bun run shot "<query>" out.png`: headless browser screenshot of the running game (see setup). Agents use it to check visuals.
 - Game URL params: `?level=<id>` to jump in, `?debug=1` for the solution-hint overlay + step clock, `?spike=1` for the FX spike.
+- `?speed=0.5` (any value 0.05–1) slows the clock further for the session, on top of the 1x/2x toggle. It's for pace playtests.
+- **Pace (gen-3.3.1):** the median pod now drains in ~3.6s (`MEDIAN_DRAIN_MS`, ticks 90–270ms). It used to be 1.2s. The user playtested
+  `?speed=0.33` and liked it: slow drains make people want to tap ahead, and tapping ahead causes the mistakes.
 - Dev hotkeys: `S` single tick, `F` settle, `R` restart, `N` next level, `H` play the next hint tap.
 
 ## Rules for agents
@@ -66,6 +69,14 @@ is completely buried, and a player who taps "whatever is showing" won most level
   Floors are best-effort: a pair needs 2 free lanes, so tight layouts may get fewer. The climb can't unpair below the floor.
   Stacking pairs on top (4 pairs on 2 lanes) killed stalling and made levels easier, so the boost is a floor, not an add.
   `meta.targetDifficulty` stores the boosted target.
+- **Wide levels (gen-3.3):** at or above the easy cutoff, half the levels (`WIDE_SHARE`, picked by `laneCountFor` from the
+  seed) are fixed at `WIDE_LANES` = 5 lanes. The climb can't change their lane count, so it has to find difficulty
+  through traps that more lanes don't fix (keys, pairs, buried colors). The other levels let the search pick 2–4 lanes
+  as before (`MAX_SEARCH_LANES`). Easy levels are never wide: with no keys or pairs, 5 lanes can't trap anyone.
+  Background: raw layouts with 5 lanes are almost never losable. Colors, board size, speckle, full-bleed scenes,
+  lowest-left pick order and impatience all failed to change that. Real generated levels widened to 5 lanes stayed
+  losable about half the time (30% hard) because of their keys and pairs. A forced 5-lane sample of 26 levels hit its
+  target in 25 cases.
 - **Key top-up:** keys the climbed plan is short of are added at the end. A late lock can leave one forced order (Coffee
   Bag went 0.44 → 0.00), so `bestTopUp` measures 6 placements and keeps the nearest to target (0.05 per missing key).
 

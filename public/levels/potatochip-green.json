@@ -11,11 +11,11 @@
   "lanes": 2,
   "tickMs": 90,
   "columns": [
-    [{"id":15,"color":6,"capacity":6},{"id":16,"color":4,"capacity":18},{"id":17,"color":2,"capacity":80,"lock":0},{"id":23,"color":9,"capacity":4,"link":24}],
-    [{"id":1,"color":3,"capacity":28},{"id":2,"color":1,"capacity":25},{"id":3,"color":0,"capacity":119,"hidden":true},{"id":4,"color":9,"capacity":2},{"id":5,"color":1,"capacity":30},{"id":6,"color":4,"capacity":28,"hidden":true},{"id":7,"color":6,"capacity":13}],
-    [{"id":10,"color":5,"capacity":9},{"id":14,"color":0,"capacity":77},{"id":18,"color":7,"capacity":3,"hidden":true},{"id":25,"color":9,"capacity":4,"hidden":true}],
+    [{"id":15,"color":6,"capacity":6},{"id":16,"color":4,"capacity":18,"hidden":true},{"id":17,"color":2,"capacity":80,"lock":0},{"id":23,"color":9,"capacity":4,"link":24}],
+    [{"id":1,"color":3,"capacity":28},{"id":2,"color":1,"capacity":25},{"id":3,"color":0,"capacity":119,"hidden":true},{"id":4,"color":9,"capacity":2,"hidden":true},{"id":5,"color":1,"capacity":30},{"id":6,"color":4,"capacity":28},{"id":7,"color":6,"capacity":13}],
+    [{"id":10,"color":5,"capacity":9},{"id":14,"color":0,"capacity":77},{"id":18,"color":7,"capacity":3},{"id":25,"color":9,"capacity":4}],
     [{"id":11,"color":0,"capacity":97},{"id":12,"color":3,"capacity":13,"hidden":true},{"id":13,"color":8,"capacity":4},{"id":19,"color":5,"capacity":14,"link":20},{"id":20,"color":8,"capacity":4,"link":19},{"id":21,"color":8,"capacity":5,"hidden":true}],
-    [{"id":8,"color":3,"capacity":19},{"id":9,"color":1,"capacity":65,"hidden":true},{"id":22,"color":7,"capacity":6},{"id":24,"color":7,"capacity":8,"link":23}]
+    [{"id":8,"color":3,"capacity":19},{"id":9,"color":1,"capacity":65,"hidden":true},{"id":22,"color":7,"capacity":6,"hidden":true},{"id":24,"color":7,"capacity":8,"link":23}]
   ],
   "solution": [1,1,1,1,1,1,1,4,4,2,3,3,3,2,0,0,0,2,3,3,4,0,2],
   "meta": {
@@ -41,7 +41,7 @@
       "longestDrainSec": 10.71,
       "minLanesProven": true
     },
-    "generatorVersion": "gen-3.2.0",
+    "generatorVersion": "gen-3.3.0",
     "sourceHash": "8a933cf9a5d9504d"
   }
 }

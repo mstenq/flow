@@ -22,6 +22,8 @@ export class GameFacade {
     private sim: Sim | null = null;
     private accumulator = 0;
     private speed: GameSpeed = 1;
+    /** Extra slow-down from `?speed=0.x` (1 = normal); multiplies with `speed`. */
+    private pace = 1;
     private paused = false;
     private history: number[] = [];
     private onSolution = true;
@@ -110,18 +112,32 @@ export class GameFacade {
         return Math.min(this.accumulator / this.stepMs, 0.999999);
     }
 
-    /** Current tick duration in ms (`tickMs`, halved at 2x). */
+    /** Current tick duration in ms (`tickMs`, halved at 2x, stretched by a slow pace). */
     get stepMs(): number {
         const level = this.levelData;
         const base = level ? level.tickMs : 50;
-        return base / this.speed;
+        return base / (this.speed * this.pace);
     }
 
     setSpeed(speed: GameSpeed): void {
         if (speed === this.speed) return;
-        // Keep the same fraction of the tick elapsed across the speed change.
+        this.retime(() => {
+            this.speed = speed;
+        });
+    }
+
+    /** Slow the clock by `pace` (0 < pace <= 1) on top of the speed toggle. Debug playtests only (`?speed=0.33`). */
+    setPace(pace: number): void {
+        if (pace === this.pace || !(pace > 0)) return;
+        this.retime(() => {
+            this.pace = pace;
+        });
+    }
+
+    /** Keep the same fraction of the tick elapsed across a clock change. */
+    private retime(change: () => void): void {
         const alpha = this.accumulator / this.stepMs;
-        this.speed = speed;
+        change();
         this.accumulator = alpha * this.stepMs;
     }
 

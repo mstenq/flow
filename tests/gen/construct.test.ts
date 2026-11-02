@@ -2,7 +2,7 @@ import { describe, expect, test } from 'bun:test';
 import { Rng } from '@game/rng';
 import { replay, toLevel, traceSolution } from '../../tools/gen/board';
 import { construct, deal } from '../../tools/gen/construct';
-import { EASY_CUTOFF, MAX_KEYS, MAX_POD, fewColorBoost, keyCountFor, mechanicCaps, sampleKnobs } from '../../tools/gen/knobs';
+import { EASY_CUTOFF, MAX_KEYS, MAX_POD, WIDE_LANES, fewColorBoost, keyCountFor, laneCountFor, mechanicCaps, sampleKnobs } from '../../tools/gen/knobs';
 import { fixtureBoards } from './fixtures';
 
 describe('construct', () => {
@@ -59,6 +59,26 @@ describe('construct', () => {
             const built = construct(board, knobs, rng);
             expect(Math.max(...built.order.map((p) => p.capacity))).toBeLessThanOrEqual(10);
         }
+    });
+
+    test('about half the levels above the easy cutoff are wide; easy levels never are', () => {
+        let wide = 0;
+        for (let seed = 0; seed < 200; seed++) {
+            expect(laneCountFor(EASY_CUTOFF - 0.01, seed)).toBeNull();
+            const lanes = laneCountFor(0.5, seed);
+            if (lanes === null) continue;
+            expect(lanes).toBe(WIDE_LANES);
+            wide++;
+        }
+        expect(wide).toBeGreaterThan(70);
+        expect(wide).toBeLessThan(130);
+    });
+
+    test('a fixed lane count wins over the sampled one without shifting the rest of the knobs', () => {
+        const free = sampleKnobs(0.6, new Rng(11));
+        const fixed = sampleKnobs(0.6, new Rng(11), 0, undefined, WIDE_LANES);
+        expect(fixed.lanes).toBe(WIDE_LANES);
+        expect({ ...fixed, lanes: free.lanes, maxStalled: free.maxStalled }).toEqual(free);
     });
 
     test('few-color levels get a key and pair floor above the easy cutoff', () => {

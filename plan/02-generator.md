@@ -94,7 +94,7 @@ Knob ranges by target difficulty (starting point, tune in Phase 6):
 | 0.5–0.75 | 4 | 3–5 | 3–6 | hidden, keys, 1 pair |
 | > 0.75 | 3–4 | 4–5 | 4–8 | all, more of them |
 
-- `tickMs` is chosen so the median pod drains in about 1.2s (clamped to 30–90ms).
+- `tickMs` is chosen so the median pod drains in about 3.6s (clamped to 90–270ms). It was 1.2s; the slower pace playtested better.
 - Output: `public/levels/<id>.json`, plus regenerating `public/levels/index.json` (`[{id,name,width,height,difficulty}]`).
 - Console summary: dimensions, colors, pods, lanes, mechanics, all stats, and the achieved vs target difficulty.
 - `--report`: writes `tools/gen/out/<id>.html` with the board, columns, stats, and a step-through replay of the solution.

@@ -14,7 +14,7 @@ import { DEFAULT_MIN_REGION, maxColorsForDifficulty, simplifyImage } from './pal
 import type { Board, Layout, Trace } from './board.ts';
 import { boardFromCells, podCount, replay, toLevel, traceSolution } from './board.ts';
 import type { Knobs } from './knobs.ts';
-import { MAX_POD, fewColorBoost, keyCountFor, knobsSummary, mechanicCaps, sampleKnobs } from './knobs.ts';
+import { MAX_POD, MAX_SEARCH_LANES, fewColorBoost, keyCountFor, knobsSummary, laneCountFor, mechanicCaps, sampleKnobs } from './knobs.ts';
 import { construct } from './construct.ts';
 import { addLock, applyMechanics, hideShare } from './mechanics.ts';
 import type { Plan } from './plan.ts';
@@ -42,6 +42,8 @@ export interface GenerateInput {
     budgetMs?: number;
     /** Cap on pod capacity during construction and mutation (default and ceiling: `MAX_POD`). */
     maxPod?: number;
+    /** Force this lane count (the climb keeps it). Default: `laneCountFor` (wide levels) or picked by the search. */
+    lanes?: number;
     /** Lighter measures everywhere (tests). */
     quick?: boolean;
 }
@@ -93,11 +95,16 @@ function distance(m: Measurement, target: number, lanes: number): number {
     return Math.abs(m.score - target) + 0.015 * missing + 0.03 * slack + unlosable;
 }
 
-/** Median pod drains in ~1.2s, clamped to 30–90ms per cell. */
+/** How long the median pod takes to drain at 1x. Slow on purpose: waiting tempts players to tap ahead (playtested). */
+export const MEDIAN_DRAIN_MS = 3600;
+export const MIN_TICK_MS = 90;
+export const MAX_TICK_MS = 270;
+
+/** Median pod drains in `MEDIAN_DRAIN_MS`, clamped to `MIN_TICK_MS`–`MAX_TICK_MS` per cell. */
 export function chooseTickMs(layout: Layout): number {
     const caps = layout.columns.flat().map((p) => p.capacity).sort((a, b) => a - b);
     const median = caps[Math.floor(caps.length / 2)] ?? 20;
-    return Math.max(30, Math.min(90, Math.round(1200 / median)));
+    return Math.max(MIN_TICK_MS, Math.min(MAX_TICK_MS, Math.round(MEDIAN_DRAIN_MS / median)));
 }
 
 /** Validate a mutated plan: replay first, else ask the solver (which may produce a new tap order). */
@@ -182,11 +189,14 @@ export function generateLevel(input: GenerateInput): GenerateResult {
     // 1. Candidates (up to 3x as many while none of them can be lost).
     const maxCandidates = input.candidates ?? 40;
     const wantKeys = keyCountFor(target, input.seed, boost);
+    // Wide levels have a fixed lane count: the search finds traps that hold with that many lanes instead of cutting lanes.
+    const fixedLanes = input.lanes ?? laneCountFor(target, input.seed);
+    if (fixedLanes !== null) log.push(`lanes fixed at ${fixedLanes}`);
     const pool: Candidate[] = [];
     for (let i = 0; i < maxCandidates * 3; i++) {
         if (i >= maxCandidates && pool.some((c) => isLosable(c.m.stats))) break;
         const r = rng.fork();
-        const knobs = { ...sampleKnobs(target, r, wantKeys, boost), maxPod };
+        const knobs = { ...sampleKnobs(target, r, wantKeys, boost, fixedLanes), maxPod };
         const built = construct(board, knobs, r);
         // Hidden pods are dealt after the search (see step 4): they don't change the score.
         const placed = applyMechanics(board, planFromLayout(built.layout), { ...knobs, hiddenShare: 0 }, r);
@@ -230,8 +240,8 @@ export function generateLevel(input: GenerateInput): GenerateResult {
         maxLocks: wantKeys,
         minPairs: boost.minPairs,
         maxPairs: caps.pairs,
-        minLanes: 2,
-        maxLanes: 4,
+        minLanes: fixedLanes ?? 2,
+        maxLanes: fixedLanes ?? MAX_SEARCH_LANES,
         maxPod,
     };
     // Deterministic work limit (count, not time) scaled to board size: measures cost roughly ∝ cells.
