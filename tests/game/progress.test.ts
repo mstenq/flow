@@ -36,7 +36,7 @@ describe('progress defaults and persistence', () => {
             version: PROGRESS_VERSION,
             completed: {},
             attempts: {},
-            settings: { music: 0.6, sfx: 0.8, reducedFx: false, colorBlind: false, speed: 1 },
+            settings: { music: 0.6, sfx: 0.8, reducedFx: false, colorBlind: false, speed: 1, unlockAll: false },
             firstSeen: {},
         });
     });
@@ -55,13 +55,13 @@ describe('progress defaults and persistence', () => {
         a.recordAttempt('a');
         a.recordAttempt('a');
         a.markCompleted('a', 4200);
-        a.updateSettings({ music: 0.3, sfx: 1, colorBlind: true, speed: 2 });
+        a.updateSettings({ music: 0.3, sfx: 1, colorBlind: true, speed: 2, unlockAll: true });
         a.markSeen('tip-lock');
         expect(JSON.parse(storage.items.get(PROGRESS_KEY)!)).toMatchObject({ version: 1 });
         const b = new ProgressStore(storage);
         expect(b.data).toEqual(a.data);
         expect(b.data.completed).toEqual({ a: { bestMs: 4200, attempts: 2 } });
-        expect(b.data.settings).toEqual({ music: 0.3, sfx: 1, reducedFx: false, colorBlind: true, speed: 2 });
+        expect(b.data.settings).toEqual({ music: 0.3, sfx: 1, reducedFx: false, colorBlind: true, speed: 2, unlockAll: true });
     });
 
     test('corrupt or foreign data falls back to defaults', () => {
@@ -78,13 +78,13 @@ describe('progress defaults and persistence', () => {
             version: 1,
             completed: { good: { bestMs: 1000, attempts: 3 }, badTime: { bestMs: 'x' }, neg: { bestMs: -5 }, noAttempts: { bestMs: 50 } },
             attempts: { good: 3, bad: 'many' },
-            settings: { music: 7, sfx: 'loud', reducedFx: 'yes', colorBlind: true, speed: 5 },
+            settings: { music: 7, sfx: 'loud', reducedFx: 'yes', colorBlind: true, speed: 5, unlockAll: 1 },
             firstSeen: { a: true, b: 'no' },
         });
         const data = parseProgress(json);
         expect(data.completed).toEqual({ good: { bestMs: 1000, attempts: 3 }, noAttempts: { bestMs: 50, attempts: 1 } });
         expect(data.attempts).toEqual({ good: 3 });
-        expect(data.settings).toEqual({ music: 1, sfx: 0.8, reducedFx: false, colorBlind: true, speed: 1 });
+        expect(data.settings).toEqual({ music: 1, sfx: 0.8, reducedFx: false, colorBlind: true, speed: 1, unlockAll: false });
         expect(data.firstSeen).toEqual({ a: true });
     });
 
@@ -175,6 +175,19 @@ describe('completion, attempts and unlocks', () => {
         expect(store.isUnlocked('nope', ORDER)).toBe(false);
         store.unlockAll = true;
         expect(store.isUnlocked('c', ['x', 'c'])).toBe(true);
+    });
+
+    test('the unlock-all setting opens every level and is saved', () => {
+        const storage = new MemoryStorage();
+        const store = new ProgressStore(storage);
+        expect(store.isUnlocked('c', ORDER)).toBe(false);
+        store.updateSettings({ unlockAll: true });
+        expect(store.unlocksAll).toBe(true);
+        expect(store.isUnlocked('c', ORDER)).toBe(true);
+        expect(store.isUnlocked('nope', ORDER)).toBe(true);
+        expect(new ProgressStore(storage).isUnlocked('c', ORDER)).toBe(true);
+        store.updateSettings({ unlockAll: false });
+        expect(store.isUnlocked('c', ORDER)).toBe(false);
     });
 
     test('pure helpers: isUnlockedIn and currentLevelIn', () => {

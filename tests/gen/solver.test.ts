@@ -2,7 +2,8 @@ import { describe, expect, test } from 'bun:test';
 import { Sim } from '@game/sim';
 import { lvl } from '../game/helpers';
 import { Solver, solveLevel } from '../../tools/gen/solver';
-import { deadEndRatio, minLanes, winRate } from '../../tools/gen/difficulty';
+import { deadEndRatio, difficultyScore, minLanes, winRate } from '../../tools/gen/difficulty';
+import { EMPTY_STATS } from '../../tools/gen/board';
 import { compileLevel } from '@game/level';
 
 function wins(level: Parameters<typeof Sim.fromLevel>[0], solution: number[]): boolean {
@@ -92,6 +93,22 @@ describe('difficulty measures', () => {
         expect(rate).toBeGreaterThan(0.2);
         expect(rate).toBeLessThan(0.8);
         expect(deadEndRatio(compileLevel(trap), [1, 0, 0], 500)).toBeCloseTo(0.5, 5);
+    });
+
+    test('the smart player skips the trap a random tapper falls into', () => {
+        // Parking the buried core first jams the only lane; the ring pod fits completely, so smart takes it first.
+        const trap = lvl(RING, [[[1, 4], [0, 6]], [[0, 6]]], 1);
+        expect(winRate(compileLevel(trap), 'smart', 100, 1)).toBe(1);
+        expect(winRate(compileLevel(trap), 'random', 100, 1)).toBeLessThan(0.8);
+    });
+
+    test('the score is driven by the sensible players, not the random one', () => {
+        const allWin = { ...EMPTY_STATS, smartWinRate: 1, greedyWinRate: 1, randomWinRate: 1 };
+        expect(difficultyScore(allWin)).toBe(0);
+        // A level only a random tapper loses is still easy.
+        expect(difficultyScore({ ...allWin, randomWinRate: 0 })).toBeCloseTo(0.1, 5);
+        expect(difficultyScore({ ...allWin, smartWinRate: 0.5 })).toBeGreaterThan(difficultyScore({ ...allWin, randomWinRate: 0, greedyWinRate: 0.5 }));
+        expect(difficultyScore({ ...EMPTY_STATS, deadEndRatio: 1 })).toBe(1);
     });
 
     test('minLanes finds the smallest solvable lane count', () => {

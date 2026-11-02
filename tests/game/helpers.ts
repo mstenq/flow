@@ -86,6 +86,7 @@ export function lvl(
             stats: {
                 randomWinRate: 0,
                 greedyWinRate: 0,
+                smartWinRate: 0,
                 deadEndRatio: 0,
                 minLanes: 0,
                 branching: 0,

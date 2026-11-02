@@ -4,7 +4,7 @@
  * `localStorage['flow.progress.v1']` holds `{ version, completed, attempts, settings, firstSeen }`:
  *   completed  level id -> { bestMs, attempts }  (attempts = total tries when it was last cleared)
  *   attempts   level id -> tries so far
- *   settings   volumes, reduced effects, color-blind glyphs, default speed
+ *   settings   volumes, reduced effects, color-blind glyphs, default speed, unlock all levels
  *   firstSeen  key -> true (Phase 6 mechanic tooltips: `hasSeen` / `markSeen`)
  *
  * Loading never throws: corrupt or unreadable data falls back to defaults. Unknown or removed level ids stay in the
@@ -30,6 +30,8 @@ export interface ProgressSettings {
     reducedFx: boolean;
     colorBlind: boolean;
     speed: GameSpeed;
+    /** Every campaign level is playable (skip the linear unlock chain). */
+    unlockAll: boolean;
 }
 
 export interface CompletedEntry {
@@ -71,6 +73,7 @@ export function defaultSettings(defaults: ProgressDefaults = {}): ProgressSettin
         reducedFx: defaults.reducedFx ?? false,
         colorBlind: false,
         speed: 1,
+        unlockAll: false,
     };
 }
 
@@ -117,6 +120,7 @@ function sanitizeSettings(raw: unknown, defaults: ProgressDefaults): ProgressSet
         reducedFx: typeof raw.reducedFx === 'boolean' ? raw.reducedFx : base.reducedFx,
         colorBlind: typeof raw.colorBlind === 'boolean' ? raw.colorBlind : base.colorBlind,
         speed: raw.speed === 2 ? 2 : 1,
+        unlockAll: typeof raw.unlockAll === 'boolean' ? raw.unlockAll : base.unlockAll,
     };
 }
 
@@ -236,8 +240,13 @@ export class ProgressStore {
         return this.data.completed[id] !== undefined;
     }
 
+    /** Every level is open: the dev flag or the saved setting. */
+    get unlocksAll(): boolean {
+        return this.unlockAll || this.data.settings.unlockAll;
+    }
+
     isUnlocked(id: string, order: readonly string[]): boolean {
-        return this.unlockAll || isUnlockedIn(this.data.completed, id, order);
+        return this.unlocksAll || isUnlockedIn(this.data.completed, id, order);
     }
 
     /** A try started (first start, retry, restart). */

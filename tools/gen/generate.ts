@@ -14,11 +14,11 @@ import { DEFAULT_MIN_REGION, maxColorsForDifficulty, simplifyImage } from './pal
 import type { Board, Layout, Trace } from './board.ts';
 import { boardFromCells, podCount, replay, toLevel, traceSolution } from './board.ts';
 import type { Knobs } from './knobs.ts';
-import { knobsSummary, mechanicCaps, sampleKnobs } from './knobs.ts';
+import { keyCountFor, knobsSummary, mechanicCaps, sampleKnobs } from './knobs.ts';
 import { construct } from './construct.ts';
-import { applyMechanics } from './mechanics.ts';
+import { addLock, applyMechanics, hideShare } from './mechanics.ts';
 import type { Plan } from './plan.ts';
-import { planFromLayout, toLayout } from './plan.ts';
+import { clonePlan, planFromLayout, toLayout } from './plan.ts';
 import type { Measurement, MeasureOptions } from './difficulty.ts';
 import { FULL_MEASURE, SCREEN_MEASURE, measure, roundStats } from './difficulty.ts';
 import type { MutationRules } from './mutate.ts';
@@ -67,21 +67,30 @@ export interface GenerateResult {
 
 const CLIMB_MEASURE: Omit<MeasureOptions, 'seed'> = { rollouts: 300, trapBudget: 300, laneBudget: 0 };
 
-/** Overflow pods we'd like a level at `target` to have: lane management should be the core of mid/hard levels. */
+/** Overflow pods we'd like a level at `target` to have: lane management is the core of every level. */
 export function wantedOverflow(target: number): number {
-    return target < 0.35 ? 0 : Math.round(2 + (target - 0.35) * 8);
+    return Math.round(1 + target * 7);
+}
+
+/** Every level must be losable: a sensible player (see `smartWinRate`) has to lose at least this share of tries. */
+export const MIN_SMART_LOSS = 0.05;
+
+export function isLosable(stats: DifficultyStats): boolean {
+    return 1 - stats.smartWinRate >= MIN_SMART_LOSS;
 }
 
 /**
- * Search objective (lower is better): distance to the target score, plus small penalties when a mid/hard level
- * gets its difficulty without lane management: too few overflow pods, or more lanes than the solution ever
- * needs (+1 spare), which means the lanes are not what makes it hard.
+ * Search objective (lower is better): distance to the target score, plus penalties when the level can't be lost
+ * by a sensible player (dominates everything else; graded by the greedy win rate so the search heads toward
+ * layouts with traps), or gets its difficulty without lane management: too few overflow pods, or more lanes than
+ * the solution ever needs (+1 spare), which means the lanes are not what makes it hard.
  */
 function distance(m: Measurement, target: number, lanes: number): number {
     const missing = Math.max(0, wantedOverflow(target) - (m.stats.overflowPods ?? 0));
     const needed = (m.stats.peakStalled ?? 0) + 1 + (m.stats.pairCount > 0 ? 1 : 0);
-    const slack = target >= 0.45 ? Math.max(0, lanes - needed - 1) : 0;
-    return Math.abs(m.score - target) + 0.015 * missing + 0.03 * slack;
+    const slack = Math.max(0, lanes - needed - (target < 0.3 ? 1 : 0));
+    const unlosable = isLosable(m.stats) ? 0 : 0.3 + (MIN_SMART_LOSS - (1 - m.stats.smartWinRate)) + 0.1 * m.stats.greedyWinRate;
+    return Math.abs(m.score - target) + 0.015 * missing + 0.03 * slack + unlosable;
 }
 
 /** Median pod drains in ~1.2s, clamped to 30–90ms per cell. */
@@ -104,6 +113,13 @@ function validate(board: Board, plan: Plan, solverBudget: number): { plan: Plan;
     const relaid = toLayout(next);
     if (!relaid) return null;
     return { plan: next, layout: relaid, resolved: true };
+}
+
+/** A copy of `plan` with locks added (via `addLock`, which keeps it solvable) until it has `want` keys, or no lock fits. */
+function topUpKeys(board: Board, plan: Plan, want: number, rng: Rng): Plan {
+    const out = clonePlan(plan);
+    for (let tries = 0; out.keys.length < want && tries < want * 3; tries++) addLock(board, out, rng);
+    return out;
 }
 
 export function generateLevel(input: GenerateInput): GenerateResult {
@@ -131,15 +147,18 @@ export function generateLevel(input: GenerateInput): GenerateResult {
     const climbOpts: MeasureOptions = { ...CLIMB_MEASURE, seed: input.seed, ...(quick ? { rollouts: 60, trapBudget: 60 } : {}) };
     const full: MeasureOptions = { ...FULL_MEASURE, seed: input.seed, ...(quick ? { rollouts: 80, trapBudget: 120, laneBudget: 2000, fastRollouts: 60 } : {}) };
 
-    // 1. Candidates.
+    // 1. Candidates (up to 3x as many while none of them can be lost).
     const maxCandidates = input.candidates ?? 40;
+    const wantKeys = keyCountFor(target, input.seed);
     const pool: Candidate[] = [];
-    for (let i = 0; i < maxCandidates; i++) {
+    for (let i = 0; i < maxCandidates * 3; i++) {
+        if (i >= maxCandidates && pool.some((c) => isLosable(c.m.stats))) break;
         const r = rng.fork();
-        const knobs = sampleKnobs(target, r);
+        const knobs = sampleKnobs(target, r, wantKeys);
         if (input.maxPod !== undefined) knobs.maxPod = input.maxPod;
         const built = construct(board, knobs, r);
-        const placed = applyMechanics(board, planFromLayout(built.layout), knobs, r);
+        // Hidden pods are dealt after the search (see step 4): they don't change the score.
+        const placed = applyMechanics(board, planFromLayout(built.layout), { ...knobs, hiddenShare: 0 }, r);
         const layout = toLayout(placed.plan);
         lap('construct');
         if (!layout) continue;
@@ -171,15 +190,16 @@ export function generateLevel(input: GenerateInput): GenerateResult {
     // 3. Hill-climb.
     const caps = mechanicCaps(target);
     const rules: MutationRules = {
-        hidden: caps.hiddenShare > 0,
-        locks: caps.locks > 0,
+        // Hidden pods stay as the knobs placed them: they are not part of the score, so the climb leaves them alone.
+        hidden: false,
+        // The key count is fixed per level (`keyCountFor`): the climb neither adds nor removes keys.
+        locks: false,
         pairs: caps.pairs > 0,
         maxHiddenShare: caps.hiddenShare,
-        maxLocks: caps.locks,
+        maxLocks: wantKeys,
         maxPairs: caps.pairs,
-        // Intro levels keep a forgiving lane count; the climb may not squeeze them to 2.
-        minLanes: target < 0.25 ? 3 : 2,
-        maxLanes: 5,
+        minLanes: 2,
+        maxLanes: 4,
         maxPod: input.maxPod,
     };
     // Deterministic work limit (count, not time) scaled to board size: measures cost roughly ∝ cells.
@@ -192,8 +212,20 @@ export function generateLevel(input: GenerateInput): GenerateResult {
     let base = best;
     let sinceGain = 0;
     let finalistIdx = 0;
-    for (let it = 0; it < iterations * 3 && tried < iterations; it++) {
-        if (elapsed() > budgetMs * 0.8) {
+    let poolIdx = finalists.length;
+    // A level nobody can lose gets up to 4x the tries (cheap on the small boards where this happens), and once it
+    // becomes losable late, another half budget to get back near the target.
+    let losableAt = isLosable(best.m.stats) ? 0 : -1;
+    const triesFor = () => (losableAt < 0 ? iterations * 4 : Math.max(iterations, losableAt + Math.round(iterations / 2)));
+    for (let it = 0; it < iterations * 12 && tried < triesFor(); it++) {
+        if (losableAt < 0 && isLosable(best.m.stats)) losableAt = tried;
+        // Simple images (a color either fully exposed or fully buried) rarely trap anyone with lanes alone: past the
+        // first 2x tries, allow one lock and one more pair than the target's caps.
+        if (losableAt < 0 && tried >= iterations * 2 && !rules.rescue) {
+            Object.assign(rules, { rescue: true, locks: true, pairs: true, maxLocks: Math.max(1, wantKeys), maxPairs: caps.pairs + 1 });
+        }
+        // An unlosable level may run over the usual budget: finding a trap matters more than generation time.
+        if (elapsed() > budgetMs * (losableAt < 0 ? 2 : 0.8)) {
             log.push(`WARNING: time budget ended the hill-climb after ${tried} tries (output may differ on other machines)`);
             break;
         }
@@ -202,6 +234,13 @@ export function generateLevel(input: GenerateInput): GenerateResult {
         if (sinceGain >= stagnationLimit && finalistIdx + 1 < finalists.length) {
             finalistIdx++;
             base = finalists[finalistIdx];
+            sinceGain = 0;
+            restarts++;
+        } else if (sinceGain >= stagnationLimit && !isLosable(best.m.stats) && poolIdx < pool.length) {
+            // Still nothing losable: try more of the screened candidates as starting points.
+            const c = pool[poolIdx++];
+            base = { ...c, m: measure(toLevel(board, c.layout, { id: input.id, name: input.name }), climbOpts) };
+            if (distance(base.m, target, base.layout.lanes) < distance(best.m, target, best.layout.lanes)) best = base;
             sinceGain = 0;
             restarts++;
         }
@@ -232,7 +271,12 @@ export function generateLevel(input: GenerateInput): GenerateResult {
     lap('climb');
     log.push(`hill-climb: ${tried} tries, ${accepted} accepted, ${restarts} restart(s) → ${best.note}`);
 
-    // 4. Final measure and output.
+    // 4. Top up keys a placement or the rescue climb dropped, hide a fixed share of pods, then the final measure and output.
+    const keyed = topUpKeys(board, best.plan, wantKeys, rng.fork());
+    if (keyed.keys.length < wantKeys) log.push(`keys: placed ${keyed.keys.length} of ${wantKeys}`);
+    const hidden = toLayout(hideShare(keyed, best.knobs.hiddenShare, rng.fork()));
+    if (!hidden) throw new Error('internal: hiding pods broke the layout');
+    best = { ...best, layout: hidden };
     const tickMs = chooseTickMs(best.layout);
     const draft = toLevel(board, best.layout, { id: input.id, name: input.name, tickMs });
     const finalM = measure(draft, full);

@@ -33,6 +33,8 @@ export interface KeySpec {
 export interface DifficultyStats {
     randomWinRate: number;
     greedyWinRate: number;
+    /** Win rate of a sensible player: pods that fill completely first, then pods with anything reachable. */
+    smartWinRate: number;
     deadEndRatio: number;
     minLanes: number;
     branching: number;

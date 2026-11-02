@@ -31,6 +31,7 @@ import { GooStream } from '../view/GooStream';
 import { Hud } from '../view/Hud';
 import { LaneView } from '../view/LaneView';
 import { QueueView } from '../view/QueueView';
+import { KeyTether } from '../view/KeyTether';
 import { Background } from '../view/Background';
 import { CameraRig } from '../fx/CameraRig';
 import { ensureFxTextures } from '../fx/textures';
@@ -63,6 +64,7 @@ export class Play extends Scene {
     private goo!: GooStream;
     private lanes!: LaneView;
     private queue!: QueueView;
+    private tether!: KeyTether;
     private hud!: Hud;
     private toast!: Toast;
     private modal!: ModalOverlay;
@@ -161,7 +163,19 @@ export class Play extends Scene {
         this.goo.setFrame(this.board.frameRect());
         this.fx = new Fx(this);
         this.lanes = new LaneView(this, this.layout, this.palette);
-        this.queue = new QueueView(this, this.layout, this.palette, { onColumnTap: (col) => this.onColumnTap(col), fx: this.fx });
+        this.queue = new QueueView(this, this.layout, this.palette, {
+            onColumnTap: (col) => this.onColumnTap(col),
+            onLockHold: (podId) => this.tether.show(podId),
+            fx: this.fx,
+        });
+        const board = this.board;
+        const queue = this.queue;
+        this.tether = new KeyTether(
+            this,
+            { keyCenterFor: (podId) => board.keyCenterFor(podId), podCenter: (podId) => queue.podCenter(podId) },
+            this.layout.board.cell,
+            this.fx,
+        );
         this.hud = new Hud(this, {
             levelName: level.name,
             speed,
@@ -259,6 +273,7 @@ export class Play extends Scene {
         this.grid.update(delta);
         this.goo.update(delta * gameFacade.getSpeed());
         this.queue.update(time);
+        this.tether.update(delta);
         this.lanes.update(delta);
         this.fx.update(delta);
         if (this.phase === 'playing') this.advanceClock(delta);
@@ -571,6 +586,7 @@ export class Play extends Scene {
         // (the board's dynamic textures would otherwise pile up, two per restart).
         this.board?.destroy();
         this.queue?.destroy();
+        this.tether?.destroy();
         this.lanes?.destroy();
         this.hud?.destroy();
         this.toast?.destroy();

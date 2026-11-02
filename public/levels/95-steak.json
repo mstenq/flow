@@ -9,36 +9,37 @@
   "cells": ".........................................................................................................................................................................................................................................................................................................222222222222..................22000000010000022..............20100000000100000022...........2010100000010100001002..........2000100000001010000102..........2000110000000101010012..........2000010001000001001112..........2000111100100000111112..........220000100111001011112...........22111000001111101222.............2111111011111122................21111110111112...................211111011112.....................2211101122........................222222................................................................................................................................................................................................................................................................................",
   "keys": [],
   "lanes": 3,
-  "tickMs": 75,
+  "tickMs": 63,
   "columns": [
-    [{"id":3,"color":1,"capacity":16},{"id":9,"color":1,"capacity":12},{"id":13,"color":0,"capacity":24}],
-    [{"id":1,"color":1,"capacity":24},{"id":2,"color":2,"capacity":16},{"id":4,"color":0,"capacity":18},{"id":6,"color":0,"capacity":33},{"id":7,"color":2,"capacity":16},{"id":10,"color":0,"capacity":30},{"id":14,"color":1,"capacity":3}],
-    [{"id":5,"color":2,"capacity":13},{"id":8,"color":1,"capacity":23},{"id":11,"color":0,"capacity":10},{"id":12,"color":1,"capacity":11},{"id":15,"color":2,"capacity":9}]
+    [{"id":3,"color":0,"capacity":35},{"id":6,"color":0,"capacity":16},{"id":8,"color":0,"capacity":2},{"id":11,"color":1,"capacity":24}],
+    [{"id":4,"color":0,"capacity":24},{"id":5,"color":0,"capacity":19},{"id":7,"color":1,"capacity":34},{"id":10,"color":2,"capacity":13},{"id":14,"color":2,"capacity":14}],
+    [{"id":1,"color":0,"capacity":19},{"id":2,"color":2,"capacity":11},{"id":9,"color":1,"capacity":31},{"id":12,"color":2,"capacity":8},{"id":13,"color":2,"capacity":8}]
   ],
-  "solution": [1,1,0,1,2,1,1,2,0,1,2,2,0,1,2],
+  "solution": [2,2,0,1,1,0,1,0,2,1,0,2,2,1],
   "meta": {
     "seed": 3385879024,
     "targetDifficulty": 0.16,
-    "difficulty": 0.159,
+    "difficulty": 0.153,
     "stats": {
-      "randomWinRate": 0.697,
-      "greedyWinRate": 0.98,
+      "randomWinRate": 0.51,
+      "greedyWinRate": 0.723,
+      "smartWinRate": 0.937,
       "deadEndRatio": 0,
       "minLanes": 1,
-      "branching": 2.8,
+      "branching": 2.71,
       "hiddenShare": 0,
       "lockCount": 0,
       "pairCount": 0,
       "overflowPods": 2,
       "peakStalled": 1,
-      "fastGreedyWinRate": 0.51,
-      "fastRandomWinRate": 0.345,
-      "maxPodCapacity": 33,
-      "medianPodCapacity": 16,
-      "longestDrainSec": 2.48,
+      "fastGreedyWinRate": 0.245,
+      "fastRandomWinRate": 0.33,
+      "maxPodCapacity": 35,
+      "medianPodCapacity": 19,
+      "longestDrainSec": 2.21,
       "minLanesProven": true
     },
-    "generatorVersion": "gen-2.0.0",
+    "generatorVersion": "gen-3.1.0",
     "sourceHash": "6129a5c68f3aed43"
   }
 }

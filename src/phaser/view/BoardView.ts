@@ -2,7 +2,8 @@
  * BoardView (neon): the board is one DynamicTexture of rounded glowing tiles (tinted white tile + additive hot core),
  * composited by a small shader that adds a slow shimmer wave and a pulse on cells reachable by active lane colors
  * (a second DynamicTexture is the reachable mask). Tiles are stamped only on change: a claim clears just that cell.
- * Around it: a translucent panel and a thin neon frame (the goo rides it). Keys are crystal icons with a sparkle.
+ * Around it: a translucent panel and a thin neon frame (the goo rides it). Keys are crystal icons in the color of the
+ * cell they sit on (drain that color to collect them), with a sparkle.
  * Claimed tiles "melt" (pooled squash + additive flash). `showHologram` ghosts the original image back in (win).
  *
  * Public interface (kept from the gray box):
@@ -11,6 +12,7 @@
  *   onClaimed(event)          remove the claimed cell instantly (the GooStream carries the visual)
  *   update(dtMs?)             per-frame housekeeping (redraw if dirty, melts, sparkles)
  *   cellCenter(x, y)          logical pixel center of a cell
+ *   keyCenterFor(podId)       center of the cell holding the key that unlocks `podId`, or null
  *   setDistProvider(fn)/setShowDist(on)   dev overlay
  *   destroy()
  * Added: frameRect(), flare(ms), showHologram(ms), setOverlayGlyphs(on).
@@ -187,6 +189,12 @@ export class BoardView {
 
     cellCenter(x: number, y: number): Point2 {
         return cellCenter(this.layout, x, y);
+    }
+
+    /** Center of the cell holding the (uncollected) key that unlocks `podId`, or null. */
+    keyCenterFor(podId: number): Point2 | null {
+        const k = this.keys.find((key) => key.podId === podId);
+        return k ? this.cellCenter(k.x, k.y) : null;
     }
 
     /** The neon frame rectangle (goo rides along it). */
@@ -471,17 +479,21 @@ export class BoardView {
         const c = this.cellCenter(k.x, k.y);
         const size = Math.max(12, this.cell);
         const labels = this.cell >= MIN_LABEL_CELL;
-        const glow = this.scene.add.image(c.x, c.y, TEX.glow).setBlendMode(BlendModes.ADD).setTint(COLORS.key).setScale((size * 1.6) / 64).setAlpha(0.6).setDepth(DEPTH.board + 0.3);
+        const color = this.cells[k.y * this.width + k.x]!;
+        const art = color === EMPTY ? undefined : this.art[color];
+        const core = art?.core ?? COLORS.key;
+        const glowColor = art?.glow ?? COLORS.key;
+        const glow = this.scene.add.image(c.x, c.y, TEX.glow).setBlendMode(BlendModes.ADD).setTint(glowColor).setScale((size * 1.6) / 64).setAlpha(0.6).setDepth(DEPTH.board + 0.3);
         const icon = this.scene.add.graphics().setDepth(DEPTH.board + 0.32);
-        icon.fillStyle(0x140c00, 0.9);
+        icon.fillStyle(0x07041a, 0.8);
         icon.fillCircle(c.x, c.y, size * 0.46);
-        icon.lineStyle(Math.max(1.5, size * 0.06), COLORS.key, 0.9);
+        icon.lineStyle(Math.max(1.5, size * 0.06), core, 0.95);
         icon.strokeCircle(c.x, c.y, size * 0.46);
-        drawCrystalKey(icon, c.x, c.y - (labels ? size * 0.08 : 0), size * 0.62);
-        const sparkle = this.scene.add.image(c.x + size * 0.3, c.y - size * 0.3, TEX.star4).setBlendMode(BlendModes.ADD).setTint(0xfff7b0).setScale((size * 0.7) / 48).setDepth(DEPTH.board + 0.34);
+        drawCrystalKey(icon, c.x, c.y - (labels ? size * 0.08 : 0), size * 0.62, glowColor);
+        const sparkle = this.scene.add.image(c.x + size * 0.3, c.y - size * 0.3, TEX.star4).setBlendMode(BlendModes.ADD).setTint(0xffffff).setScale((size * 0.7) / 48).setDepth(DEPTH.board + 0.34);
         let label: GameObjects.Text | null = null;
         if (labels) {
-            label = ui(this.scene.add.text(c.x, c.y + size * 0.27, keyLetter(k.id), font(Math.max(10, size * 0.26), '#ffe600')).setOrigin(0.5).setDepth(DEPTH.board + 0.36));
+            label = ui(this.scene.add.text(c.x, c.y + size * 0.27, keyLetter(k.id), { ...font(Math.max(10, size * 0.26), '#ffffff'), stroke: '#05030c', strokeThickness: 3 }).setOrigin(0.5).setDepth(DEPTH.board + 0.36));
         }
         return { id: k.id, glow, icon, sparkle, label, phase: Math.random() * Math.PI * 2 };
     }
@@ -586,12 +598,12 @@ export class BoardView {
     }
 }
 
-/** A faceted crystal key (gold), width `size`. */
-function drawCrystalKey(g: GameObjects.Graphics, cx: number, cy: number, size: number): void {
+/** A faceted crystal key in `color`, width `size`. */
+function drawCrystalKey(g: GameObjects.Graphics, cx: number, cy: number, size: number, color: number): void {
     const r = size * 0.24;
     const bx = cx - size * 0.24;
     const shaft = Math.max(2, size * 0.13);
-    g.fillStyle(COLORS.key, 1);
+    g.fillStyle(color, 1);
     // Diamond bow.
     g.fillTriangle(bx - r, cy, bx, cy - r, bx + r, cy);
     g.fillTriangle(bx - r, cy, bx, cy + r, bx + r, cy);

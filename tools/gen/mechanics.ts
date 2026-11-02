@@ -88,7 +88,10 @@ export function addLock(board: Board, plan: Plan, rng: Rng): boolean {
         candidates.push(i);
     }
     rng.shuffle(candidates);
-    const keyId = plan.keys.reduce((m, k) => Math.max(m, k.id), 0) + 1;
+    // Lowest free id, so a level's keys read A, B, C.
+    const used = new Set(plan.keys.map((k) => k.id));
+    let keyId = 0;
+    while (used.has(keyId)) keyId++;
     for (const i of candidates.slice(0, 10)) {
         const j = steps[i];
         const weights: number[] = [];
@@ -137,6 +140,16 @@ export function addHidden(plan: Plan, share: number, rng: Rng): number {
         n++;
     });
     return n;
+}
+
+/** A copy of `plan` with exactly `round(share × pods)` plain non-front pods hidden (fewer if not enough qualify). */
+export function hideShare(plan: Plan, share: number, rng: Rng): Plan {
+    const out = clonePlan(plan);
+    const pos = positions(out);
+    const options = out.order.map((_, i) => i).filter((i) => plain(out, i) && pos[i] !== 0);
+    const want = Math.min(options.length, Math.round(share * out.order.length));
+    for (const i of rng.shuffle(options).slice(0, want)) out.order[i].hidden = true;
+    return out;
 }
 
 export interface Placement {

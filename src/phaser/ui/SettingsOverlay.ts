@@ -1,7 +1,7 @@
 /**
  * Settings panel content for `ModalOverlay` (shared by the level select cog and the pause menu).
  * Rows: music volume, SFX volume (big -/+ steppers over a 10-segment bar), reduced effects, color-blind glyphs,
- * default game speed. Every change goes through `runActions.updateSettings`, which saves it and (via
+ * default game speed, unlock all levels. Every change goes through `runActions.updateSettings`, which saves it and (via
  * `bootstrap.ts` / the Play scene) applies it live.
  */
 import type { GameObjects, Scene } from 'phaser';
@@ -20,7 +20,7 @@ const SEG_W = 20;
 const SEG_GAP = 4;
 const BAR_W = STEPS * SEG_W + (STEPS - 1) * SEG_GAP;
 
-export const SETTINGS_HEIGHT = SLIDER_H * 2 + TOGGLE_H * 3 + 8;
+export const SETTINGS_HEIGHT = SLIDER_H * 2 + TOGGLE_H * 4 + 8;
 
 type VolumeKey = 'music' | 'sfx';
 
@@ -92,6 +92,7 @@ function buildRows(scene: Scene, panel: GameObjects.Container, top: number): Des
     toggleRow('REDUCED FX', () => onOff(getRunState().settings.reducedFx), () => ({ reducedFx: !getRunState().settings.reducedFx }));
     toggleRow('COLOR-BLIND', () => onOff(getRunState().settings.colorBlind), () => ({ colorBlind: !getRunState().settings.colorBlind }));
     toggleRow('GAME SPEED', () => `${getRunState().settings.speed}x`, () => ({ speed: getRunState().settings.speed === 1 ? 2 : 1 }));
+    toggleRow('UNLOCK ALL', () => onOff(getRunState().settings.unlockAll), () => ({ unlockAll: !getRunState().settings.unlockAll }));
 
     refresh();
     return things;

@@ -182,7 +182,7 @@ export function runOne(opts: RunOptions): RunResult {
         `pods     ${pods.length} in ${level.columns.length} columns (${level.columns.map((c) => c.length).join('/')}), ${level.lanes} lanes, tick ${level.tickMs}ms, ${level.solution.length} solution taps`,
         `mechanics ${mech}`,
         `knobs    (start) ${knobsSummary(result.knobs)}`,
-        `stats    greedy ${pct(stats.greedyWinRate)}, random ${pct(stats.randomWinRate)}, deadEnd ${stats.deadEndRatio.toFixed(3)}, ` +
+        `stats    smart ${pct(stats.smartWinRate)}, greedy ${pct(stats.greedyWinRate)}, random ${pct(stats.randomWinRate)}, deadEnd ${stats.deadEndRatio.toFixed(3)}, ` +
             `minLanes ${stats.minLanes}${stats.minLanesProven === false ? '(budget)' : ''}/${level.lanes}, branching ${stats.branching.toFixed(2)}, ` +
             `overflow ${stats.overflowPods}, peakStalled ${stats.peakStalled}, hidden ${stats.hiddenShare.toFixed(2)}`,
         `fast     greedy ${pct(stats.fastGreedyWinRate ?? 0)}, random ${pct(stats.fastRandomWinRate ?? 0)} (tap-whenever-possible; settled greedy ${pct(stats.greedyWinRate)}, random ${pct(stats.randomWinRate)})`,

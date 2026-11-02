@@ -213,6 +213,7 @@ function html(input: ReportInput, imgs: { original: string; simple: string; neon
     const trap = isFastPlayTrap(s);
     const statRows: [string, string][] = [
         ['difficulty', `${level.meta.difficulty.toFixed(3)} <span class="dim">(target ${level.meta.targetDifficulty.toFixed(2)})</span>`],
+        ['smartWinRate', pct(s.smartWinRate)],
         ['greedyWinRate', pct(s.greedyWinRate)],
         ['randomWinRate', pct(s.randomWinRate)],
         ['fastGreedyWinRate', s.fastGreedyWinRate === undefined ? '-' : `${pct(s.fastGreedyWinRate)}${trap ? ' <span class="badge trap">FAST-PLAY TRAP</span>' : ''}`],

@@ -11,34 +11,35 @@
   "lanes": 3,
   "tickMs": 90,
   "columns": [
-    [{"id":3,"color":3,"capacity":2},{"id":8,"color":1,"capacity":11},{"id":11,"color":3,"capacity":2}],
-    [{"id":4,"color":1,"capacity":35},{"id":6,"color":1,"capacity":8},{"id":7,"color":0,"capacity":73},{"id":10,"color":3,"capacity":5},{"id":13,"color":2,"capacity":7}],
-    [{"id":1,"color":0,"capacity":46},{"id":2,"color":0,"capacity":37},{"id":5,"color":2,"capacity":6},{"id":9,"color":2,"capacity":6},{"id":12,"color":2,"capacity":6}]
+    [{"id":1,"color":1,"capacity":8},{"id":6,"color":3,"capacity":4},{"id":9,"color":2,"capacity":4},{"id":10,"color":2,"capacity":8},{"id":13,"color":0,"capacity":32},{"id":16,"color":2,"capacity":5}],
+    [{"id":5,"color":0,"capacity":38},{"id":7,"color":1,"capacity":15},{"id":8,"color":1,"capacity":16},{"id":12,"color":0,"capacity":52},{"id":15,"color":0,"capacity":34}],
+    [{"id":2,"color":1,"capacity":11},{"id":3,"color":1,"capacity":4},{"id":4,"color":2,"capacity":8},{"id":11,"color":3,"capacity":3},{"id":14,"color":3,"capacity":2}]
   ],
-  "solution": [2,2,0,1,2,1,1,0,2,1,0,2,1],
+  "solution": [0,2,2,2,1,0,1,1,0,0,2,1,0,2,1,0],
   "meta": {
     "seed": 1061067550,
     "targetDifficulty": 0.21,
-    "difficulty": 0.176,
+    "difficulty": 0.197,
     "stats": {
-      "randomWinRate": 0.533,
-      "greedyWinRate": 1,
+      "randomWinRate": 0.4,
+      "greedyWinRate": 0.93,
+      "smartWinRate": 0.783,
       "deadEndRatio": 0,
       "minLanes": 1,
-      "branching": 2.77,
+      "branching": 2.81,
       "hiddenShare": 0,
       "lockCount": 0,
       "pairCount": 0,
-      "overflowPods": 0,
-      "peakStalled": 0,
-      "fastGreedyWinRate": 0.975,
-      "fastRandomWinRate": 0.645,
-      "maxPodCapacity": 73,
-      "medianPodCapacity": 7,
-      "longestDrainSec": 6.57,
+      "overflowPods": 2,
+      "peakStalled": 1,
+      "fastGreedyWinRate": 0.89,
+      "fastRandomWinRate": 0.63,
+      "maxPodCapacity": 52,
+      "medianPodCapacity": 8,
+      "longestDrainSec": 4.68,
       "minLanesProven": true
     },
-    "generatorVersion": "gen-2.0.0",
+    "generatorVersion": "gen-3.1.0",
     "sourceHash": "f969158b4ff48c12"
   }
 }

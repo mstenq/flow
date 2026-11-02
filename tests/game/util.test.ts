@@ -90,7 +90,7 @@ describe('state store', () => {
     });
 
     test('run state: current level, completion, settings', () => {
-        const defaults = { sfx: 0.8, music: 0.6, reducedFx: false, colorBlind: false, speed: 1 as const };
+        const defaults = { sfx: 0.8, music: 0.6, reducedFx: false, colorBlind: false, speed: 1 as const, unlockAll: false };
         expect(getRunState()).toEqual({ currentLevelId: null, completed: {}, attempts: {}, settings: defaults, firstSeen: {}, unlockAll: false });
         runActions.setCurrentLevel('heart');
         runActions.recordAttempt('heart');

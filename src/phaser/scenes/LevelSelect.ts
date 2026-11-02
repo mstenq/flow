@@ -18,7 +18,7 @@ import { currentLevelIn, formatTime } from '@game/progress';
 import { LOGICAL_H, LOGICAL_W } from '@game/layout';
 import { SELECT, TILE_W, clampScroll, hitRect, isTap, layoutSelect, maxScroll, nearestRect, scrollFromTrack, scrollThumb, scrollToCenter, visibleRange } from '@game/selectLayout';
 import type { Rect, SelectLayout } from '@game/selectLayout';
-import { getRunState, isLevelUnlocked } from '@game/state';
+import { getRunState, isLevelUnlocked, onRunChange } from '@game/state';
 import { fetchLevel, loadLevelList } from '../levels';
 import { COLORS, font } from '../theme';
 import { audioDirector } from '../audio';
@@ -121,6 +121,9 @@ export class LevelSelect extends Scene {
     private toast: Toast | null = null;
     private scrollZone: GameObjects.Zone | null = null;
     private offFx: (() => void) | null = null;
+    private offRun: (() => void) | null = null;
+    /** Last `unlockAll` seen, so only a real flip rebinds the tiles. */
+    private unlockAll = false;
     private scroll = 0;
     private vel = 0;
     private drag: Drag | null = null;
@@ -170,6 +173,8 @@ export class LevelSelect extends Scene {
         this.toast = new Toast(this, LOGICAL_W / 2, 150);
         this.modal = new ModalOverlay(this);
         this.offFx = onReducedFxChange(() => this.views.forEach((v) => this.animate(v)));
+        this.unlockAll = getRunState().unlockAll;
+        this.offRun = onRunChange(() => this.onRunChanged());
         this.events.once('shutdown', () => this.teardown());
         const loading = ui(this.add.text(LOGICAL_W / 2, 640, 'Loading...', font(24, COLORS.dim)).setOrigin(0.5));
         void loadLevelList().then((list) => {
@@ -224,6 +229,15 @@ export class LevelSelect extends Scene {
         const modal = this.modal;
         if (!modal || modal.isOpen || this.leaving) return;
         modal.show(settingsContent(this, () => modal.hide()));
+    }
+
+    /** The unlock-all setting flipped (settings overlay): rebind every tile so locks and labels update. */
+    private onRunChanged(): void {
+        const { unlockAll } = getRunState();
+        if (unlockAll === this.unlockAll) return;
+        this.unlockAll = unlockAll;
+        for (const view of [...this.bound.values()]) this.unbind(view);
+        this.dirty = true;
     }
 
     private subtitle(): string {
@@ -584,7 +598,7 @@ export class LevelSelect extends Scene {
         const i = hitRect(this.all.slice(start, end), x, contentY);
         const tile = i < 0 ? undefined : this.bound.get(start + i);
         if (!tile) return;
-        if (tile.state === 'locked' && !getRunState().unlockAll) {
+        if (tile.state === 'locked') {
             this.deny(tile);
             return;
         }
@@ -701,6 +715,8 @@ export class LevelSelect extends Scene {
         this.input.off('wheel', this.onWheel, this);
         this.offFx?.();
         this.offFx = null;
+        this.offRun?.();
+        this.offRun = null;
         this.toast?.destroy();
         this.toast = null;
         this.modal?.destroy();

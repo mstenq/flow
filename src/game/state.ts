@@ -19,7 +19,7 @@ export interface RunState {
     attempts: Readonly<Record<string, number>>;
     settings: Settings;
     firstSeen: Readonly<Record<string, true>>;
-    /** `?unlockall=1`: treat every level as unlocked (not saved). */
+    /** Every level unlocked: the "unlock all" setting or `?unlockall=1` (not saved). */
     unlockAll: boolean;
 }
 
@@ -51,7 +51,7 @@ const runFromStore = (currentLevelId: string | null): RunState => ({
     attempts: store.data.attempts,
     settings: store.data.settings,
     firstSeen: store.data.firstSeen,
-    unlockAll: store.unlockAll,
+    unlockAll: store.unlocksAll,
 });
 
 const initialRound = (): RoundState => ({

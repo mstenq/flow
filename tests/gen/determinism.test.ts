@@ -64,9 +64,9 @@ describe('determinism', () => {
             expect(run('b')).toBe(first);
             const level = JSON.parse(first);
             expect(level.meta.targetDifficulty).toBe(0.15);
-            // Easy levels carry no mechanics.
-            expect(level.keys).toEqual([]);
-            expect(level.columns.flat().some((p: { hidden?: boolean; link?: number }) => p.hidden || p.link)).toBe(false);
+            // Easy levels never hide pods (locks / pairs only appear when needed to make a level losable).
+            expect(level.columns.flat().some((p: { hidden?: boolean }) => p.hidden)).toBe(false);
+            expect(level.meta.stats.smartWinRate).toBeLessThanOrEqual(0.95);
         } finally {
             rmSync(dir, { recursive: true, force: true });
         }

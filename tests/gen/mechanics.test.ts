@@ -4,7 +4,7 @@ import { Sim } from '@game/sim';
 import { replay, toLevel, traceSolution } from '../../tools/gen/board';
 import { construct } from '../../tools/gen/construct';
 import { sampleKnobs } from '../../tools/gen/knobs';
-import { applyMechanics } from '../../tools/gen/mechanics';
+import { applyMechanics, hideShare } from '../../tools/gen/mechanics';
 import { planFromLayout, stepOfPod, toLayout } from '../../tools/gen/plan';
 import { fixtureBoards } from './fixtures';
 
@@ -40,6 +40,21 @@ describe('mechanics', () => {
         expect(locks).toBeGreaterThan(30);
         expect(pairs).toBeGreaterThan(20);
         expect(hidden).toBeGreaterThan(20);
+    });
+
+    test('hideShare hides an exact share of plain pods, never a front pod, and keeps the solution', () => {
+        for (let seed = 0; seed < 20; seed++) {
+            const { board, placed } = build(seed);
+            const bare = { ...placed.plan, order: placed.plan.order.map((p) => ({ ...p, hidden: undefined })) };
+            const plan = hideShare(bare, 0.25, new Rng(seed));
+            const layout = toLayout(plan)!;
+            const pods = layout.columns.flat();
+            const hidden = pods.filter((p) => p.hidden).length;
+            const eligible = layout.columns.reduce((n, col) => n + col.slice(1).filter((p) => p.lock === undefined && p.link === undefined).length, 0);
+            expect(hidden).toBe(Math.min(eligible, Math.round(0.25 * pods.length)));
+            for (const col of layout.columns) expect(col[0].hidden).toBeUndefined();
+            expect(replay(toLevel(board, layout, { id: 'h', name: 'h' })).won).toBe(true);
+        }
     });
 
     test('every key is drained strictly before its locked pod is needed', () => {

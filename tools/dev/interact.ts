@@ -6,7 +6,7 @@
  *        `reload` (reload the page; localStorage survives), `storage` (prints the saved progress JSON),
  *        `eval:<js expression>` (evaluate in the page and print the JSON result; `__FLOW__` is available in dev),
  *        `hide` / `show` (fake the page being hidden / visible: fires `visibilitychange`),
- *        `resize:<WxH>` (resize the viewport).
+ *        `resize:<WxH>` (resize the viewport), `down:<x>,<y>` / `up` (press and hold, then release the mouse).
  * Env: `FLOW_PROD=1` tests the production build in dist/ (no `__FLOW__`, so `eval`/`fps`/`scene` steps are limited).
  * Example: bun tools/dev/interact.ts "level=dev-basic&autoplay=random&speed=2" wait:15000 shot:/tmp/a.png click:360,680 wait:1500 shot:/tmp/b.png
  */
@@ -94,6 +94,12 @@ try {
         } else if (cmd === 'resize') {
             const [w, h] = arg.split('x').map(Number) as [number, number];
             await page.setViewport({ width: w, height: h });
+        } else if (cmd === 'down') {
+            const [x, y] = arg.split(',').map(Number) as [number, number];
+            await page.mouse.move(x, y);
+            await page.mouse.down();
+        } else if (cmd === 'up') {
+            await page.mouse.up();
         } else if (cmd === 'click') {
             const [x, y] = arg.split(',').map(Number) as [number, number];
             await page.mouse.click(x, y);

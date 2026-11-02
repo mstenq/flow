@@ -46,3 +46,16 @@ The generator must **never fail on too many colors**. It must simplify automatic
 - When working in parallel with another agent, stay inside the paths you own. If you need a change outside them, report it instead of making it.
 - Guard clauses, no inline `import('x').T` types, `import type` at the top (see AGENTS.md).
 - Finish by running `bun test` + `bun run typecheck` (scoped to your area if another agent is mid-edit elsewhere) and report the results honestly.
+
+## Difficulty model (gen-3, overrides plan/02-generator.md §5 score)
+Playtesting showed the gen-2 levels were easy: the score leaned on `randomWinRate`, but nobody taps a pod whose color
+is completely buried, and a player who taps "whatever is showing" won most levels every time.
+- **`smartWinRate`** (new stat): a sensible player that taps pods that fill completely first, then pods with anything
+  reachable, then the rest (random within a tier). The score is `0.55·(1-smart) + 0.25·(1-greedy) + 0.10·(1-random) + 0.10·deadEndRatio`.
+  Rough guide: 0.15 ≈ smart wins 90%+, 0.5 ≈ 55%, 0.8 ≈ 20%. The targets in `levels-src/levels.json` are unchanged.
+- **Every level must be losable:** the search heavily penalizes a layout the smart player loses less than 5% of the time
+  (`MIN_SMART_LOSS` in `generate.ts`), screens and climbs longer until it finds one.
+- **Structure:** knobs use `target + STRUCTURE_BOOST` (fewer lanes, more stalls), pairs are allowed from 0.25 and up to
+  3 per level. Locks and colors are unchanged (colors are limited by the source art).
+- **Hidden pods are not part of the score.** They are dealt after the search at a fixed share (`hiddenShareFor`:
+  0 below 0.25, then ~0.22–0.27, the same as gen-2 levels had). The climb never hides or unhides.

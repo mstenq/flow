@@ -34,6 +34,8 @@ export interface MutationRules {
     maxLanes: number;
     /** Hard cap on pod capacity (undefined = none). */
     maxPod?: number;
+    /** Set once the climb relaxed the mechanic caps to make an unlosable level losable. */
+    rescue?: boolean;
 }
 
 /** Which mutations to try, weighted by whether the level should get harder (+1) or easier (-1). */

@@ -2,13 +2,15 @@
  * QueueView (neon): per column the front pod plus the next 3 as glass capsules (deep body, colored rim light,
  * color-blind glyph, crisp capacity number on the UI camera), a "+n" badge for deeper pods, glitching "?" for
  * hidden pods, a hex-lock with chains of light for locked pods, crackling lightning tethers for linked pairs,
- * and a slide-up tween when a pod leaves. Tapping anywhere in a column strip taps its front pod (a Zone per column).
+ * and a slide-up tween when a pod leaves. Tapping anywhere in a column strip taps its front pod (a Zone per column),
+ * except pressing a locked pod: that holds it (`onLockHold(podId)` until release, `onLockHold(null)`) so the scene can
+ * point at its key. A locked front pod is also tapped (the denial feedback still plays).
  *
  * Positions are derived from the snapshot (`sync`), so the view cannot drift; events only add flourishes.
  * Unlocks wait for the key flight: `holdLock(podId)` keeps the lock drawn until `releaseLock(podId)` shatters it.
  *
  * Public interface (kept from the gray box):
- *   constructor(scene, layout, palette, { onColumnTap, fx? })
+ *   constructor(scene, layout, palette, { onColumnTap, onLockHold?, fx? })
  *   sync(columns)                 full refresh from `ViewState.columns`
  *   onTapped(podIds, laneCenters) the pods launch on an arc to their lane slots
  *   onUnlocked(podId)             lock shatters + reveal (deferred while a key is flying to it)
@@ -35,6 +37,8 @@ import { capsuleRadius, drawColorPod, drawHiddenPod, drawLightning, drawLinkRing
 
 export interface QueueViewOptions {
     onColumnTap: (column: number) => void;
+    /** A locked pod is pressed (its id) or released (null). */
+    onLockHold?: (podId: number | null) => void;
     fx?: Fx;
 }
 
@@ -96,12 +100,14 @@ export class QueueView {
     private linkMs = 0;
     private glitchMs = 0;
     private lastTime = 0;
+    private holding: number | null = null;
+    private readonly onRelease = () => this.release();
 
     constructor(
         private readonly scene: Scene,
         private readonly layout: Layout,
         palette: number[],
-        opts: QueueViewOptions,
+        private readonly opts: QueueViewOptions,
     ) {
         this.art = paletteArtFromNums(palette);
         this.fx = opts.fx ?? null;
@@ -114,10 +120,12 @@ export class QueueView {
             const r = q.hitRects[col]!;
             const zone = scene.add.zone(r.x + r.w / 2, r.y + r.h / 2, r.w, r.h).setDepth(DEPTH.queue + 3);
             zone.setInteractive({ useHandCursor: true });
-            zone.on('pointerdown', () => opts.onColumnTap(col));
+            zone.on('pointerdown', (_p: unknown, _lx: number, localY: number) => this.press(col, r.y + localY));
             this.zones.push(zone);
             this.badges.push(ui(scene.add.text(cx, q.badgeY, '', font(22, COLORS.dim)).setOrigin(0.5).setDepth(DEPTH.queue)));
         });
+        scene.input.on('pointerup', this.onRelease);
+        scene.input.on('pointerupoutside', this.onRelease);
     }
 
     get flyingCount(): number {
@@ -126,6 +134,7 @@ export class QueueView {
 
     /** Enable or disable the column tap zones (overlays do this too, by blocking input above). */
     setInputEnabled(enabled: boolean): void {
+        if (!enabled) this.release();
         for (const z of this.zones) {
             if (enabled) z.setInteractive({ useHandCursor: true });
             else z.disableInteractive();
@@ -300,6 +309,8 @@ export class QueueView {
     }
 
     destroy(): void {
+        this.scene.input.off('pointerup', this.onRelease);
+        this.scene.input.off('pointerupoutside', this.onRelease);
         for (const pv of this.pods.values()) this.destroyPod(pv);
         this.pods.clear();
         for (const z of this.zones) z.destroy();
@@ -310,6 +321,35 @@ export class QueueView {
     }
 
     // ------------------------------------------------------------------ internals
+
+    /** Press at layout-space `y` in `column`: hold a locked pod, else tap the column. */
+    private press(column: number, y: number): void {
+        const pv = this.podAt(column, y);
+        if (!pv || !pv.locked || pv.hidden) {
+            this.opts.onColumnTap(column);
+            return;
+        }
+        this.holding = pv.id;
+        this.opts.onLockHold?.(pv.id);
+        if (pv.index === 0) this.opts.onColumnTap(column);
+    }
+
+    private release(): void {
+        if (this.holding === null) return;
+        this.holding = null;
+        this.opts.onLockHold?.(null);
+    }
+
+    /** The visible pod in `column` whose slot contains layout-space `y`, or null. */
+    private podAt(column: number, y: number): PodView | null {
+        const half = this.layout.queue.podH / 2;
+        for (const pv of this.pods.values()) {
+            if (pv.column !== column) continue;
+            const s = podSlot(this.layout, column, pv.index);
+            if (Math.abs(y - s.y) <= half * s.scale) return pv;
+        }
+        return null;
+    }
 
     private flushReveals(): void {
         if (this.pending.size === 0) return;

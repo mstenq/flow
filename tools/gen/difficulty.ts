@@ -5,6 +5,9 @@
  * - greedyWinRate  share won by a "reasonable" player: prefers taps whose color has something reachable
  *                  (for a pair: either color), random among those, else random. Exact counting of reachable
  *                  cells vs capacity is not assumed (a human can't do that at a glance on a 48×48 board).
+ * - smartWinRate   share won by a sensible player (closest to how people actually play): pods that fill
+ *                  completely right now first, then pods with something reachable, then the rest; random within
+ *                  a tier. This is what the score leans on: a level this player can't lose has no real traps.
  * - deadEndRatio   trap density along the solution: at each step, the share of legal taps whose resulting state
  *                  is proven dead (budgeted solver; states it can't decide are left out). Budget-aware: steps
  *                  where nothing could be decided don't count.
@@ -43,15 +46,19 @@ export interface Measurement {
     ms: number;
 }
 
-type Policy = 'random' | 'greedy';
+type Policy = 'random' | 'greedy' | 'smart';
 
-/** Policy choice among legal taps. Greedy prefers pods with something reachable, random tie-break. */
+/**
+ * Policy choice among legal taps, random within the best tier. Greedy: anything reachable beats nothing reachable.
+ * Smart: fills completely now, then something reachable, then nothing reachable (`tapScore` tiers).
+ */
 function pickTap(sim: Sim, legal: number[], policy: Policy, rng: Rng): number {
     if (policy === 'random' || legal.length === 1) return legal[rng.below(legal.length)];
-    let best = 2;
+    let best = 3;
     let options: number[] = [];
     for (const c of legal) {
-        const tier = tapScore(sim, c).tier === 2 ? 1 : 0;
+        const raw = tapScore(sim, c).tier;
+        const tier = policy === 'smart' ? raw : raw === 2 ? 1 : 0;
         if (tier < best) {
             best = tier;
             options = [c];
@@ -115,10 +122,12 @@ export function isFastPlayTrap(stats: DifficultyStats): boolean {
     return stats.greedyWinRate >= 0.5 && stats.fastGreedyWinRate < 0.5 * stats.greedyWinRate;
 }
 
+const POLICY_SALT: Record<Policy, number> = { random: 0x52414e44, greedy: 0x47524545, smart: 0x534d5254 };
+
 export function winRate(compiled: CompiledLevel, policy: Policy, rollouts: number, seed: number): number {
     const base = Sim.fromCompiled(compiled, { events: false });
     base.settle();
-    const rng = new Rng(seed ^ (policy === 'random' ? 0x52414e44 : 0x47524545));
+    const rng = new Rng(seed ^ POLICY_SALT[policy]);
     let wins = 0;
     for (let i = 0; i < rollouts; i++) if (rollout(base, policy, rng)) wins++;
     return wins / rollouts;
@@ -172,22 +181,15 @@ export function minLanes(level: LevelData, budget: number): { lanes: number; pro
     return { lanes: best, proven: true };
 }
 
-/** 0..1 load from mechanics: hidden share, locks, pairs. */
-export function mechanicsLoad(stats: DifficultyStats): number {
-    return Math.min(1, 0.6 * stats.hiddenShare + 0.2 * stats.lockCount + 0.25 * stats.pairCount);
-}
-
-/** Concave curve on loss rates: losing 40% of reasonable attempts already feels hard. */
-export const LOSS_CURVE = 0.7;
-
 /**
- * Score in 0..1: the plan's weights on curved loss rates.
- *   0.45·f(1-greedy) + 0.30·f(1-random) + 0.15·deadEndRatio + 0.10·mechanicsLoad,   f(x) = x^0.7
+ * Score in 0..1, driven by how often sensible players lose (a uniformly random tapper loses almost anything, so it
+ * only counts a little). Hidden pods are deliberately left out: they make planning harder for a person but don't
+ * change any policy's odds, and leaving them out keeps the search from piling them on.
+ *   0.55·(1-smart) + 0.25·(1-greedy) + 0.10·(1-random) + 0.10·deadEndRatio
+ * Rough guide: 0.15 ≈ smart wins 90%+, 0.5 ≈ 55%, 0.8 ≈ 20%.
  */
 export function difficultyScore(stats: DifficultyStats): number {
-    const f = (x: number) => Math.max(0, x) ** LOSS_CURVE;
-    const raw =
-        0.45 * f(1 - stats.greedyWinRate) + 0.3 * f(1 - stats.randomWinRate) + 0.15 * stats.deadEndRatio + 0.1 * mechanicsLoad(stats);
+    const raw = 0.55 * (1 - stats.smartWinRate) + 0.25 * (1 - stats.greedyWinRate) + 0.1 * (1 - stats.randomWinRate) + 0.1 * stats.deadEndRatio;
     return Math.max(0, Math.min(1, raw));
 }
 
@@ -199,6 +201,7 @@ export function measure(level: LevelData, opts: MeasureOptions): Measurement {
     const stats: DifficultyStats = {
         randomWinRate: winRate(compiled, 'random', opts.rollouts, opts.seed),
         greedyWinRate: winRate(compiled, 'greedy', opts.rollouts, opts.seed),
+        smartWinRate: winRate(compiled, 'smart', opts.rollouts, opts.seed),
         deadEndRatio: opts.trapBudget > 0 ? deadEndRatio(compiled, level.solution, opts.trapBudget) : 0,
         minLanes: level.lanes,
         branching: trace.legalBefore.length === 0 ? 0 : trace.legalBefore.reduce((a, b) => a + b, 0) / trace.legalBefore.length,
@@ -230,6 +233,7 @@ export function roundStats(stats: DifficultyStats): DifficultyStats {
     const out: DifficultyStats = {
         randomWinRate: r(stats.randomWinRate),
         greedyWinRate: r(stats.greedyWinRate),
+        smartWinRate: r(stats.smartWinRate),
         deadEndRatio: r(stats.deadEndRatio),
         minLanes: stats.minLanes,
         branching: r(stats.branching, 2),

@@ -9,7 +9,7 @@ import { cellColor, cellsToString } from '@game/grid';
 import { Sim } from '@game/sim';
 
 /** Bump whenever generator output for the same inputs changes (invalidates the gen:all cache). */
-export const GENERATOR_VERSION = 'gen-2.0.0';
+export const GENERATOR_VERSION = 'gen-3.1.0';
 
 export interface Board {
     width: number;
@@ -33,6 +33,7 @@ export interface Layout {
 export const EMPTY_STATS: DifficultyStats = {
     randomWinRate: 0,
     greedyWinRate: 0,
+    smartWinRate: 0,
     deadEndRatio: 0,
     minLanes: 0,
     branching: 0,

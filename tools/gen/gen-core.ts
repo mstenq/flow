@@ -50,7 +50,7 @@ export function processGenJob(job: GenJob): GenResult {
         const s = m.stats;
         const row =
             `${job.id.padEnd(16)} ${(ms / 1000).toFixed(1).padStart(5)}s   target ${m.targetDifficulty.toFixed(2)}  got ${m.difficulty.toFixed(3)}` +
-            `  greedy ${(s.greedyWinRate * 100).toFixed(0).padStart(3)}%  random ${(s.randomWinRate * 100).toFixed(0).padStart(3)}%` +
+            `  smart ${(s.smartWinRate * 100).toFixed(0).padStart(3)}%  greedy ${(s.greedyWinRate * 100).toFixed(0).padStart(3)}%  random ${(s.randomWinRate * 100).toFixed(0).padStart(3)}%` +
             `  fast ${((s.fastGreedyWinRate ?? 0) * 100).toFixed(0).padStart(3)}%/${((s.fastRandomWinRate ?? 0) * 100).toFixed(0).padStart(3)}%${isFastPlayTrap(s) ? ' TRAP' : ''}` +
             `  maxPod ${s.maxPodCapacity} drain ${(s.longestDrainSec ?? 0).toFixed(1)}s` +
             `  colors ${level.palette.length}  lanes ${level.lanes}  pods ${level.columns.flat().length}`;
