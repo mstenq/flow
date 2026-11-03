@@ -11,12 +11,14 @@ export interface Point {
     y: number;
 }
 
-/** A pod in a queue column. At most one of `hidden` / `lock` / `link` is set (no combined mechanics in v1). */
+/** A pod in a queue column. At most one of `hidden` / `lock` / `link` / `pushy` is set (no combined mechanics in v1). */
 export interface PodSpec {
     id: number;
     color: number;
     capacity: number;
     hidden?: true;
+    /** Drops into a free lane by itself as soon as it is at the front of its column (see `Sim`). */
+    pushy?: true;
     /** Key id that unlocks this pod. */
     lock?: number;
     /** Pod id of the linked partner (must link back). */
@@ -41,6 +43,8 @@ export interface DifficultyStats {
     hiddenShare: number;
     lockCount: number;
     pairCount: number;
+    /** Pushy pods in the level. */
+    pushyCount?: number;
     /** Solution taps whose pod stalls (does not complete in its own settle). Generator diagnostic. */
     overflowPods?: number;
     /** Most lanes left stalled after any settle along the solution. Generator diagnostic. */
@@ -102,6 +106,8 @@ export type SimEvent =
     | { t: 'keyCollected'; keyId: number; x: number; y: number; podId: number }
     | { t: 'unlocked'; podId: number }
     | { t: 'revealed'; podId: number }
+    /** A pushy pod at a column front dropped into `lane` by itself (like a tap, but not the player's). */
+    | { t: 'pushed'; podId: number; lane: number }
     /** Emitted per pod; linked pairs emit both in the same tick. */
     | { t: 'podCompleted'; podId: number; lane: number }
     | { t: 'won' }
@@ -143,6 +149,8 @@ export interface PodState {
     lock: number | null;
     /** Partner pod id for linked pods, else null. */
     link: number | null;
+    /** Drops into a lane by itself once it reaches the front. */
+    pushy: boolean;
 }
 
 export interface KeyView {

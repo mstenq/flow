@@ -5,7 +5,7 @@ import { parseCells } from './grid';
 import { Zobrist } from './hash';
 
 /** Bump when sim rules change; `bun run verify` re-checks levels. */
-export const RULES_VERSION = 1;
+export const RULES_VERSION = 2;
 /** Largest supported board dimension (the generator reads PNGs up to this size too). Bigger boards are too small to read. */
 export const MAX_DIM = 64;
 /** Cell strings encode colors as one base-36 character (see `CELL_CHARS` in grid.ts). */
@@ -43,6 +43,10 @@ export interface CompiledLevel {
     podColor: Uint8Array;
     podCap: Int32Array;
     podHidden: Uint8Array;
+    /** 1 = pushy (drops into a free lane by itself at the front of its column). */
+    podPushy: Uint8Array;
+    /** Any pushy pod in the level (lets the sim skip the auto-drop scan). */
+    hasPushy: boolean;
     /** Key index locking each pod, -1 = none. */
     podLock: Int16Array;
     /** Partner pod index, -1 = none. */
@@ -111,10 +115,12 @@ export function validateLevel(level: LevelData): void {
             if (!isInt(pod.color) || pod.color < 0 || pod.color >= paletteSize) fail(`pod ${pod.id} has invalid color ${pod.color}`);
             if (!isInt(pod.capacity) || pod.capacity < 1) fail(`pod ${pod.id} capacity must be an integer >= 1, got ${pod.capacity}`);
             if (pod.hidden !== undefined && pod.hidden !== true) fail(`pod ${pod.id} hidden must be true or absent`);
+            if (pod.pushy !== undefined && pod.pushy !== true) fail(`pod ${pod.id} pushy must be true or absent`);
             if (pod.lock !== undefined && !isInt(pod.lock)) fail(`pod ${pod.id} lock must be an integer key id`);
             if (pod.link !== undefined && !isInt(pod.link)) fail(`pod ${pod.id} link must be an integer pod id`);
-            const mechanics = (pod.hidden ? 1 : 0) + (pod.lock !== undefined ? 1 : 0) + (pod.link !== undefined ? 1 : 0);
-            if (mechanics > 1) fail(`pod ${pod.id} combines mechanics (at most one of hidden/lock/link)`);
+            const mechanics =
+                (pod.hidden ? 1 : 0) + (pod.lock !== undefined ? 1 : 0) + (pod.link !== undefined ? 1 : 0) + (pod.pushy ? 1 : 0);
+            if (mechanics > 1) fail(`pod ${pod.id} combines mechanics (at most one of hidden/lock/link/pushy)`);
             if (pod.link !== undefined) hasLink = true;
             pods.set(pod.id, { pod, col, pos });
             capTotal[pod.color] += pod.capacity;
@@ -196,6 +202,8 @@ export function compileLevel(level: LevelData): CompiledLevel {
     const podColor = new Uint8Array(numPods);
     const podCap = new Int32Array(numPods);
     const podHidden = new Uint8Array(numPods);
+    const podPushy = new Uint8Array(numPods);
+    let hasPushy = false;
     const podLock = new Int16Array(numPods).fill(-1);
     const podLink = new Int32Array(numPods).fill(-1);
     const podCol = new Int32Array(numPods);
@@ -211,6 +219,8 @@ export function compileLevel(level: LevelData): CompiledLevel {
             podColor[p] = pod.color;
             podCap[p] = pod.capacity;
             podHidden[p] = pod.hidden ? 1 : 0;
+            podPushy[p] = pod.pushy ? 1 : 0;
+            if (pod.pushy) hasPushy = true;
             podCol[p] = col;
             podPos[p] = pos;
             podIndex.set(pod.id, p);
@@ -264,6 +274,8 @@ export function compileLevel(level: LevelData): CompiledLevel {
         podColor,
         podCap,
         podHidden,
+        podPushy,
+        hasPushy,
         podLock,
         podLink,
         podCol,

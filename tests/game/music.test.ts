@@ -126,6 +126,7 @@ describe('event -> cue mapping', () => {
         { t: 'keyCollected', keyId: 1, x: 0, y: 0, podId: 2 },
         { t: 'unlocked', podId: 2 },
         { t: 'revealed', podId: 2 },
+        { t: 'pushed', podId: 3, lane: 1 },
         { t: 'podCompleted', podId: 1, lane: 0 },
         { t: 'won' },
         { t: 'dead' },

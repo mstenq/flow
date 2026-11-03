@@ -241,11 +241,11 @@ describe('snapshot', () => {
         expect(snap.lanes).toEqual([null, null]);
         expect(snap.columns).toEqual([
             [
-                { id: 1, color: 0, capacity: 2, hidden: false, locked: false, lock: null, link: null },
-                { id: 2, color: null, capacity: null, hidden: true, locked: false, lock: null, link: null },
+                { id: 1, color: 0, capacity: 2, hidden: false, locked: false, lock: null, link: null, pushy: false },
+                { id: 2, color: null, capacity: null, hidden: true, locked: false, lock: null, link: null, pushy: false },
             ],
-            [{ id: 3, color: null, capacity: null, hidden: false, locked: true, lock: 9, link: null }],
-            [{ id: 4, color: 2, capacity: 1, hidden: false, locked: false, lock: null, link: null }],
+            [{ id: 3, color: null, capacity: null, hidden: false, locked: true, lock: 9, link: null, pushy: false }],
+            [{ id: 4, color: 2, capacity: 1, hidden: false, locked: false, lock: null, link: null, pushy: false }],
         ]);
         expect(snap.settled).toBe(true);
         expect(snap.dead).toBe(false);

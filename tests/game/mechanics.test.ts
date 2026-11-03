@@ -35,6 +35,7 @@ describe('locked pods + keys', () => {
             locked: false,
             lock: null,
             link: null,
+            pushy: false,
         });
         expect(s.legalTaps()).toEqual([1]);
         s.tap(1);

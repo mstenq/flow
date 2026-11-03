@@ -207,6 +207,7 @@ const CUE_MAP: { [K in SimEventType]: (e: Extract<SimEvent, { t: K }>) => SoundC
     keyCollected: () => [{ sfx: 'keyCollected' }],
     unlocked: () => [{ sfx: 'lockShatter' }],
     revealed: () => [{ sfx: 'reveal' }],
+    pushed: () => [{ sfx: 'tap' }],
     podCompleted: () => [{ sfx: 'podComplete' }],
     won: () => [{ sfx: 'win' }],
     dead: () => [{ sfx: 'overload' }],

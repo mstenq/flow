@@ -1,6 +1,16 @@
 /**
  * FLOW rules engine. Implements PLAN.md "Canonical game rules" exactly; deterministic and allocation-light.
  *
+ * Pushy pods (rules v2): a pushy pod at the front of its column takes a free lane by itself, exactly as if tapped.
+ * The drop happens inside the action that made it possible, before the player can act again:
+ * - at level start (sims are built with any pushy fronts already dropped),
+ * - at the end of a `tap()` (the tapped pod exposed a pushy pod, and a lane is still free),
+ * - at the end of a tick, right after completed pods free their lanes.
+ * Several waiting pushy pods take free lanes lowest column first; a dropped pod can expose another pushy pod,
+ * which drops too while lanes remain. So between actions no pushy pod ever sits at a front while a lane is free:
+ * tapping one is legal by the normal rules, but it only waits at the front when every lane is busy (`noLane`).
+ * The drop is a pure function of the state, so the hash needs no extra feature and settled play models it exactly.
+ *
  * Used by the game (via `gameFacade`, ticks on a clock, taps any time) and by the generator/solver
  * (`clone()` → `tap()` → `settle()`, memo on `hashKey()`).
  */
@@ -96,6 +106,7 @@ export class Sim {
         s.wonEmitted = false;
         s.deadEmitted = false;
         for (let col = 0; col < numCols; col++) s.revealFront(col, null);
+        s.dropPushy(null);
         return s;
     }
 
@@ -336,6 +347,7 @@ export class Sim {
         if (q < 0) {
             ev?.push({ t: 'tapped', podIds: [podId[p]], lanes: [l1] });
             this.revealFront(column, ev);
+            this.dropPushy(ev);
             return ev ?? NO_EVENTS;
         }
         const l2 = this.placeInFreeLane(q);
@@ -344,6 +356,7 @@ export class Sim {
         ev?.push({ t: 'tapped', podIds: [podId[p], podId[q]], lanes: [l1, l2] });
         this.revealFront(column, ev);
         if (qc !== column) this.revealFront(qc, ev);
+        this.dropPushy(ev);
         return ev ?? NO_EVENTS;
     }
 
@@ -447,6 +460,7 @@ export class Sim {
             locked,
             lock: locked ? c.keyId[k] : null,
             link: q < 0 ? null : c.podId[q],
+            pushy: c.podPushy[p] === 1,
         };
     }
 
@@ -473,6 +487,31 @@ export class Sim {
         if (this.compiled.podHidden[p] === 0 || this.podRevealed[p] === 1) return;
         this.podRevealed[p] = 1;
         ev?.push({ t: 'revealed', podId: this.compiled.podId[p] });
+    }
+
+    /** Pushy pods at column fronts take free lanes, lowest column first, until no lane is free or none waits. */
+    private dropPushy(ev: SimEvent[] | null): void {
+        const c = this.compiled;
+        if (!c.hasPushy) return;
+        while (this.freeLaneCount() > 0) {
+            const col = this.pushyFrontColumn();
+            if (col < 0) return;
+            const p = this.frontIndex(col);
+            const l = this.placeInFreeLane(p);
+            this.advanceHead(col);
+            ev?.push({ t: 'pushed', podId: c.podId[p], lane: l });
+            this.revealFront(col, ev);
+        }
+    }
+
+    /** Lowest column whose front pod is pushy, or -1. */
+    private pushyFrontColumn(): number {
+        const { numCols, podPushy } = this.compiled;
+        for (let col = 0; col < numCols; col++) {
+            const p = this.frontIndex(col);
+            if (p >= 0 && podPushy[p] === 1) return col;
+        }
+        return -1;
     }
 
     private xorHead(column: number, head: number): void {
@@ -547,7 +586,10 @@ export class Sim {
             ev?.push({ t: 'claimed', podId: c.podId[p], lane: l, x, y, color, path });
             this.collectKeyAt(i, x, y, ev);
         }
-        if (claimed) this.completePods(ev);
+        if (claimed) {
+            this.completePods(ev);
+            this.dropPushy(ev);
+        }
         if (this.cellsLeft === 0 && !this.wonEmitted) {
             this.wonEmitted = true;
             ev?.push({ t: 'won' });
