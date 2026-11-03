@@ -50,11 +50,6 @@ export function drawGlassSheen(g: GameObjects.Graphics, cx: number, cy: number, 
     g.fillRoundedRect(cx - w * 0.22, cy - h / 2 + 3, w * 0.44, Math.max(2, h * 0.035), 2);
 }
 
-/** Stroke width of the outline glyphs: thick enough to read at ~12 px. */
-function glyphLine(r: number): number {
-    return Math.max(1.6, r * 0.34);
-}
-
 type Pt = readonly [number, number];
 
 function fillPoly(g: GameObjects.Graphics, pts: readonly Pt[]): void {
@@ -62,14 +57,6 @@ function fillPoly(g: GameObjects.Graphics, pts: readonly Pt[]): void {
     pts.forEach(([x, y], i) => (i === 0 ? g.moveTo(x, y) : g.lineTo(x, y)));
     g.closePath();
     g.fillPath();
-}
-
-function strokePoly(g: GameObjects.Graphics, pts: readonly Pt[], width: number, color: number, alpha: number): void {
-    g.lineStyle(width, color, alpha);
-    g.beginPath();
-    pts.forEach(([x, y], i) => (i === 0 ? g.moveTo(x, y) : g.lineTo(x, y)));
-    g.closePath();
-    g.strokePath();
 }
 
 function starPts(cx: number, cy: number, ro: number, ri: number): Pt[] {
@@ -86,58 +73,62 @@ function hexPts(cx: number, cy: number, r: number): Pt[] {
     return Array.from({ length: 6 }, (_, i): Pt => [cx + Math.cos((i * Math.PI) / 3) * r, cy + Math.sin((i * Math.PI) / 3) * r]);
 }
 
-/** Color-blind glyph (see `ColorGlyph`: 20 shapes, solid or outline), radius `r`. */
+/** `n + 1` points along a circular arc from angle `a0` to `a1` (radians, either direction). */
+function arcPts(cx: number, cy: number, r: number, a0: number, a1: number, n: number): Pt[] {
+    return Array.from({ length: n + 1 }, (_, i): Pt => {
+        const a = a0 + ((a1 - a0) * i) / n;
+        return [cx + Math.cos(a) * r, cy + Math.sin(a) * r];
+    });
+}
+
+/** Points along a quadratic curve from `p0` (excluded) through control `c` to `p1` (included). */
+function quadPts(p0: Pt, c: Pt, p1: Pt, n: number): Pt[] {
+    return Array.from({ length: n }, (_, i): Pt => {
+        const t = (i + 1) / n;
+        const u = 1 - t;
+        return [u * u * p0[0] + 2 * u * t * c[0] + t * t * p1[0], u * u * p0[1] + 2 * u * t * c[1] + t * t * p1[1]];
+    });
+}
+
+/** Crescent moon (horns to the right): the outer circle minus an offset circle, centered on its bounding box. */
+function moonPts(cx: number, cy: number, r: number): Pt[] {
+    const R = r * 0.92;
+    const d = R * 0.7;
+    const h = Math.sqrt(R * R - (d / 2) * (d / 2));
+    const ox = cx + (R - d / 2) / 2;
+    const t1 = Math.atan2(-h, d / 2);
+    const t2 = Math.atan2(h, d / 2);
+    const p2 = Math.atan2(h, -d / 2);
+    return [...arcPts(ox, cy, R, t1, t2 - Math.PI * 2, 16), ...arcPts(ox + d, cy, R, p2, Math.PI * 2 - p2, 12)];
+}
+
+/**
+ * Color-blind glyph (see `ColorGlyph`: 20 solid shapes), radius `r`. Coordinates below are in units of `r` around
+ * the center; every shape stays within about ±r.
+ */
 export function drawGlyph(g: GameObjects.Graphics, shape: ColorGlyph, cx: number, cy: number, r: number, color: number, alpha = 1): void {
     g.fillStyle(color, alpha);
-    const lw = glyphLine(r);
+    const p = (x: number, y: number): Pt => [cx + x * r, cy + y * r];
     switch (shape) {
         case 'circle':
             g.fillCircle(cx, cy, r * 0.85);
             return;
-        case 'ring':
-            g.lineStyle(lw, color, alpha);
-            g.strokeCircle(cx, cy, r * 0.74);
-            return;
-        case 'target':
-            g.lineStyle(lw * 0.85, color, alpha);
-            g.strokeCircle(cx, cy, r * 0.86);
-            g.fillCircle(cx, cy, r * 0.34);
-            return;
         case 'triangle':
             g.fillTriangle(cx, cy - r, cx + r * 0.95, cy + r * 0.75, cx - r * 0.95, cy + r * 0.75);
-            return;
-        case 'triangle-o':
-            strokePoly(g, [[cx, cy - r * 0.82], [cx + r * 0.8, cy + r * 0.62], [cx - r * 0.8, cy + r * 0.62]], lw, color, alpha);
-            return;
-        case 'tridown':
-            g.fillTriangle(cx, cy + r, cx + r * 0.95, cy - r * 0.75, cx - r * 0.95, cy - r * 0.75);
             return;
         case 'square':
             g.fillRect(cx - r * 0.75, cy - r * 0.75, r * 1.5, r * 1.5);
             return;
-        case 'square-o':
-            g.lineStyle(lw, color, alpha);
-            g.strokeRect(cx - r * 0.66, cy - r * 0.66, r * 1.32, r * 1.32);
-            return;
         case 'diamond':
-            fillPoly(g, [[cx, cy - r], [cx + r * 0.85, cy], [cx, cy + r], [cx - r * 0.85, cy]]);
-            return;
-        case 'diamond-o':
-            strokePoly(g, [[cx, cy - r * 0.86], [cx + r * 0.72, cy], [cx, cy + r * 0.86], [cx - r * 0.72, cy]], lw, color, alpha);
+            fillPoly(g, [p(0, -1), p(0.85, 0), p(0, 1), p(-0.85, 0)]);
             return;
         case 'hex':
             fillPoly(g, hexPts(cx, cy, r * 0.95));
             return;
-        case 'hex-o':
-            strokePoly(g, hexPts(cx, cy, r * 0.82), lw, color, alpha);
-            return;
         case 'star':
             fillPoly(g, starPts(cx, cy, r * 1.05, r * 0.46));
             return;
-        case 'star-o':
-            strokePoly(g, starPts(cx, cy, r * 0.95, r * 0.42), lw * 0.9, color, alpha);
-            return;
-        case 'cross': {
+        case 'plus': {
             const t = r * 0.38;
             g.fillRect(cx - t, cy - r, t * 2, r * 2);
             g.fillRect(cx - r, cy - t, r * 2, t * 2);
@@ -150,31 +141,90 @@ export function drawGlyph(g: GameObjects.Graphics, shape: ColorGlyph, cx: number
             fillPoly(g, [[cx + e, cy - e + t * 1.4], [cx + e - t * 1.4, cy - e], [cx - e, cy + e - t * 1.4], [cx - e + t * 1.4, cy + e]]);
             return;
         }
-        case 'chevron':
-            g.fillTriangle(cx - r, cy - r * 0.2, cx, cy - r, cx + r, cy - r * 0.2);
-            g.fillTriangle(cx - r, cy + r * 0.7, cx, cy - r * 0.1, cx + r, cy + r * 0.7);
+        case 'half':
+            fillPoly(g, arcPts(cx, cy + r * 0.48, r * 0.98, Math.PI, Math.PI * 2, 16));
             return;
-        case 'bars': {
-            const bw = r * 0.42;
-            g.fillRect(cx - r, cy - r * 0.85, bw, r * 1.7);
-            g.fillRect(cx - bw / 2, cy - r * 0.85, bw, r * 1.7);
-            g.fillRect(cx + r - bw, cy - r * 0.85, bw, r * 1.7);
+        case 'heart':
+            g.fillCircle(cx - r * 0.45, cy - r * 0.35, r * 0.5);
+            g.fillCircle(cx + r * 0.45, cy - r * 0.35, r * 0.5);
+            fillPoly(g, [p(-0.93, -0.19), p(0.93, -0.19), p(0, 0.86)]);
             return;
-        }
-        case 'hbars': {
-            const bh = r * 0.42;
-            g.fillRect(cx - r * 0.85, cy - r, r * 1.7, bh);
-            g.fillRect(cx - r * 0.85, cy - bh / 2, r * 1.7, bh);
-            g.fillRect(cx - r * 0.85, cy + r - bh, r * 1.7, bh);
+        case 'spade':
+            g.fillCircle(cx - r * 0.45, cy + r * 0.12, r * 0.47);
+            g.fillCircle(cx + r * 0.45, cy + r * 0.12, r * 0.47);
+            fillPoly(g, [p(0, -0.98), p(0.9, 0), p(-0.9, 0)]);
+            fillPoly(g, [p(0, 0.2), p(0.34, 0.98), p(-0.34, 0.98)]);
             return;
-        }
-        case 'half': {
-            const pts: Pt[] = [];
-            for (let i = 0; i <= 10; i++) {
-                const a = Math.PI + (i * Math.PI) / 10;
-                pts.push([cx + Math.cos(a) * r, cy + r * 0.5 + Math.sin(a) * r]);
+        case 'club':
+            g.fillCircle(cx, cy - r * 0.5, r * 0.4);
+            g.fillCircle(cx - r * 0.48, cy + r * 0.1, r * 0.4);
+            g.fillCircle(cx + r * 0.48, cy + r * 0.1, r * 0.4);
+            g.fillCircle(cx, cy, r * 0.3);
+            fillPoly(g, [p(0, 0.1), p(0.36, 0.98), p(-0.36, 0.98)]);
+            return;
+        case 'blossom':
+            // Five round petals that just touch (so the rim stays scalloped), over a solid center.
+            for (let k = 0; k < 5; k++) {
+                const a = -Math.PI / 2 + (k * Math.PI * 2) / 5;
+                g.fillCircle(cx + Math.cos(a) * r * 0.58, cy + Math.sin(a) * r * 0.58, r * 0.37);
             }
-            fillPoly(g, pts);
+            g.fillCircle(cx, cy, r * 0.42);
+            return;
+        case 'moon':
+            fillPoly(g, moonPts(cx, cy, r));
+            return;
+        case 'gem':
+            fillPoly(g, [p(-0.55, -0.72), p(0.55, -0.72), p(0.98, -0.22), p(0, 0.92), p(-0.98, -0.22)]);
+            return;
+        case 'note': {
+            // Two beamed eighth notes (♫): heads at the bottom left of each stem, beam slanting up to the right.
+            const t = Math.max(1.2, r * 0.2);
+            const bh = Math.max(1.4, r * 0.34);
+            g.fillEllipse(cx - r * 0.5, cy + r * 0.62, r * 0.76, r * 0.56);
+            g.fillEllipse(cx + r * 0.5, cy + r * 0.46, r * 0.76, r * 0.56);
+            const lx = cx - r * 0.12;
+            const rx = cx + r * 0.88;
+            g.fillRect(lx - t, cy - r * 0.62, t, r * 1.24);
+            g.fillRect(rx - t, cy - r * 0.84, t, r * 1.3);
+            fillPoly(g, [[lx - t, cy - r * 0.62], [rx, cy - r * 0.84], [rx, cy - r * 0.84 + bh], [lx - t, cy - r * 0.62 + bh]]);
+            return;
+        }
+        case 'radioactive':
+            // Trefoil: three 60° blades (up-left, up-right, down) around a center dot.
+            for (const deg of [-150, -30, 90]) {
+                const a = (deg * Math.PI) / 180;
+                const w = Math.PI / 6;
+                fillPoly(g, [...arcPts(cx, cy, r, a - w, a + w, 8), ...arcPts(cx, cy, r * 0.36, a + w, a - w, 4)]);
+            }
+            g.fillCircle(cx, cy, r * 0.2);
+            return;
+        case 'crown':
+            fillPoly(g, [p(-0.9, 0.72), p(0.9, 0.72), p(0.92, -0.5), p(0.45, -0.02), p(0, -0.68), p(-0.45, -0.02), p(-0.92, -0.5)]);
+            g.fillCircle(cx - r * 0.92, cy - r * 0.56, r * 0.17);
+            g.fillCircle(cx, cy - r * 0.74, r * 0.17);
+            g.fillCircle(cx + r * 0.92, cy - r * 0.56, r * 0.17);
+            return;
+        case 'flame': {
+            // Round base, tip leaning right, one small tongue on the left (so it never reads as a drop).
+            const tip = p(0.12, -1);
+            const notch = p(-0.22, -0.28);
+            const tongue = p(-0.5, -0.62);
+            const right = p(0.6, 0.35);
+            g.fillCircle(cx, cy + r * 0.35, r * 0.6);
+            fillPoly(g, [
+                right,
+                ...quadPts(right, p(0.78, -0.3), tip, 8),
+                ...quadPts(tip, p(-0.02, -0.5), notch, 5),
+                tongue,
+                ...quadPts(tongue, p(-0.78, -0.05), p(-0.6, 0.35), 6),
+            ]);
+            return;
+        }
+        case 'shield': {
+            // Flat top, straight sides, curving in to a point at the bottom.
+            const rightHip = p(0.82, -0.1);
+            const bottom = p(0, 0.98);
+            fillPoly(g, [p(-0.82, -0.88), p(0.82, -0.88), rightHip, ...quadPts(rightHip, p(0.82, 0.55), bottom, 6), ...quadPts(bottom, p(-0.82, 0.55), p(-0.82, -0.1), 6)]);
             return;
         }
     }

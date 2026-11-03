@@ -3,9 +3,6 @@ import { NEON_PALETTE } from '@data/palette';
 import { ALL_GLYPHS, GLYPH_BY_NAME, glyphFor, paletteNameFor } from '@data/themeColors';
 import { paletteArt } from '../../src/phaser/theme';
 
-/** Base shape of a glyph: the outline variants (`-o`) share it with their solid twin. */
-const base = (g: string) => g.replace(/-o$/, '');
-
 describe('color-blind glyphs', () => {
     test('every palette name has a glyph, and all 20 are distinct', () => {
         expect(NEON_PALETTE).toHaveLength(20);
@@ -21,7 +18,7 @@ describe('color-blind glyphs', () => {
         expect([...ALL_GLYPHS].sort()).toEqual(Object.values(GLYPH_BY_NAME).sort());
     });
 
-    test('similar hues never share a base shape (no solid/outline twins)', () => {
+    test('similar hues never share a shape', () => {
         const families = [
             ['violet', 'purple', 'blue', 'ink'],
             ['orange', 'copper', 'gold', 'yellow', 'peach'],
@@ -32,8 +29,8 @@ describe('color-blind glyphs', () => {
             ['mint', 'teal', 'cyan'],
         ];
         for (const family of families) {
-            const bases = family.map((n) => base(GLYPH_BY_NAME[n]!));
-            expect(new Set(bases).size).toBe(family.length);
+            const shapes = family.map((n) => GLYPH_BY_NAME[n]!);
+            expect(new Set(shapes).size).toBe(family.length);
         }
     });
 

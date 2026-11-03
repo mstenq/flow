@@ -14,86 +14,86 @@ export interface ColorVariants {
 }
 
 /**
- * 20 distinct shapes, one per neon color. Ten base shapes, most of them also as an outline (`-o`) or a variant, so a
- * level that uses 14 colors stays readable without color. See `GLYPH_BY_NAME` for how similar hues are kept apart.
+ * 20 distinct solid shapes, one per neon color, so a level that uses 14 colors stays readable without color. No outlines
+ * or thin strokes: every glyph is a filled silhouette that reads at ~12 px, and most hint at their color (red heart,
+ * gold crown, chartreuse radioactive). See `GLYPH_BY_NAME` for how similar hues are kept apart.
  */
 export type ColorGlyph =
     | 'circle'
-    | 'ring'
     | 'triangle'
-    | 'triangle-o'
-    | 'tridown'
     | 'square'
-    | 'square-o'
-    | 'diamond'
-    | 'diamond-o'
-    | 'hex'
-    | 'hex-o'
     | 'star'
-    | 'star-o'
-    | 'cross'
+    | 'flame'
+    | 'heart'
+    | 'moon'
+    | 'note'
+    | 'diamond'
+    | 'plus'
+    | 'blossom'
+    | 'crown'
+    | 'hex'
+    | 'shield'
+    | 'radioactive'
     | 'x'
-    | 'chevron'
-    | 'bars'
-    | 'hbars'
     | 'half'
-    | 'target';
+    | 'gem'
+    | 'spade'
+    | 'club';
 
 /**
- * Glyph per canonical neon color name (unique). Similar hues never share a base shape (the shape with `-o` stripped),
- * so they differ in silhouette, not only in fill:
- *   pink family    magenta circle, pink star-o, red cross
- *   purple family  violet hex, purple triangle-o, blue chevron, ink bars
- *   cyan family    cyan triangle, sky square-o, teal ring, steel x, mint diamond
- *   green family   lime square, chartreuse hex-o, mint diamond
- *   warm family    yellow star, gold target, orange hbars, copper tridown, peach diamond-o
- *   pale family    white half, peach diamond-o, steel x
+ * Glyph per canonical neon color name (unique). Similar hues never share a silhouette:
+ *   pink family    magenta circle, pink blossom, red heart
+ *   purple family  violet moon, purple gem, blue note, ink club
+ *   cyan family    cyan triangle, sky half-disc, teal x, steel spade, mint diamond
+ *   green family   lime square, chartreuse radioactive, mint diamond
+ *   warm family    yellow star, gold crown, orange flame, copper shield, peach hex
+ *   pale family    white plus, peach hex, steel spade
  */
 export const GLYPH_BY_NAME: Readonly<Record<string, ColorGlyph>> = {
     magenta: 'circle',
     cyan: 'triangle',
     lime: 'square',
     yellow: 'star',
-    orange: 'hbars',
-    red: 'cross',
-    violet: 'hex',
-    blue: 'chevron',
+    orange: 'flame',
+    red: 'heart',
+    violet: 'moon',
+    blue: 'note',
     mint: 'diamond',
-    white: 'half',
-    pink: 'star-o',
-    gold: 'target',
-    peach: 'diamond-o',
-    copper: 'tridown',
-    chartreuse: 'hex-o',
-    teal: 'ring',
-    sky: 'square-o',
-    purple: 'triangle-o',
-    steel: 'x',
-    ink: 'bars',
+    white: 'plus',
+    pink: 'blossom',
+    gold: 'crown',
+    peach: 'hex',
+    copper: 'shield',
+    chartreuse: 'radioactive',
+    teal: 'x',
+    sky: 'half',
+    purple: 'gem',
+    steel: 'spade',
+    ink: 'club',
 };
 
-/** All glyphs, for fallbacks and tests. */
+/** All glyphs (in palette order), for fallbacks and tests. */
 export const ALL_GLYPHS: readonly ColorGlyph[] = [
     'circle',
     'triangle',
     'square',
     'star',
-    'hbars',
-    'cross',
-    'hex',
-    'chevron',
+    'flame',
+    'heart',
+    'moon',
+    'note',
     'diamond',
-    'half',
-    'star-o',
-    'target',
-    'diamond-o',
-    'tridown',
-    'hex-o',
-    'ring',
-    'square-o',
-    'triangle-o',
+    'plus',
+    'blossom',
+    'crown',
+    'hex',
+    'shield',
+    'radioactive',
     'x',
-    'bars',
+    'half',
+    'gem',
+    'spade',
+    'club',
 ];
 
 export function hexToNum(hex: string): number {

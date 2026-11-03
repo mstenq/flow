@@ -2,9 +2,14 @@
  * QueueView (neon): per column the front pod plus the next 3 as glass capsules (deep body, colored rim light,
  * color-blind glyph, crisp capacity number on the UI camera), a "+n" badge for deeper pods, glitching "?" for
  * hidden pods, a hex-lock with chains of light for locked pods, crackling lightning tethers for linked pairs,
- * and a slide-up tween when a pod leaves. Tapping anywhere in a column strip taps its front pod (a Zone per column),
- * except pressing a locked pod: that holds it (`onLockHold(podId)` until release, `onLockHold(null)`) so the scene can
- * point at its key. A locked front pod is also tapped (the denial feedback still plays).
+ * and a slide-up tween when a pod leaves. Tapping anywhere in a column strip taps its front pod (a Zone per column).
+ * Taps fire on release, so a press can turn into a hold instead:
+ *   - pressing a locked pod holds it at once (`onLockHold(podId)` until release, `onLockHold(null)`) so the scene can
+ *     point at its key;
+ *   - holding a visible color pod (any row) for `HOLD_MS` focuses its color, plus a linked partner's known color
+ *     (`onColorHold(colors)` until release, `onColorHold(null)`) so the scene can dim every other color.
+ * A press that showed a hold never taps; any other press taps on release (a short press on a locked front pod still
+ * taps, so the denial feedback plays).
  *
  * Positions are derived from the snapshot (`sync`), so the view cannot drift; events only add flourishes.
  * Unlocks wait for the key flight: `holdLock(podId)` keeps the lock drawn until `releaseLock(podId)` shatters it.
@@ -39,6 +44,8 @@ export interface QueueViewOptions {
     onColumnTap: (column: number) => void;
     /** A locked pod is pressed (its id) or released (null). */
     onLockHold?: (podId: number | null) => void;
+    /** A color pod is held (its color, plus a linked partner's known color) or released (null). */
+    onColorHold?: (colors: number[] | null) => void;
     fx?: Fx;
 }
 
@@ -74,6 +81,17 @@ interface PodView {
     lockId: number | null;
 }
 
+/** A press in a column strip, resolved on release: a tap, unless it turned into a hold. */
+interface Press {
+    pointerId: number;
+    column: number;
+    podId: number | null;
+    ms: number;
+    /** A hold visual is showing (lock tether or color focus): release does not tap. */
+    held: boolean;
+    colorHeld: boolean;
+}
+
 const TWEEN_MS = 220;
 /** Radius of the pushy badge (pod-local px; deeper pods are scaled down, so it must be generous). */
 const PUSHY_BADGE_R = 23;
@@ -81,10 +99,14 @@ const FLY_MS = 300;
 const GLITCH_MS = 70;
 /** Tween progress after which a sliding pod's texts start to fade in. */
 const SLIDE_TEXT_FROM = 0.6;
+/** A press on a color pod held this long focuses its color instead of tapping. */
+const HOLD_MS = 220;
 
 export class QueueView {
     private readonly pods = new Map<number, PodView>();
     private readonly loc = new Map<number, { column: number; index: number }>();
+    /** Known color of every queued pod (null while hidden or locked), visible or not. */
+    private readonly colors = new Map<number, number | null>();
     private readonly badges: GameObjects.Text[] = [];
     private readonly zones: GameObjects.Zone[] = [];
     private readonly slotGfx: GameObjects.Graphics;
@@ -104,8 +126,8 @@ export class QueueView {
     private linkMs = 0;
     private glitchMs = 0;
     private lastTime = 0;
-    private holding: number | null = null;
-    private readonly onRelease = () => this.release();
+    private press: Press | null = null;
+    private readonly onRelease = (pointer: { id: number }) => this.release(pointer.id);
 
     constructor(
         private readonly scene: Scene,
@@ -124,7 +146,7 @@ export class QueueView {
             const r = q.hitRects[col]!;
             const zone = scene.add.zone(r.x + r.w / 2, r.y + r.h / 2, r.w, r.h).setDepth(DEPTH.queue + 3);
             zone.setInteractive({ useHandCursor: true });
-            zone.on('pointerdown', (_p: unknown, _lx: number, localY: number) => this.press(col, r.y + localY));
+            zone.on('pointerdown', (p: { id: number }, _lx: number, localY: number) => this.startPress(p.id, col, r.y + localY));
             this.zones.push(zone);
             this.badges.push(ui(scene.add.text(cx, q.badgeY, '', font(22, COLORS.dim)).setOrigin(0.5).setDepth(DEPTH.queue)));
         });
@@ -138,7 +160,7 @@ export class QueueView {
 
     /** Enable or disable the column tap zones (overlays do this too, by blocking input above). */
     setInputEnabled(enabled: boolean): void {
-        if (!enabled) this.release();
+        if (!enabled) this.cancelPress();
         for (const z of this.zones) {
             if (enabled) z.setInteractive({ useHandCursor: true });
             else z.disableInteractive();
@@ -148,10 +170,12 @@ export class QueueView {
     sync(columns: PodState[][]): void {
         const seen = new Set<number>();
         this.loc.clear();
+        this.colors.clear();
         let links = false;
         columns.forEach((pods, column) => {
             pods.forEach((p, index) => {
                 this.loc.set(p.id, { column, index });
+                this.colors.set(p.id, p.hidden || p.locked ? null : p.color);
                 if (p.link !== null) links = true;
                 if (index >= VISIBLE_PODS) return;
                 seen.add(p.id);
@@ -327,12 +351,14 @@ export class QueueView {
         this.glitchMs += dt;
         const glitch = this.glitchMs >= GLITCH_MS;
         if (glitch) this.glitchMs = 0;
+        this.tickPress(dt);
         for (const pv of this.pods.values()) this.tickPod(pv, dt, timeMs, glitch);
         this.flushReveals();
         this.drawHint(timeMs);
     }
 
     destroy(): void {
+        this.cancelPress();
         this.scene.input.off('pointerup', this.onRelease);
         this.scene.input.off('pointerupoutside', this.onRelease);
         for (const pv of this.pods.values()) this.destroyPod(pv);
@@ -346,22 +372,54 @@ export class QueueView {
 
     // ------------------------------------------------------------------ internals
 
-    /** Press at layout-space `y` in `column`: hold a locked pod, else tap the column. */
-    private press(column: number, y: number): void {
+    /** Press at layout-space `y` in `column`: a locked pod shows its key at once; everything else waits for release or `HOLD_MS`. */
+    private startPress(pointerId: number, column: number, y: number): void {
+        if (this.press) this.release(this.press.pointerId);
         const pv = this.podAt(column, y);
-        if (!pv || !pv.locked || pv.hidden) {
-            this.opts.onColumnTap(column);
-            return;
-        }
-        this.holding = pv.id;
-        this.opts.onLockHold?.(pv.id);
-        if (pv.index === 0) this.opts.onColumnTap(column);
+        const locked = pv !== null && pv.locked && !pv.hidden;
+        this.press = { pointerId, column, podId: pv?.id ?? null, ms: 0, held: locked, colorHeld: false };
+        if (locked) this.opts.onLockHold?.(pv.id);
     }
 
-    private release(): void {
-        if (this.holding === null) return;
-        this.holding = null;
-        this.opts.onLockHold?.(null);
+    /** The press turns into a color hold once it has lasted `HOLD_MS` on a pod whose color is known. */
+    private tickPress(dt: number): void {
+        const press = this.press;
+        if (!press || press.held || press.podId === null) return;
+        press.ms += dt;
+        if (press.ms < HOLD_MS) return;
+        const colors = this.holdColors(press.podId);
+        if (colors.length === 0) return;
+        press.held = true;
+        press.colorHeld = true;
+        this.opts.onColorHold?.(colors);
+    }
+
+    /** The pod's own color plus its linked partner's, when known (hidden and locked pods have none). */
+    private holdColors(podId: number): number[] {
+        const pv = this.pods.get(podId);
+        const own = this.colors.get(podId) ?? null;
+        if (!pv || own === null) return [];
+        const partner = pv.link === null ? null : (this.colors.get(pv.link) ?? null);
+        return partner === null || partner === own ? [own] : [own, partner];
+    }
+
+    /** Pointer released: a short press taps its column; a hold ends its visuals instead. */
+    private release(pointerId: number): void {
+        const press = this.press;
+        if (!press || press.pointerId !== pointerId) return;
+        this.endPress(press);
+        if (!press.held) this.opts.onColumnTap(press.column);
+    }
+
+    /** Drop the current press without tapping (input disabled, view destroyed). */
+    private cancelPress(): void {
+        if (this.press) this.endPress(this.press);
+    }
+
+    private endPress(press: Press): void {
+        this.press = null;
+        if (press.colorHeld) this.opts.onColorHold?.(null);
+        else if (press.held) this.opts.onLockHold?.(null);
     }
 
     /** The visible pod in `column` whose slot contains layout-space `y`, or null. */

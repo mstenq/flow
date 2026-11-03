@@ -167,6 +167,7 @@ export class Play extends Scene {
         this.queue = new QueueView(this, this.layout, this.palette, {
             onColumnTap: (col) => this.onColumnTap(col),
             onLockHold: (podId) => this.tether.show(podId),
+            onColorHold: (colors) => this.board.setFocus(colors),
             fx: this.fx,
         });
         const board = this.board;

@@ -15,7 +15,7 @@
  *   keyCenterFor(podId)       center of the cell holding the key that unlocks `podId`, or null
  *   setDistProvider(fn)/setShowDist(on)   dev overlay
  *   destroy()
- * Added: frameRect(), flare(ms), showHologram(ms), setOverlayGlyphs(on).
+ * Added: frameRect(), flare(ms), showHologram(ms), setOverlayGlyphs(on), setFocus(colors | null).
  */
 import { BlendModes } from 'phaser';
 import type { GameObjects, Scene, Textures } from 'phaser';
@@ -41,6 +41,10 @@ const MELT_MS = 170;
 /** Reachable mask refresh throttle. */
 const REACH_MS = 180;
 const TILE_TINT_SCALE = 0.86;
+/** While a color is focused (pod held), every other tile is stamped this dark, with a fainter core; its keys, glyphs and melts fade to `UNFOCUSED_ALPHA`. */
+const UNFOCUSED_TINT_SCALE = 0.2;
+const UNFOCUSED_CORE = 0.2;
+const UNFOCUSED_ALPHA = 0.25;
 
 const BOARD_FRAG = `
 precision mediump float;
@@ -65,6 +69,8 @@ interface Melt {
     tile: GameObjects.Image;
     flash: GameObjects.Image;
     life: number;
+    /** Alpha scale (a melt on a dimmed cell stays dim). */
+    fade: number;
 }
 
 interface KeySprite {
@@ -73,6 +79,8 @@ interface KeySprite {
     icon: GameObjects.Graphics;
     sparkle: GameObjects.Image;
     label: GameObjects.Text | null;
+    /** Color of the cell it sits on (EMPTY if none). */
+    color: number;
     phase: number;
 }
 
@@ -112,6 +120,8 @@ export class BoardView {
     private reachDirty = true;
     private reachMs = REACH_MS;
     private activeColors = 0;
+    /** Focused colors as a bitmask (a pod is held); 0 = no focus, everything at full brightness. */
+    private focus = 0;
     private lastActiveColors = -1;
     private distProvider: ((color: number, x: number, y: number) => number) | null = null;
     private showDist = false;
@@ -183,7 +193,7 @@ export class BoardView {
         for (let i = 0; i < MELT_POOL; i++) {
             const tile = scene.add.image(0, 0, this.tileKey).setDepth(DEPTH.board + 0.2).setVisible(false);
             const flash = scene.add.image(0, 0, TEX.glow).setDepth(DEPTH.board + 0.25).setBlendMode(BlendModes.ADD).setVisible(false);
-            this.melts.push({ tile, flash, life: 0 });
+            this.melts.push({ tile, flash, life: 0, fade: 1 });
         }
     }
 
@@ -241,6 +251,15 @@ export class BoardView {
         this.showGlyphs = on;
         this.glyphGfx.setVisible(on);
         this.fullRedraw = true;
+    }
+
+    /** Dim every tile (and key) whose color is not in `colors`; null restores the whole board. */
+    setFocus(colors: number[] | null): void {
+        const mask = colors === null ? 0 : colors.reduce((m, c) => m | (1 << c), 0);
+        if (mask === this.focus) return;
+        this.focus = mask;
+        this.fullRedraw = true;
+        this.applyKeyFocus();
     }
 
     /** Whole frame flares white-hot, then cools (win). */
@@ -358,7 +377,7 @@ export class BoardView {
             this.fullRedraw = false;
             this.cleared.length = 0;
             tex.clear();
-            this.stampAll(tex, this.cells, TILE_TINT_SCALE);
+            this.stampAll(tex, this.cells, TILE_TINT_SCALE, this.focus);
             tex.render();
             this.drawGlyphOverlay();
             return;
@@ -375,7 +394,8 @@ export class BoardView {
         if (this.showGlyphs) this.drawGlyphOverlay();
     }
 
-    private stampAll(tex: Textures.DynamicTexture, cells: Uint8Array, tintScale: number): void {
+    /** Stamp every non-empty cell; with a `focus` color mask, cells outside it are stamped dim. */
+    private stampAll(tex: Textures.DynamicTexture, cells: Uint8Array, tintScale: number, focus = 0): void {
         const c = this.cell;
         const coreAlpha = c >= 12 ? 0.42 : 0.3;
         for (let y = 0; y < this.height; y++) {
@@ -385,9 +405,11 @@ export class BoardView {
                 if (v === EMPTY) continue;
                 const art = this.art[v];
                 if (!art) continue;
-                const tint = tintScale === 1 ? art.core : mixColor(0x000000, art.core, tintScale);
+                const dim = focus !== 0 && (focus & (1 << v)) === 0;
+                const scale = dim ? UNFOCUSED_TINT_SCALE : tintScale;
+                const tint = scale === 1 ? art.core : mixColor(0x000000, art.core, scale);
                 tex.stamp(this.tileKey, undefined, x * c, y * c, { tint, originX: 0, originY: 0 });
-                tex.stamp(this.coreKey, undefined, x * c, y * c, { tint: art.glow, originX: 0, originY: 0, alpha: coreAlpha, blendMode: BlendModes.ADD });
+                tex.stamp(this.coreKey, undefined, x * c, y * c, { tint: art.glow, originX: 0, originY: 0, alpha: dim ? coreAlpha * UNFOCUSED_CORE : coreAlpha, blendMode: BlendModes.ADD });
             }
         }
     }
@@ -427,7 +449,7 @@ export class BoardView {
                 const art = this.art[v];
                 if (!art) continue;
                 const p = this.cellCenter(x, y);
-                drawGlyph(g, art.glyph, p.x, p.y, r, art.deep, 0.85);
+                drawGlyph(g, art.glyph, p.x, p.y, r, art.deep, this.isDimmed(v) ? 0.85 * UNFOCUSED_ALPHA : 0.85);
             }
         }
     }
@@ -441,8 +463,9 @@ export class BoardView {
         if (!m) return;
         const p = this.cellCenter(x, y);
         m.life = MELT_MS;
-        m.tile.setPosition(p.x, p.y).setTint(art.core).setScale(1).setAlpha(1).setVisible(true);
-        m.flash.setPosition(p.x, p.y).setTint(art.glow).setScale((this.cell * 1.2) / 64).setAlpha(0.65).setVisible(true);
+        m.fade = this.isDimmed(color) ? UNFOCUSED_ALPHA : 1;
+        m.tile.setPosition(p.x, p.y).setTint(art.core).setScale(1).setAlpha(m.fade).setVisible(true);
+        m.flash.setPosition(p.x, p.y).setTint(art.glow).setScale((this.cell * 1.2) / 64).setAlpha(0.65 * m.fade).setVisible(true);
     }
 
     private tickMelts(dt: number): void {
@@ -455,8 +478,8 @@ export class BoardView {
                 continue;
             }
             const t = 1 - m.life / MELT_MS;
-            m.tile.setScale(1 + 0.35 * t, 1 - 0.8 * t).setAlpha(1 - t);
-            m.flash.setScale((this.cell * (1.2 + 1.6 * t)) / 64).setAlpha(0.65 * (1 - t));
+            m.tile.setScale(1 + 0.35 * t, 1 - 0.8 * t).setAlpha((1 - t) * m.fade);
+            m.flash.setScale((this.cell * (1.2 + 1.6 * t)) / 64).setAlpha(0.65 * (1 - t) * m.fade);
         }
     }
 
@@ -472,6 +495,20 @@ export class BoardView {
         for (const k of this.keys) {
             if (this.keySprites.some((s) => s.id === k.id)) continue;
             this.keySprites.push(this.makeKey(k));
+        }
+        this.applyKeyFocus();
+    }
+
+    private isDimmed(color: number): boolean {
+        return this.focus !== 0 && (color === EMPTY || (this.focus & (1 << color)) === 0);
+    }
+
+    /** Keys on dimmed cells fade with them (glow and sparkle are scaled per frame in `animateKeys`). */
+    private applyKeyFocus(): void {
+        for (const k of this.keySprites) {
+            const alpha = this.isDimmed(k.color) ? UNFOCUSED_ALPHA : 1;
+            k.icon.setAlpha(alpha);
+            k.label?.setAlpha(alpha);
         }
     }
 
@@ -495,7 +532,7 @@ export class BoardView {
         if (labels) {
             label = ui(this.scene.add.text(c.x, c.y + size * 0.27, keyLetter(k.id), { ...font(Math.max(10, size * 0.26), '#ffffff'), stroke: '#05030c', strokeThickness: 3 }).setOrigin(0.5).setDepth(DEPTH.board + 0.36));
         }
-        return { id: k.id, glow, icon, sparkle, label, phase: Math.random() * Math.PI * 2 };
+        return { id: k.id, glow, icon, sparkle, label, color, phase: Math.random() * Math.PI * 2 };
     }
 
     private animateKeys(dt: number): void {
@@ -505,8 +542,9 @@ export class BoardView {
             k.phase += dt / 1000;
             k.sparkle.setRotation(k.phase * 1.6);
             const tw = 0.5 + 0.5 * Math.sin(k.phase * 3.1);
-            k.sparkle.setScale(((size * (0.45 + 0.45 * tw)) / 48)).setAlpha(0.5 + 0.5 * tw);
-            k.glow.setAlpha(0.45 + 0.25 * Math.sin(k.phase * 2.3));
+            const fade = this.isDimmed(k.color) ? UNFOCUSED_ALPHA : 1;
+            k.sparkle.setScale(((size * (0.45 + 0.45 * tw)) / 48)).setAlpha((0.5 + 0.5 * tw) * fade);
+            k.glow.setAlpha((0.45 + 0.25 * Math.sin(k.phase * 2.3)) * fade);
         }
     }
 
