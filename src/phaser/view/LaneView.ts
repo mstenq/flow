@@ -1,7 +1,7 @@
 /**
  * LaneView (neon): L lane slots. An active pod is a glass capsule whose liquid level rises as goo lands, with a
  * wobbling sine surface that sloshes on every arrival, a crisp count (UI camera) that ticks down with a pop, a
- * color-blind glyph, and status glows (stalled amber flicker, linked "charged, waiting" aura). Empty slots are dim
+ * color-blind glyph, and status glows (stalled flicker in the pod's own color, linked "charged, waiting" aura). Empty slots are dim
  * dashed outlines that breathe. Linked pods in two lanes are joined by a crackling lightning tether. When every
  * lane is occupied, the tray border heats from cyan toward red.
  *
@@ -423,8 +423,8 @@ export class LaneView {
             aura += 0.45 + 0.35 * Math.sin(this.timeS * 7);
             auraTint = mixColor(auraTint, 0xffffff, 0.3);
         } else if (shown.state === 'stalled') {
+            // Pod-colored flicker: an amber aura/rim reads as the orange pod and hides the yellow one.
             aura += 0.12 + 0.1 * Math.sin(this.timeS * 5);
-            auraTint = 0xffb020;
         }
         if (s.deny > 0) auraTint = 0xff2950;
         s.aura.setAlpha(inbound ? 0 : Math.min(1, aura)).setTint(auraTint);
@@ -474,7 +474,7 @@ export class LaneView {
         }
         s.shellKey = `${shown.podId}:${shown.state}`;
         const art = this.art[shown.color]!;
-        const rim = shown.state === 'stalled' ? 0xffb020 : shown.state === 'waiting' ? mixColor(art.glow, 0xffffff, 0.4) : art.core;
+        const rim = shown.state === 'waiting' ? mixColor(art.glow, 0xffffff, 0.4) : art.core;
         drawCapsule(g, 0, 0, w, h, { body: art.deep, bodyAlpha: 0.9, rim, rimAlpha: 1, rimWidth: 2.5, glowAlpha: 0.9 });
         // Bottom-left: the top edge carries the STALLED / CHARGED label and the link rings.
         const gx = -w / 2 + 20;
