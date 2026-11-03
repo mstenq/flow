@@ -43,16 +43,16 @@ export type ColorGlyph =
 /**
  * Glyph per canonical neon color name (unique). Similar hues never share a silhouette:
  *   pink family    magenta circle, pink blossom, red heart
- *   purple family  violet moon, purple gem, blue note, ink club
+ *   purple family  violet moon, purple gem, blue note, ink square
  *   cyan family    cyan triangle, sky half-disc, teal x, steel spade, mint diamond
- *   green family   lime square, chartreuse radioactive, mint diamond
+ *   green family   lime club, chartreuse radioactive, mint diamond
  *   warm family    yellow star, gold crown, orange flame, copper shield, peach hex
  *   pale family    white plus, peach hex, steel spade
  */
 export const GLYPH_BY_NAME: Readonly<Record<string, ColorGlyph>> = {
     magenta: 'circle',
     cyan: 'triangle',
-    lime: 'square',
+    lime: 'club',
     yellow: 'star',
     orange: 'flame',
     red: 'heart',
@@ -69,7 +69,7 @@ export const GLYPH_BY_NAME: Readonly<Record<string, ColorGlyph>> = {
     sky: 'half',
     purple: 'gem',
     steel: 'spade',
-    ink: 'club',
+    ink: 'square',
 };
 
 /** All glyphs (in palette order), for fallbacks and tests. */
