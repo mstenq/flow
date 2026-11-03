@@ -8,6 +8,8 @@
  * - smartWinRate   share won by a sensible player (closest to how people actually play): pods that fill
  *                  completely right now first, then pods with something reachable, then the rest; random within
  *                  a tier. This is what the score leans on: a level this player can't lose has no real traps.
+ *                  Pushy pods: every player only judges the pod it taps (see `tapScore`); the drops themselves
+ *                  happen inside the sim for every player (settled and real-time).
  * - deadEndRatio   trap density along the solution: at each step, the share of legal taps whose resulting state
  *                  is proven dead (budgeted solver; states it can't decide are left out). Budget-aware: steps
  *                  where nothing could be decided don't count.
@@ -208,6 +210,7 @@ export function measure(level: LevelData, opts: MeasureOptions): Measurement {
         hiddenShare: pods.length === 0 ? 0 : pods.filter((p) => p.hidden).length / pods.length,
         lockCount: pods.filter((p) => p.lock !== undefined).length,
         pairCount: pods.filter((p) => p.link !== undefined).length / 2,
+        pushyCount: pods.filter((p) => p.pushy).length,
         overflowPods: trace.stalledPod.filter(Boolean).length,
         peakStalled: trace.stalledAfter.reduce((a, b) => Math.max(a, b), 0),
     };
@@ -241,6 +244,7 @@ export function roundStats(stats: DifficultyStats): DifficultyStats {
         lockCount: stats.lockCount,
         pairCount: stats.pairCount,
     };
+    if (stats.pushyCount !== undefined) out.pushyCount = stats.pushyCount;
     if (stats.overflowPods !== undefined) out.overflowPods = stats.overflowPods;
     if (stats.peakStalled !== undefined) out.peakStalled = stats.peakStalled;
     if (stats.fastGreedyWinRate !== undefined) out.fastGreedyWinRate = r(stats.fastGreedyWinRate);

@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "rulesVersion": 1,
+  "rulesVersion": 2,
   "id": "light-bulb",
   "name": "Light Bulb",
   "width": 32,
@@ -12,17 +12,17 @@
   "tickMs": 270,
   "columns": [
     [{"id":1,"color":2,"capacity":5},{"id":3,"color":0,"capacity":47,"link":2},{"id":5,"color":1,"capacity":8},{"id":7,"color":0,"capacity":11,"lock":0},{"id":8,"color":2,"capacity":8},{"id":9,"color":1,"capacity":2},{"id":14,"color":2,"capacity":5}],
-    [{"id":2,"color":0,"capacity":37,"link":3},{"id":6,"color":0,"capacity":47},{"id":12,"color":2,"capacity":7},{"id":13,"color":1,"capacity":10},{"id":15,"color":1,"capacity":8},{"id":16,"color":1,"capacity":10}],
-    [{"id":4,"color":0,"capacity":45},{"id":10,"color":2,"capacity":1},{"id":11,"color":1,"capacity":4},{"id":17,"color":1,"capacity":7}]
+    [{"id":2,"color":0,"capacity":37,"link":3},{"id":6,"color":0,"capacity":47},{"id":12,"color":2,"capacity":7},{"id":13,"color":1,"capacity":7},{"id":15,"color":1,"capacity":8},{"id":16,"color":1,"capacity":10}],
+    [{"id":4,"color":0,"capacity":45},{"id":10,"color":2,"capacity":1},{"id":11,"color":1,"capacity":4},{"id":17,"color":1,"capacity":10}]
   ],
   "solution": [0,1,2,0,1,0,0,0,2,2,1,1,0,1,1,2],
   "meta": {
     "seed": 3334506741,
     "targetDifficulty": 0.17,
-    "difficulty": 0.171,
+    "difficulty": 0.167,
     "stats": {
-      "randomWinRate": 0.763,
-      "greedyWinRate": 0.82,
+      "randomWinRate": 0.773,
+      "greedyWinRate": 0.833,
       "smartWinRate": 0.813,
       "deadEndRatio": 0,
       "minLanes": 2,
@@ -30,6 +30,7 @@
       "hiddenShare": 0,
       "lockCount": 1,
       "pairCount": 1,
+      "pushyCount": 0,
       "overflowPods": 1,
       "peakStalled": 1,
       "fastGreedyWinRate": 1,
@@ -39,7 +40,7 @@
       "longestDrainSec": 12.69,
       "minLanesProven": true
     },
-    "generatorVersion": "gen-3.5.1",
+    "generatorVersion": "gen-3.6.0",
     "sourceHash": "2cb7ef6a29c20d89"
   }
 }

@@ -226,7 +226,7 @@ function html(input: ReportInput, imgs: { original: string; simple: string; neon
         ['overflow pods', String(s.overflowPods ?? '-')],
         ['peak stalled', String(s.peakStalled ?? '-')],
         ['hidden share', s.hiddenShare.toFixed(2)],
-        ['locks / pairs', `${s.lockCount} / ${s.pairCount}`],
+        ['locks / pairs / pushy', `${s.lockCount} / ${s.pairCount} / ${s.pushyCount ?? 0}`],
     ];
     const timing = Object.entries(input.timings)
         .map(([k, v]) => `${k} ${(v / 1000).toFixed(2)}s`)
@@ -280,6 +280,7 @@ canvas { background:var(--bg); border-radius:10px; border:1px solid var(--line);
 .pod { height:30px; border-radius:7px; display:flex; align-items:center; justify-content:space-between; padding:0 7px; font-weight:700; font-size:12px; color:#08060f; position:relative; }
 .pod.hidden { background:repeating-linear-gradient(45deg,#2a2148,#2a2148 5px,#1c1633 5px,#1c1633 10px) !important; color:var(--text); }
 .pod.locked { outline:2px dashed #fff; outline-offset:-3px; }
+.pod.pushy { border-bottom:4px solid #fff; }
 .pod .tag { font-size:10px; font-weight:600; padding:0 4px; border-radius:4px; background:rgba(0,0,0,.55); color:#fff; }
 .pod.next { box-shadow:0 0 0 2px #fff, 0 0 14px rgba(255,255,255,.6); }
 .info { margin:6px 0 12px; color:var(--dim); min-height:20px; }
@@ -292,7 +293,7 @@ canvas { background:var(--bg); border-radius:10px; border:1px solid var(--line);
 <div class="grid top">
   <div>
     <h1>${esc(level.name)}</h1>
-    <div class="sub">id <b>${esc(level.id)}</b> · ${level.width}×${level.height} · ${level.palette.length} colors · ${pods.length} pods · ${level.lanes} lanes · ${level.columns.length} columns · tick ${level.tickMs}ms · seed ${level.meta.seed} · ${esc(level.meta.generatorVersion)}</div>
+    <div class="sub">id <b>${esc(level.id)}</b> · ${level.width}×${level.height} · ${level.palette.length} colors · ${pods.length} pods${pods.some((p) => p.pushy) ? ` (${pods.filter((p) => p.pushy).length} pushy ▼)` : ''} · ${level.lanes} lanes · ${level.columns.length} columns · tick ${level.tickMs}ms · seed ${level.meta.seed} · ${esc(level.meta.generatorVersion)}</div>
     <div class="sub">${timing}</div>
   </div>
   <div style="text-align:right"><div class="dim">difficulty</div><div class="score">${level.meta.difficulty.toFixed(2)}</div><div class="dim">target ${level.meta.targetDifficulty.toFixed(2)}</div></div>
@@ -332,7 +333,7 @@ canvas { background:var(--bg); border-radius:10px; border:1px solid var(--line);
       <div class="lanes" id="lanes"></div>
       <h2>Columns <span class="dim" style="text-transform:none;letter-spacing:0">(front on top · white ring = next solution tap)</span></h2>
       <div class="cols" id="cols"></div>
-      <div class="legend">striped = hidden (true color shown as border) · dashed outline = locked (K = key id) · ⇄ = linked partner · red pulse = stalled lane</div>
+      <div class="legend">striped = hidden (true color shown as border) · dashed outline = locked (K = key id) · ⇄ = linked partner · ▼ = pushy (drops into a free lane by itself at the front, never tapped) · red pulse = stalled lane</div>
     </div>
   </div>
 </div>
@@ -382,13 +383,14 @@ function drawBoard(f, prev) {
 function podEl(p, nextId) {
   const truth = podById.get(p.id);
   const el = document.createElement('div');
-  el.className = 'pod' + (p.hidden ? ' hidden' : '') + (p.locked ? ' locked' : '') + (p.id === nextId ? ' next' : '');
+  el.className = 'pod' + (p.hidden ? ' hidden' : '') + (p.locked ? ' locked' : '') + (p.pushy ? ' pushy' : '') + (p.id === nextId ? ' next' : '');
   el.style.background = pal[truth.color];
   if (p.hidden) el.style.border = '2px solid ' + pal[truth.color];
   const left = document.createElement('span');
   left.textContent = p.hidden ? '? ' + truth.capacity : String(truth.capacity);
   el.appendChild(left);
   const tags = [];
+  if (p.pushy) tags.push('▼');
   if (p.locked) tags.push('K' + p.lock);
   if (p.link !== null) tags.push('⇄' + p.link);
   if (p.hidden) tags.push('hid');
@@ -409,7 +411,7 @@ function render(i) {
     el.className = 'lane full ' + l.state;
     el.style.borderColor = pal[l.color];
     el.style.boxShadow = '0 0 12px ' + pal[l.color] + '55';
-    el.innerHTML = '<b style="color:' + pal[l.color] + '">#' + l.podId + (l.link !== null ? ' ⇄' + l.link : '') + '</b><span>' + (l.capacity - l.remaining) + ' / ' + l.capacity + '</span><span class="dim">' + l.state + '</span><div class="fill" style="background:' + pal[l.color] + ';width:' + (100 * (l.capacity - l.remaining) / l.capacity) + '%"></div>';
+    el.innerHTML = '<b style="color:' + pal[l.color] + '">' + (podById.get(l.podId).pushy ? '▼ ' : '') + '#' + l.podId + (l.link !== null ? ' ⇄' + l.link : '') + '</b><span>' + (l.capacity - l.remaining) + ' / ' + l.capacity + '</span><span class="dim">' + l.state + '</span><div class="fill" style="background:' + pal[l.color] + ';width:' + (100 * (l.capacity - l.remaining) / l.capacity) + '%"></div>';
     lanes.appendChild(el);
   });
   const nextCol = i < L.solution.length ? L.solution[i] : -1;
@@ -423,15 +425,17 @@ function render(i) {
     cols.appendChild(el);
   });
   const left = [...f.cells].filter((ch) => ch !== '.').length;
+  const pushed = f.pushed.map((id) => { const t = podById.get(id); return '▼ #' + id + ' (<span style="color:' + pal[t.color] + '">■</span> cap ' + t.capacity + ')'; });
+  const pushedMsg = pushed.length ? ' · pushed in: ' + pushed.join(', ') : '';
   let msg;
-  if (i === 0) msg = 'Start. <b>' + left + '</b> cells. Next tap: column <b>' + nextCol + '</b>.';
+  if (i === 0) msg = 'Start. <b>' + left + '</b> cells. Next tap: column <b>' + nextCol + '</b>.' + pushedMsg;
   else {
     const tappedPod = prev.columns[f.tapped][0];
     const truth = podById.get(tappedPod.id);
     const pair = truth.link !== undefined ? ' + partner #' + truth.link : '';
     const stalled = f.lanes.filter((l) => l && l.state === 'stalled').length;
     msg = 'Step <b>' + i + '</b>: tapped column <b>' + f.tapped + '</b> → pod #' + truth.id + pair + ' (<span style="color:' + pal[truth.color] + '">■</span> cap ' + truth.capacity + ')' +
-      (D.stalledPod[i-1] ? ' <b style="color:#ff2950">stalls</b>' : ' completes') + ' · drained <b>' + f.drained + '</b> · <b>' + left + '</b> left · stalled lanes ' + stalled + '/' + L.lanes;
+      (D.stalledPod[i-1] ? ' <b style="color:#ff2950">stalls</b>' : ' completes') + pushedMsg + ' · drained <b>' + f.drained + '</b> · <b>' + left + '</b> left · stalled lanes ' + stalled + '/' + L.lanes;
     if (f.won) msg += ' · <span class="win">WON</span>';
     if (f.dead) msg += ' · <span class="dead">DEAD</span>';
   }

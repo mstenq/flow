@@ -1,5 +1,7 @@
 /**
  * Settled-play solver: DFS over taps with `settle()` between them, memoized on `hashKey()`.
+ * Pushy pods need nothing here: the sim drops them inside `tap()` / `settle()`, they are never legal taps while a
+ * lane is free, and the state (and its hash) already says where they are.
  *
  * The state graph is a DAG (every tap advances a column head), so a node whose subtree was fully explored
  * without a win is proven dead. A `Solver` keeps its `dead` / `win` memo across calls, which makes the many
@@ -30,7 +32,9 @@ function frontIndex(sim: Sim, col: number): number {
 /**
  * How promising a tap looks, lower is better: 0 = everything tapped completes now, 1 = some of its color is
  * reachable, 2 = nothing reachable. Uses only what a player can see (front pods are always revealed).
- * `deficit` (capacity beyond reachable) breaks ties.
+ * `deficit` (capacity beyond reachable) breaks ties. A pushy pod the tap would expose is ignored on purpose: judged
+ * by what is reachable before the tap drains anything it looks worse than it is (the tapped pod often opens its
+ * color), and the search learned to exploit a player that shied away from it.
  */
 export function tapScore(sim: Sim, col: number): { tier: number; deficit: number } {
     const c = sim.compiled;

@@ -14,17 +14,29 @@ import { DEFAULT_MIN_REGION, maxColorsForDifficulty, simplifyImage } from './pal
 import type { Board, Layout, Trace } from './board.ts';
 import { boardFromCells, podCount, replay, toLevel, traceSolution } from './board.ts';
 import type { Knobs } from './knobs.ts';
-import { MAX_SEARCH_LANES, WIDE_LANES, backgroundFor, fewColorBoost, keyCountFor, knobsSummary, laneCountFor, mechanicCaps, outlineFor, podCaps, sampleKnobs } from './knobs.ts';
+import {
+    MAX_SEARCH_LANES,
+    WIDE_LANES,
+    backgroundFor,
+    fewColorBoost,
+    keyCountFor,
+    knobsSummary,
+    laneCountFor,
+    mechanicCaps,
+    outlineFor,
+    podCaps,
+    pushyCountFor,
+    sampleKnobs,
+} from './knobs.ts';
 import { addBackground, addOutlineRing } from './outline-ring.ts';
 import { construct } from './construct.ts';
-import { addLock, applyMechanics, hideShare } from './mechanics.ts';
+import { PUSHY_SOLVER_BUDGET, addLock, addPushy, applyMechanics, hideShare, validatePlan } from './mechanics.ts';
 import type { Plan } from './plan.ts';
-import { clonePlan, planFromLayout, toLayout } from './plan.ts';
+import { clonePlan, planFromLayout, pushyCount, toLayout } from './plan.ts';
 import type { Measurement, MeasureOptions } from './difficulty.ts';
 import { FULL_MEASURE, SCREEN_MEASURE, measure, roundStats } from './difficulty.ts';
 import type { MutationRules } from './mutate.ts';
 import { mutate } from './mutate.ts';
-import { solveLevel } from './solver.ts';
 
 export interface GenerateInput {
     image: RgbaImage;
@@ -117,53 +129,61 @@ export function chooseTickMs(layout: Layout): number {
     return Math.max(MIN_TICK_MS, Math.min(MAX_TICK_MS, Math.round(tick)));
 }
 
-/** Validate a mutated plan: replay first, else ask the solver (which may produce a new tap order). */
-function validate(board: Board, plan: Plan, solverBudget: number): { plan: Plan; layout: Layout; resolved: boolean } | null {
-    const layout = toLayout(plan);
-    if (!layout) return null;
-    const level = toLevel(board, layout, { id: 'v', name: 'v' });
-    if (replay(level).won) return { plan, layout, resolved: false };
-    const r = solveLevel(level, solverBudget);
-    if (r.status !== 'solved') return null;
-    const solved: Layout = { ...layout, solution: r.solution };
-    const next = planFromLayout(solved);
-    const relaid = toLayout(next);
-    if (!relaid) return null;
-    return { plan: next, layout: relaid, resolved: true };
+/** One mechanic the end of the search tops up to a fixed count (keys, pushy pods). */
+interface TopUp {
+    want: number;
+    have: (plan: Plan) => number;
+    /** Add one (in place, keeps the plan winning). False if nothing fits. */
+    add: (plan: Plan, rng: Rng) => boolean;
+    /** Each one the level ends up short of costs this much in `bestTopUp`. */
+    missingCost: number;
+    /** Placements measured. */
+    tries: number;
 }
 
-/** A copy of `plan` with locks added (via `addLock`, which keeps it solvable) until it has `want` keys, or no lock fits. */
-function topUpKeys(board: Board, plan: Plan, want: number, rng: Rng): Plan {
+/** A copy of `plan` with `spec.add` applied until it has `spec.want`, or nothing more fits. */
+function topUpPlan(plan: Plan, spec: TopUp, rng: Rng): Plan {
     const out = clonePlan(plan);
-    for (let tries = 0; out.keys.length < want && tries < want * 3; tries++) addLock(board, out, rng);
+    for (let tries = 0; spec.have(out) < spec.want && tries < spec.want * 3; tries++) spec.add(out, rng);
     return out;
+}
+
+interface Scored {
+    plan: Plan;
+    layout: Layout;
+    m: Measurement;
+}
+
+/**
+ * The climbed plan with a mechanic topped up to `spec.want`. A late lock or pushy pod can strip every losing move
+ * (small boards end up with one forced order), so a few placements are measured and the one nearest the target
+ * wins. The plan without the extras stays an option, so a level is never made unlosable just to reach the count.
+ */
+function bestTopUp(best: Scored, spec: TopUp, target: number, rng: Rng, measureLayout: (layout: Layout) => Measurement): Scored {
+    const have = spec.have(best.plan);
+    if (have >= spec.want) return best;
+    const cost = (s: Scored) => distance(s.m, target, s.layout.lanes) + spec.missingCost * (spec.want - spec.have(s.plan));
+    let pick = best;
+    let pickCost = cost(best);
+    for (let k = 0; k < spec.tries; k++) {
+        const plan = topUpPlan(best.plan, spec, rng);
+        if (spec.have(plan) === have) continue;
+        const layout = toLayout(plan);
+        if (!layout) continue;
+        const next = { plan, layout, m: measureLayout(layout) };
+        const c = cost(next);
+        if (c >= pickCost) continue;
+        pick = next;
+        pickCost = c;
+    }
+    return pick;
 }
 
 /** Each key a level ends up short of costs this much in `bestTopUp`. */
 const MISSING_KEY_COST = 0.05;
 
-/**
- * The climbed plan with keys topped up to `want`. A late lock can strip every losing move (small boards end up with
- * one forced order), so a few placements are measured and the one nearest the target wins. The plan without the
- * extra keys stays an option, so a level is never made unlosable just to reach the key count.
- */
-function bestTopUp(board: Board, best: Candidate, want: number, target: number, rng: Rng, measureLayout: (layout: Layout) => Measurement): Plan {
-    if (best.plan.keys.length >= want) return best.plan;
-    const cost = (m: Measurement, plan: Plan, lanes: number) => distance(m, target, lanes) + MISSING_KEY_COST * (want - plan.keys.length);
-    let pick = best.plan;
-    let pickCost = cost(best.m, best.plan, best.layout.lanes);
-    for (let k = 0; k < 6; k++) {
-        const plan = topUpKeys(board, best.plan, want, rng);
-        if (plan.keys.length === best.plan.keys.length) continue;
-        const layout = toLayout(plan);
-        if (!layout) continue;
-        const c = cost(measureLayout(layout), plan, layout.lanes);
-        if (c >= pickCost) continue;
-        pick = plan;
-        pickCost = c;
-    }
-    return pick;
-}
+/** Each pushy pod a level ends up short of costs this much in `bestTopUp`. */
+const MISSING_PUSHY_COST = 0.03;
 
 export function generateLevel(input: GenerateInput): GenerateResult {
     const t0 = performance.now();
@@ -226,10 +246,12 @@ export function generateLevel(input: GenerateInput): GenerateResult {
     for (let i = 0; i < maxCandidates * 3; i++) {
         if (i >= maxCandidates && pool.some((c) => isLosable(c.m.stats))) break;
         const r = rng.fork();
-        const knobs = { ...sampleKnobs(target, r, wantKeys, boost, fixedLanes), maxPod };
+        const sampled = sampleKnobs(target, r, wantKeys, boost, fixedLanes);
+        // Pushy pods only on candidates with enough lanes (the count itself is per level, see `pushyCountFor`).
+        const knobs = { ...sampled, pushy: pushyCountFor(target, input.seed, sampled.lanes), maxPod };
         const built = construct(board, knobs, r);
         // Hidden pods are dealt after the search (see step 4): they don't change the score.
-        const placed = applyMechanics(board, planFromLayout(built.layout), { ...knobs, hiddenShare: 0 }, r);
+        const placed = applyMechanics(board, planFromLayout(board, built.layout), { ...knobs, hiddenShare: 0 }, r);
         const layout = toLayout(placed.plan);
         lap('construct');
         if (!layout) continue;
@@ -266,6 +288,8 @@ export function generateLevel(input: GenerateInput): GenerateResult {
         // The key count is fixed per level (`keyCountFor`): the climb neither adds nor removes keys.
         locks: false,
         pairs: caps.pairs > 0,
+        // The pushy count is fixed per level too: the climb only moves the flag between pods.
+        pushy: pushyCountFor(target, input.seed, MAX_SEARCH_LANES) > 0,
         maxHiddenShare: caps.hiddenShare,
         maxLocks: wantKeys,
         minPairs: boost.minPairs,
@@ -331,7 +355,7 @@ export function generateLevel(input: GenerateInput): GenerateResult {
         if (kinds.length === 0) continue;
         tried++;
         sinceGain++;
-        const ok = validate(board, plan, quick ? 3000 : 20_000);
+        const ok = validatePlan(board, plan, quick ? 3000 : 20_000);
         if (!ok) continue;
         const m = measure(toLevel(board, ok.layout, { id: input.id, name: input.name }), climbOpts);
         if (distance(m, searchTarget, ok.layout.lanes) >= distance(base.m, searchTarget, base.layout.lanes)) continue;
@@ -343,8 +367,22 @@ export function generateLevel(input: GenerateInput): GenerateResult {
     lap('climb');
     log.push(`hill-climb: ${tried} tries, ${accepted} accepted, ${restarts} restart(s) → ${best.note}`);
 
-    // 4. Top up keys a placement or the rescue climb dropped, hide a fixed share of pods, then the final measure and output.
-    const keyed = bestTopUp(board, best, wantKeys, searchTarget, rng.fork(), (layout) => measure(toLevel(board, layout, { id: input.id, name: input.name }), climbOpts));
+    // 4. Top up pushy pods and keys that placement or the climb dropped (pushy first: it may change the tap order,
+    // keys read the final drain order), hide a fixed share of pods, then the final measure and output.
+    const measureClimb = (layout: Layout) => measure(toLevel(board, layout, { id: input.id, name: input.name }), climbOpts);
+    // A non-fixed level that climbed to 4 lanes gets its pushy pods only here.
+    const wantPushy = pushyCountFor(target, input.seed, best.layout.lanes);
+    const pushySpec: TopUp = {
+        want: wantPushy,
+        have: pushyCount,
+        add: (plan, r) => addPushy(board, plan, r, quick ? 500 : PUSHY_SOLVER_BUDGET),
+        missingCost: MISSING_PUSHY_COST,
+        tries: 4,
+    };
+    const pushed = bestTopUp(best, pushySpec, searchTarget, rng.fork(), measureClimb);
+    if (pushyCount(pushed.plan) < wantPushy) log.push(`pushy: placed ${pushyCount(pushed.plan)} of ${wantPushy}`);
+    const keySpec: TopUp = { want: wantKeys, have: (p) => p.keys.length, add: (plan, r) => addLock(board, plan, r), missingCost: MISSING_KEY_COST, tries: 6 };
+    const keyed = bestTopUp(pushed, keySpec, searchTarget, rng.fork(), measureClimb).plan;
     if (keyed.keys.length < wantKeys) log.push(`keys: placed ${keyed.keys.length} of ${wantKeys}`);
     const hidden = toLayout(hideShare(keyed, best.knobs.hiddenShare, rng.fork()));
     if (!hidden) throw new Error('internal: hiding pods broke the layout');

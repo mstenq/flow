@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "rulesVersion": 1,
+  "rulesVersion": 2,
   "id": "crab",
   "name": "Crab",
   "width": 34,
@@ -11,9 +11,9 @@
   "lanes": 5,
   "tickMs": 164,
   "columns": [
-    [{"id":1,"color":1,"capacity":30},{"id":2,"color":0,"capacity":57,"hidden":true},{"id":5,"color":5,"capacity":28,"hidden":true},{"id":6,"color":4,"capacity":5},{"id":7,"color":2,"capacity":22},{"id":8,"color":2,"capacity":20},{"id":9,"color":0,"capacity":50},{"id":10,"color":3,"capacity":8},{"id":11,"color":5,"capacity":26},{"id":12,"color":3,"capacity":9}],
-    [{"id":13,"color":0,"capacity":64},{"id":18,"color":1,"capacity":30,"hidden":true},{"id":19,"color":3,"capacity":10},{"id":20,"color":5,"capacity":28,"hidden":true},{"id":22,"color":1,"capacity":10,"lock":0},{"id":23,"color":4,"capacity":3,"link":24},{"id":24,"color":4,"capacity":2,"link":23},{"id":27,"color":0,"capacity":74,"hidden":true}],
-    [{"id":3,"color":0,"capacity":74},{"id":4,"color":1,"capacity":20},{"id":14,"color":1,"capacity":29},{"id":15,"color":5,"capacity":20},{"id":16,"color":0,"capacity":106},{"id":17,"color":2,"capacity":22,"hidden":true},{"id":21,"color":5,"capacity":34},{"id":25,"color":3,"capacity":10},{"id":26,"color":2,"capacity":22}]
+    [{"id":1,"color":1,"capacity":30},{"id":2,"color":0,"capacity":57},{"id":5,"color":5,"capacity":28},{"id":6,"color":4,"capacity":5},{"id":7,"color":2,"capacity":22},{"id":8,"color":2,"capacity":20},{"id":9,"color":0,"capacity":50},{"id":10,"color":3,"capacity":8},{"id":11,"color":5,"capacity":26},{"id":12,"color":3,"capacity":9,"hidden":true}],
+    [{"id":13,"color":0,"capacity":64},{"id":18,"color":1,"capacity":30},{"id":19,"color":3,"capacity":10,"hidden":true},{"id":20,"color":5,"capacity":28},{"id":22,"color":1,"capacity":10,"lock":0},{"id":23,"color":4,"capacity":3,"link":24},{"id":24,"color":4,"capacity":2,"link":23},{"id":27,"color":0,"capacity":74}],
+    [{"id":3,"color":0,"capacity":74},{"id":4,"color":1,"capacity":20,"hidden":true},{"id":14,"color":1,"capacity":29,"hidden":true},{"id":15,"color":5,"capacity":20},{"id":16,"color":0,"capacity":106},{"id":17,"color":2,"capacity":22,"hidden":true},{"id":21,"color":5,"capacity":34,"hidden":true},{"id":25,"color":3,"capacity":10},{"id":26,"color":2,"capacity":22}]
   ],
   "solution": [0,0,2,2,0,0,0,0,0,0,0,0,1,2,2,2,2,1,1,1,2,1,1,2,2,1],
   "meta": {
@@ -30,6 +30,7 @@
       "hiddenShare": 0.222,
       "lockCount": 1,
       "pairCount": 1,
+      "pushyCount": 0,
       "overflowPods": 4,
       "peakStalled": 4,
       "fastGreedyWinRate": 0.52,
@@ -39,7 +40,7 @@
       "longestDrainSec": 17.38,
       "minLanesProven": true
     },
-    "generatorVersion": "gen-3.5.1",
+    "generatorVersion": "gen-3.6.0",
     "sourceHash": "fa6e262a7c4326e6"
   }
 }

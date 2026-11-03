@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "rulesVersion": 1,
+  "rulesVersion": 2,
   "id": "53-gingerbreadman-dish",
   "name": "Gingerbread Man Dish",
   "width": 32,
@@ -11,11 +11,11 @@
   "lanes": 5,
   "tickMs": 144,
   "columns": [
-    [{"id":1,"color":6,"capacity":29},{"id":4,"color":3,"capacity":26},{"id":5,"color":6,"capacity":24},{"id":23,"color":5,"capacity":9},{"id":29,"color":6,"capacity":5},{"id":32,"color":1,"capacity":3,"link":33},{"id":33,"color":2,"capacity":24,"link":32}],
-    [{"id":2,"color":3,"capacity":26},{"id":3,"color":1,"capacity":31},{"id":17,"color":2,"capacity":15,"hidden":true},{"id":18,"color":4,"capacity":16},{"id":19,"color":5,"capacity":9}],
-    [{"id":6,"color":5,"capacity":6},{"id":9,"color":3,"capacity":25},{"id":16,"color":5,"capacity":8,"hidden":true},{"id":20,"color":0,"capacity":26,"hidden":true},{"id":22,"color":2,"capacity":26},{"id":25,"color":2,"capacity":26}],
-    [{"id":7,"color":0,"capacity":46},{"id":8,"color":3,"capacity":26,"hidden":true},{"id":10,"color":0,"capacity":41},{"id":11,"color":1,"capacity":31,"hidden":true},{"id":24,"color":4,"capacity":20,"hidden":true},{"id":30,"color":4,"capacity":15},{"id":31,"color":4,"capacity":18}],
-    [{"id":12,"color":0,"capacity":46},{"id":13,"color":1,"capacity":28},{"id":14,"color":0,"capacity":25,"lock":0},{"id":15,"color":6,"capacity":29},{"id":21,"color":4,"capacity":23,"hidden":true},{"id":26,"color":1,"capacity":31,"hidden":true},{"id":27,"color":2,"capacity":14},{"id":28,"color":6,"capacity":29,"lock":1}]
+    [{"id":1,"color":6,"capacity":29},{"id":4,"color":3,"capacity":26},{"id":5,"color":6,"capacity":24,"hidden":true},{"id":23,"color":5,"capacity":9},{"id":29,"color":6,"capacity":5,"hidden":true},{"id":32,"color":1,"capacity":3,"link":33},{"id":33,"color":2,"capacity":24,"link":32}],
+    [{"id":2,"color":3,"capacity":26},{"id":3,"color":1,"capacity":31},{"id":17,"color":2,"capacity":15},{"id":18,"color":4,"capacity":16},{"id":19,"color":5,"capacity":9,"hidden":true}],
+    [{"id":6,"color":5,"capacity":6},{"id":9,"color":3,"capacity":25,"hidden":true},{"id":16,"color":5,"capacity":8,"hidden":true},{"id":20,"color":0,"capacity":26},{"id":22,"color":2,"capacity":26},{"id":25,"color":2,"capacity":26}],
+    [{"id":7,"color":0,"capacity":46},{"id":8,"color":3,"capacity":26},{"id":10,"color":0,"capacity":41,"hidden":true},{"id":11,"color":1,"capacity":31,"hidden":true},{"id":24,"color":4,"capacity":20},{"id":30,"color":4,"capacity":15},{"id":31,"color":4,"capacity":18}],
+    [{"id":12,"color":0,"capacity":46},{"id":13,"color":1,"capacity":28},{"id":14,"color":0,"capacity":25,"lock":0},{"id":15,"color":6,"capacity":29},{"id":21,"color":4,"capacity":23},{"id":26,"color":1,"capacity":31},{"id":27,"color":2,"capacity":14,"hidden":true},{"id":28,"color":6,"capacity":29,"lock":1}]
   ],
   "solution": [0,1,1,0,0,2,3,3,2,3,3,4,4,4,4,2,1,1,1,2,4,2,0,3,2,4,4,4,0,3,3,0],
   "meta": {
@@ -32,6 +32,7 @@
       "hiddenShare": 0.242,
       "lockCount": 2,
       "pairCount": 1,
+      "pushyCount": 0,
       "overflowPods": 8,
       "peakStalled": 4,
       "fastGreedyWinRate": 0.765,
@@ -41,7 +42,7 @@
       "longestDrainSec": 6.62,
       "minLanesProven": true
     },
-    "generatorVersion": "gen-3.5.1",
+    "generatorVersion": "gen-3.6.0",
     "sourceHash": "a3a19408482c4d82"
   }
 }

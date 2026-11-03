@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "rulesVersion": 1,
+  "rulesVersion": 2,
   "id": "bucket",
   "name": "Bucket",
   "width": 32,
@@ -13,8 +13,8 @@
   "columns": [
     [{"id":5,"color":1,"capacity":44},{"id":9,"color":3,"capacity":29,"lock":1},{"id":11,"color":2,"capacity":9,"link":12},{"id":12,"color":3,"capacity":25,"link":11},{"id":18,"color":0,"capacity":36,"link":19},{"id":19,"color":3,"capacity":9,"link":18},{"id":20,"color":0,"capacity":47,"lock":2}],
     [{"id":10,"color":0,"capacity":57},{"id":13,"color":1,"capacity":49,"hidden":true},{"id":15,"color":0,"capacity":54}],
-    [{"id":6,"color":1,"capacity":49},{"id":7,"color":2,"capacity":27},{"id":8,"color":2,"capacity":29},{"id":14,"color":1,"capacity":5,"hidden":true},{"id":16,"color":3,"capacity":29,"hidden":true}],
-    [{"id":1,"color":2,"capacity":29},{"id":2,"color":2,"capacity":21,"hidden":true},{"id":3,"color":3,"capacity":24},{"id":4,"color":1,"capacity":49,"hidden":true},{"id":17,"color":0,"capacity":43,"lock":0}]
+    [{"id":6,"color":1,"capacity":49},{"id":7,"color":2,"capacity":27},{"id":8,"color":2,"capacity":29,"hidden":true},{"id":14,"color":1,"capacity":5,"hidden":true},{"id":16,"color":3,"capacity":29,"hidden":true}],
+    [{"id":1,"color":2,"capacity":29},{"id":2,"color":2,"capacity":21},{"id":3,"color":3,"capacity":24,"hidden":true},{"id":4,"color":1,"capacity":49},{"id":17,"color":0,"capacity":43,"lock":0}]
   ],
   "solution": [3,3,3,3,0,2,2,2,0,1,0,1,2,1,2,3,0,0],
   "meta": {
@@ -31,6 +31,7 @@
       "hiddenShare": 0.25,
       "lockCount": 3,
       "pairCount": 2,
+      "pushyCount": 0,
       "overflowPods": 7,
       "peakStalled": 4,
       "fastGreedyWinRate": 0.285,
@@ -40,7 +41,7 @@
       "longestDrainSec": 7.07,
       "minLanesProven": true
     },
-    "generatorVersion": "gen-3.5.1",
+    "generatorVersion": "gen-3.6.0",
     "sourceHash": "b90a87a7a5c8bc2b"
   }
 }

@@ -1,12 +1,17 @@
 /**
- * Hill-climb mutations on a `Plan`. Redeals (`move`) keep the tap order, so they are always solvable; the
- * rest may break the stored solution and are re-validated by the caller (replay, then solver).
+ * Hill-climb mutations on a `Plan`. Without pushy pods, redeals (`move`) keep the tap order, so they are always
+ * solvable; the rest (and every edit of a plan with pushy pods, whose drop times depend on the deal) may break the
+ * stored solution and are re-validated by the caller (`validatePlan`: replay, then solver).
+ *
+ * The pushy count is fixed per level (`pushyCountFor`): the climb only moves the flag to another pod
+ * (`pushy-move`), and never cuts lanes below `MIN_PUSHY_LANES` while the plan has pushy pods.
  */
 import type { Rng } from '@game/rng';
 import type { Board } from './board.ts';
 import type { Plan } from './plan.ts';
-import { clonePlan, toLayout } from './plan.ts';
-import { addLock, addPair } from './mechanics.ts';
+import { clonePlan, planHasPushy, toLayout } from './plan.ts';
+import { addLock, addPair, isPlainPod } from './mechanics.ts';
+import { MIN_PUSHY_LANES } from './knobs.ts';
 
 export type MutationKind =
     | 'move'
@@ -21,12 +26,15 @@ export type MutationKind =
     | 'lock'
     | 'unlock'
     | 'pair'
-    | 'unpair';
+    | 'unpair'
+    | 'pushy-move';
 
 export interface MutationRules {
     hidden: boolean;
     locks: boolean;
     pairs: boolean;
+    /** Allow moving the pushy flag to another pod (count unchanged). */
+    pushy: boolean;
     maxHiddenShare: number;
     maxLocks: number;
     /** Fewest pairs the climb may unpair down to. */
@@ -55,12 +63,12 @@ function weightsFor(direction: number, rules: MutationRules): [MutationKind, num
     if (rules.hidden) w.push(['hide', harder ? 1.5 : 0.3], ['unhide', harder ? 0.3 : 1.5]);
     if (rules.locks) w.push(['lock', harder ? 1.5 : 0.2], ['unlock', harder ? 0.2 : 1.5]);
     if (rules.pairs) w.push(['pair', harder ? 1.5 : 0.2], ['unpair', harder ? 0.2 : 1.5]);
+    if (rules.pushy) w.push(['pushy-move', 1.5]);
     return w;
 }
 
 function plainIdx(plan: Plan, i: number): boolean {
-    const p = plan.order[i];
-    return !p.hidden && p.lock === undefined && p.link === undefined;
+    return isPlainPod(plan.order[i]);
 }
 
 function nextId(plan: Plan): number {
@@ -132,7 +140,7 @@ function apply(kind: MutationKind, board: Board, plan: Plan, rng: Rng, rules: Mu
         }
         case 'lanes-': {
             const hasPair = plan.order.some((p) => p.link !== undefined);
-            const floor = Math.max(rules.minLanes, hasPair ? 2 : 1);
+            const floor = Math.max(rules.minLanes, hasPair ? 2 : 1, planHasPushy(plan) ? MIN_PUSHY_LANES : 1);
             if (plan.lanes <= floor) return false;
             plan.lanes--;
             return true;
@@ -177,6 +185,16 @@ function apply(kind: MutationKind, board: Board, plan: Plan, rng: Rng, rules: Mu
             const q = plan.order.find((o) => o.id === p.link);
             delete p.link;
             if (q) delete q.link;
+            return true;
+        }
+        case 'pushy-move': {
+            const from = plan.order.map((p, i) => (p.pushy ? i : -1)).filter((i) => i >= 0);
+            if (from.length === 0) return false;
+            const front = frontFlags(plan);
+            const to = plan.order.map((_, i) => i).filter((i) => plainIdx(plan, i) && !front[i]);
+            if (to.length === 0) return false;
+            delete plan.order[rng.pick(from)].pushy;
+            plan.order[rng.pick(to)].pushy = true;
             return true;
         }
     }

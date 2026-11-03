@@ -49,6 +49,7 @@ export interface SweepResult {
     minLanes?: number;
     locks?: number;
     pairs?: number;
+    pushy?: number;
     hidden?: number;
     overflow?: number;
     warnings?: string[];
@@ -165,6 +166,7 @@ export function processJob(job: SweepJob): SweepResult {
             base.minLanes = st.minLanes;
             base.locks = st.lockCount;
             base.pairs = st.pairCount;
+            base.pushy = st.pushyCount ?? 0;
             base.hidden = pods.filter((p) => p.hidden).length;
             base.overflow = st.overflowPods;
             base.warnings = r.log.filter((x) => x.startsWith('WARNING'));

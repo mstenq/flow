@@ -8,7 +8,7 @@ import type { MechanicId, MechanicInfo } from '@game/mechanics';
 import { COLORS, font, keyLetter } from '../theme';
 import type { PaletteArt } from '../theme';
 import { drawKeyGlyph } from './glyphs';
-import { drawColorPod, drawHiddenPod, drawLightning, drawLinkRings, drawLockedPod } from '../view/podArt';
+import { PUSHY_COLOR, drawColorPod, drawHiddenPod, drawLightning, drawLinkRings, drawLockedPod, drawPushyBadge, pushyBadgeCenter } from '../view/podArt';
 import type { Destroyable, ModalContent } from './ModalOverlay';
 
 const POD_W = 132;
@@ -16,6 +16,8 @@ const POD_H = 104;
 const POD_SCALE = 0.82;
 const ART_H = 176;
 const TEXT_H = 150;
+
+const TITLE_COLORS: Record<MechanicId, string> = { hidden: '#b9a8ff', locked: '#ffe600', linked: '#bff8ff', pushy: '#ff9a4a' };
 
 export const INTRO_HEIGHT = ART_H + TEXT_H;
 
@@ -32,7 +34,7 @@ export function introContent(scene: Scene, opts: IntroOptions): ModalContent {
     const { info, remaining, onDone } = opts;
     return {
         title: info.title,
-        titleColor: info.id === 'locked' ? '#ffe600' : info.id === 'linked' ? '#bff8ff' : '#b9a8ff',
+        titleColor: TITLE_COLORS[info.id],
         custom: { height: INTRO_HEIGHT, build: (panel, top) => buildCard(scene, panel, top, opts) },
         buttons: [{ label: remaining > 0 ? 'NEXT' : 'GOT IT', primary: true, onPress: onDone }],
         onBackdrop: onDone,
@@ -113,5 +115,20 @@ const ILLUSTRATIONS: Record<MechanicId, (c: Canvas) => void> = {
         pod(-92, draw(2), '30', '#ffffff');
         pod(92, draw(2), '30', '#ffffff');
         drawLightning(gfx, -92 + POD_W * POD_SCALE * 0.5, cy - 8, 92 - POD_W * POD_SCALE * 0.5, cy - 8, 6, 5, 0x9ff3ff, 2.2, 1);
+    },
+    // A pod marked with the pushy badge -> the same pod sitting in a lane, with no tap in between.
+    pushy: ({ gfx, pod, cy, pick }) => {
+        pod(
+            -120,
+            (g) => {
+                drawColorPod(g, POD_W, POD_H, pick(3), true);
+                const b = pushyBadgeCenter(POD_W, POD_H);
+                drawPushyBadge(g, b.x, b.y, 21, 0, 1);
+            },
+            '18',
+            '#ffffff',
+        );
+        arrow(gfx, 0, cy, PUSHY_COLOR);
+        pod(120, (g) => drawColorPod(g, POD_W, POD_H, pick(3), true), '18', '#ffffff', 'LANE');
     },
 };

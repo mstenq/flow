@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "rulesVersion": 1,
+  "rulesVersion": 2,
   "id": "rhino",
   "name": "Rhino",
   "width": 32,
@@ -11,9 +11,9 @@
   "lanes": 5,
   "tickMs": 116,
   "columns": [
-    [{"id":8,"color":4,"capacity":26},{"id":9,"color":4,"capacity":10,"hidden":true},{"id":11,"color":4,"capacity":28,"lock":0},{"id":13,"color":2,"capacity":17},{"id":19,"color":0,"capacity":52}],
-    [{"id":5,"color":0,"capacity":51,"link":4},{"id":7,"color":1,"capacity":58,"hidden":true},{"id":10,"color":1,"capacity":41},{"id":17,"color":1,"capacity":31,"hidden":true}],
-    [{"id":1,"color":4,"capacity":27,"link":2},{"id":2,"color":2,"capacity":40,"link":1},{"id":6,"color":2,"capacity":33,"hidden":true},{"id":14,"color":1,"capacity":44,"lock":1},{"id":18,"color":4,"capacity":34,"hidden":true},{"id":23,"color":0,"capacity":44},{"id":24,"color":0,"capacity":9},{"id":26,"color":0,"capacity":5}],
+    [{"id":8,"color":4,"capacity":26},{"id":9,"color":4,"capacity":10},{"id":11,"color":4,"capacity":28,"lock":0},{"id":13,"color":2,"capacity":17,"hidden":true},{"id":19,"color":0,"capacity":52,"hidden":true}],
+    [{"id":5,"color":0,"capacity":51,"link":4},{"id":7,"color":1,"capacity":58,"hidden":true},{"id":10,"color":1,"capacity":41,"hidden":true},{"id":17,"color":1,"capacity":31,"hidden":true}],
+    [{"id":1,"color":4,"capacity":27,"link":2},{"id":2,"color":2,"capacity":40,"link":1},{"id":6,"color":2,"capacity":33},{"id":14,"color":1,"capacity":44,"lock":1},{"id":18,"color":4,"capacity":34},{"id":23,"color":0,"capacity":44},{"id":24,"color":0,"capacity":9},{"id":26,"color":0,"capacity":5}],
     [{"id":3,"color":2,"capacity":28},{"id":4,"color":3,"capacity":10,"link":5},{"id":20,"color":4,"capacity":21},{"id":21,"color":3,"capacity":6,"link":22},{"id":22,"color":0,"capacity":32,"link":21},{"id":27,"color":0,"capacity":18}],
     [{"id":12,"color":2,"capacity":40},{"id":15,"color":1,"capacity":53,"hidden":true},{"id":16,"color":1,"capacity":5},{"id":25,"color":0,"capacity":34,"lock":2}]
   ],
@@ -32,6 +32,7 @@
       "hiddenShare": 0.222,
       "lockCount": 3,
       "pairCount": 3,
+      "pushyCount": 0,
       "overflowPods": 6,
       "peakStalled": 4,
       "fastGreedyWinRate": 0,
@@ -41,7 +42,7 @@
       "longestDrainSec": 6.73,
       "minLanesProven": true
     },
-    "generatorVersion": "gen-3.5.1",
+    "generatorVersion": "gen-3.6.0",
     "sourceHash": "3adfd44ec361248a"
   }
 }

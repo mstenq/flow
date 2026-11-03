@@ -226,6 +226,15 @@ export class PlaybackRunner {
                 if (grid) for (const c of centers) grid.applyImpulse(c.x, c.y, 260, 170);
                 return;
             }
+            case 'pushed': {
+                // A pushy pod dropped into a free lane by itself: the tapped flight, plus an orange flourish.
+                const to = lanes.slotCenter(e.lane);
+                lanes.expectPod?.(e.lane);
+                queue.onTapped([e.podId], [to], () => lanes.podLanded?.(e.lane), true);
+                lanes.flash(e.lane);
+                grid?.applyImpulse(to.x, to.y, 380, 220);
+                return;
+            }
             case 'claimed': {
                 board.onClaimed(e);
                 const points = this.worldPath(e);

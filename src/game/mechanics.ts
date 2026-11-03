@@ -5,7 +5,7 @@
  */
 import type { LevelData } from './types';
 
-export type MechanicId = 'hidden' | 'locked' | 'linked';
+export type MechanicId = 'hidden' | 'locked' | 'linked' | 'pushy';
 
 export interface MechanicInfo {
     id: MechanicId;
@@ -18,6 +18,7 @@ export const MECHANICS: readonly MechanicInfo[] = [
     { id: 'hidden', title: 'HIDDEN POD', text: 'Its color stays secret until it reaches the front of its column.' },
     { id: 'locked', title: 'LOCKED POD', text: 'Drain the key out of the image to open it.' },
     { id: 'linked', title: 'LINKED PODS', text: 'Tap one and its partner joins it. Needs two free lanes.' },
+    { id: 'pushy', title: 'PUSHY POD', text: 'Drops into a free lane by itself when it reaches the front. Plan around it.' },
 ];
 
 export function introKey(id: MechanicId): string {
@@ -32,6 +33,7 @@ export function levelMechanics(level: Pick<LevelData, 'columns'>): MechanicId[] 
             if (pod.hidden) found.add('hidden');
             if (pod.lock !== undefined) found.add('locked');
             if (pod.link !== undefined) found.add('linked');
+            if (pod.pushy) found.add('pushy');
         }
     }
     return MECHANICS.filter((m) => found.has(m.id)).map((m) => m.id);

@@ -29,6 +29,7 @@ export class Sfx {
         if (!ctx || !dest || this.engine.isPaused || ctx.state === 'closed') return;
         switch (cue.sfx) {
             case 'tap': return this.tap(dest);
+            case 'pushed': return this.pushed(dest);
             case 'claim': return this.claim(cue.color, dest, ctx);
             case 'tick': return this.tickLimiter.tryAcquire(ctx.currentTime) ? this.tick(dest) : undefined;
             case 'podComplete': return this.podComplete(dest);
@@ -49,6 +50,12 @@ export class Sfx {
 
     private tap(d: AudioNode): void {
         tone(this.e(), d, { freq: 330, endFreq: 880, dur: 0.09, type: 'square', vol: 0.12 });
+    }
+
+    /** A pod dropped into a lane by itself: a lower, dirtier drop than the player's tap blip. */
+    private pushed(d: AudioNode): void {
+        tone(this.e(), d, { freq: 520, endFreq: 140, dur: 0.12, type: 'sawtooth', vol: 0.11 });
+        tone(this.e(), d, { freq: 220, endFreq: 70, dur: 0.1, type: 'square', vol: 0.09 });
     }
 
     private claim(color: number, d: AudioNode, ctx: AudioContext): void {

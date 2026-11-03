@@ -2,7 +2,7 @@
  * Minimal mirror of the sim's settled-play rules for construction, where pods are invented on the fly
  * (the real `Sim` needs every pod up front). Same tick semantics: lanes left→right each claim the nearest
  * reachable cell by `(dist, -y, x)`, other colors' distances update immediately, full pods free their lane.
- * No keys or links: mechanics are placed afterwards and every result is replayed on the real `Sim`.
+ * No keys, links or pushy pods: mechanics are placed afterwards and every result is replayed on the real `Sim`.
  */
 import { EMPTY } from '@game/types';
 import { INF, buildDist, relaxOpened } from '@game/reach';

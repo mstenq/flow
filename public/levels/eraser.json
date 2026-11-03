@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "rulesVersion": 1,
+  "rulesVersion": 2,
   "id": "eraser",
   "name": "Eraser",
   "width": 32,
@@ -30,6 +30,7 @@
       "hiddenShare": 0,
       "lockCount": 0,
       "pairCount": 0,
+      "pushyCount": 0,
       "overflowPods": 3,
       "peakStalled": 1,
       "fastGreedyWinRate": 0.69,
@@ -39,7 +40,7 @@
       "longestDrainSec": 3.24,
       "minLanesProven": true
     },
-    "generatorVersion": "gen-3.5.1",
+    "generatorVersion": "gen-3.6.0",
     "sourceHash": "06db27733d0b6b4c"
   }
 }

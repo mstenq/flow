@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "rulesVersion": 1,
+  "rulesVersion": 2,
   "id": "frying-pan",
   "name": "Frying Pan",
   "width": 32,
@@ -31,6 +31,7 @@
       "hiddenShare": 0,
       "lockCount": 1,
       "pairCount": 1,
+      "pushyCount": 0,
       "overflowPods": 0,
       "peakStalled": 0,
       "fastGreedyWinRate": 0.915,
@@ -40,7 +41,7 @@
       "longestDrainSec": 6.44,
       "minLanesProven": true
     },
-    "generatorVersion": "gen-3.5.1",
+    "generatorVersion": "gen-3.6.0",
     "sourceHash": "0bd7afeb2f9a702a"
   }
 }

@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "rulesVersion": 1,
+  "rulesVersion": 2,
   "id": "bowl",
   "name": "Bowl",
   "width": 32,
@@ -32,6 +32,7 @@
       "hiddenShare": 0,
       "lockCount": 0,
       "pairCount": 0,
+      "pushyCount": 0,
       "overflowPods": 5,
       "peakStalled": 2,
       "fastGreedyWinRate": 0.835,
@@ -41,7 +42,7 @@
       "longestDrainSec": 9.64,
       "minLanesProven": true
     },
-    "generatorVersion": "gen-3.5.1",
+    "generatorVersion": "gen-3.6.0",
     "sourceHash": "08f58b98f2b24b77"
   }
 }

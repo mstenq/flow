@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "rulesVersion": 1,
+  "rulesVersion": 2,
   "id": "butter2",
   "name": "Butter 2",
   "width": 32,
@@ -11,9 +11,9 @@
   "lanes": 5,
   "tickMs": 270,
   "columns": [
-    [{"id":6,"color":2,"capacity":17},{"id":15,"color":3,"capacity":14},{"id":27,"color":8,"capacity":5,"hidden":true},{"id":29,"color":7,"capacity":5},{"id":30,"color":5,"capacity":2,"lock":1},{"id":31,"color":6,"capacity":4},{"id":34,"color":10,"capacity":24,"hidden":true},{"id":36,"color":1,"capacity":18},{"id":39,"color":4,"capacity":5,"hidden":true},{"id":42,"color":7,"capacity":2,"hidden":true},{"id":45,"color":9,"capacity":1}],
-    [{"id":3,"color":0,"capacity":29},{"id":7,"color":9,"capacity":2,"link":8},{"id":8,"color":9,"capacity":1,"link":7},{"id":9,"color":5,"capacity":5},{"id":13,"color":1,"capacity":14},{"id":14,"color":0,"capacity":29},{"id":16,"color":2,"capacity":17},{"id":17,"color":9,"capacity":1},{"id":22,"color":6,"capacity":3,"hidden":true},{"id":28,"color":1,"capacity":18},{"id":32,"color":10,"capacity":24},{"id":35,"color":3,"capacity":14},{"id":40,"color":3,"capacity":12},{"id":43,"color":10,"capacity":1},{"id":44,"color":6,"capacity":1,"hidden":true}],
-    [{"id":1,"color":0,"capacity":18},{"id":2,"color":10,"capacity":24,"hidden":true},{"id":4,"color":4,"capacity":9,"hidden":true},{"id":5,"color":2,"capacity":13},{"id":10,"color":4,"capacity":10,"hidden":true},{"id":11,"color":8,"capacity":5},{"id":12,"color":3,"capacity":14},{"id":18,"color":1,"capacity":13,"hidden":true},{"id":19,"color":7,"capacity":3},{"id":20,"color":10,"capacity":21},{"id":21,"color":2,"capacity":14},{"id":23,"color":6,"capacity":4},{"id":24,"color":0,"capacity":28},{"id":25,"color":5,"capacity":4,"hidden":true},{"id":26,"color":0,"capacity":11},{"id":33,"color":5,"capacity":3},{"id":37,"color":1,"capacity":7},{"id":38,"color":2,"capacity":6,"lock":0},{"id":41,"color":9,"capacity":1,"lock":2}]
+    [{"id":6,"color":2,"capacity":17},{"id":15,"color":3,"capacity":14},{"id":27,"color":8,"capacity":5,"hidden":true},{"id":29,"color":7,"capacity":5},{"id":30,"color":5,"capacity":2,"lock":1},{"id":31,"color":6,"capacity":4},{"id":34,"color":10,"capacity":24},{"id":36,"color":1,"capacity":18,"hidden":true},{"id":39,"color":4,"capacity":5,"hidden":true},{"id":42,"color":7,"capacity":2},{"id":45,"color":9,"capacity":1}],
+    [{"id":3,"color":0,"capacity":29},{"id":7,"color":9,"capacity":2,"link":8},{"id":8,"color":9,"capacity":1,"link":7},{"id":9,"color":5,"capacity":5},{"id":13,"color":1,"capacity":14},{"id":14,"color":0,"capacity":29},{"id":16,"color":2,"capacity":17},{"id":17,"color":9,"capacity":1,"hidden":true},{"id":22,"color":6,"capacity":3},{"id":28,"color":1,"capacity":18},{"id":32,"color":10,"capacity":24},{"id":35,"color":3,"capacity":14,"hidden":true},{"id":40,"color":3,"capacity":12},{"id":43,"color":10,"capacity":1},{"id":44,"color":6,"capacity":1}],
+    [{"id":1,"color":0,"capacity":18},{"id":2,"color":10,"capacity":24},{"id":4,"color":4,"capacity":9},{"id":5,"color":2,"capacity":13},{"id":10,"color":4,"capacity":10,"hidden":true},{"id":11,"color":8,"capacity":5,"hidden":true},{"id":12,"color":3,"capacity":14},{"id":18,"color":1,"capacity":13},{"id":19,"color":7,"capacity":3},{"id":20,"color":10,"capacity":21},{"id":21,"color":2,"capacity":14,"hidden":true},{"id":23,"color":6,"capacity":4},{"id":24,"color":0,"capacity":28,"hidden":true},{"id":25,"color":5,"capacity":4,"hidden":true},{"id":26,"color":0,"capacity":11},{"id":33,"color":5,"capacity":3,"hidden":true},{"id":37,"color":1,"capacity":7},{"id":38,"color":2,"capacity":6,"lock":0},{"id":41,"color":9,"capacity":1,"lock":2}]
   ],
   "solution": [2,2,1,2,2,0,1,1,2,2,2,1,1,0,1,1,2,2,2,2,1,2,2,2,2,0,1,0,0,0,1,2,0,1,0,2,2,0,1,2,0,1,1,0],
   "meta": {
@@ -30,6 +30,7 @@
       "hiddenShare": 0.244,
       "lockCount": 3,
       "pairCount": 1,
+      "pushyCount": 0,
       "overflowPods": 12,
       "peakStalled": 4,
       "fastGreedyWinRate": 0.28,
@@ -39,7 +40,7 @@
       "longestDrainSec": 7.83,
       "minLanesProven": true
     },
-    "generatorVersion": "gen-3.5.1",
+    "generatorVersion": "gen-3.6.0",
     "sourceHash": "3034f703e4f63f0f"
   }
 }

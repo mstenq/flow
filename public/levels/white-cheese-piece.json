@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "rulesVersion": 1,
+  "rulesVersion": 2,
   "id": "white-cheese-piece",
   "name": "White Cheese Piece",
   "width": 32,
@@ -11,11 +11,11 @@
   "lanes": 5,
   "tickMs": 240,
   "columns": [
-    [{"id":4,"color":0,"capacity":28},{"id":8,"color":1,"capacity":17,"hidden":true},{"id":12,"color":2,"capacity":15},{"id":18,"color":1,"capacity":20,"hidden":true},{"id":24,"color":5,"capacity":17,"hidden":true},{"id":28,"color":0,"capacity":25}],
-    [{"id":2,"color":1,"capacity":26},{"id":10,"color":3,"capacity":9},{"id":16,"color":2,"capacity":11},{"id":17,"color":2,"capacity":3},{"id":20,"color":5,"capacity":23,"lock":0},{"id":26,"color":5,"capacity":23,"link":25}],
-    [{"id":9,"color":3,"capacity":11},{"id":14,"color":2,"capacity":15},{"id":19,"color":1,"capacity":15,"lock":2},{"id":21,"color":4,"capacity":8,"link":22},{"id":22,"color":5,"capacity":14,"link":21}],
-    [{"id":1,"color":0,"capacity":28},{"id":5,"color":5,"capacity":17},{"id":13,"color":2,"capacity":15},{"id":25,"color":4,"capacity":10,"link":26},{"id":29,"color":0,"capacity":12}],
-    [{"id":3,"color":3,"capacity":11},{"id":6,"color":4,"capacity":10,"lock":1},{"id":7,"color":3,"capacity":11,"hidden":true},{"id":11,"color":1,"capacity":26,"hidden":true},{"id":15,"color":0,"capacity":20,"hidden":true},{"id":23,"color":4,"capacity":8,"hidden":true},{"id":27,"color":4,"capacity":4}]
+    [{"id":4,"color":0,"capacity":28},{"id":8,"color":1,"capacity":17},{"id":12,"color":2,"capacity":15,"hidden":true},{"id":18,"color":1,"capacity":20,"hidden":true},{"id":24,"color":5,"capacity":17},{"id":28,"color":0,"capacity":25}],
+    [{"id":2,"color":1,"capacity":26},{"id":10,"color":3,"capacity":9},{"id":16,"color":2,"capacity":11},{"id":17,"color":2,"capacity":3,"hidden":true},{"id":20,"color":5,"capacity":23,"lock":0},{"id":26,"color":5,"capacity":23,"link":25}],
+    [{"id":9,"color":3,"capacity":11},{"id":14,"color":2,"capacity":15,"hidden":true},{"id":19,"color":1,"capacity":15,"lock":2},{"id":21,"color":4,"capacity":8,"link":22},{"id":22,"color":5,"capacity":14,"link":21}],
+    [{"id":1,"color":0,"capacity":28},{"id":5,"color":5,"capacity":17},{"id":13,"color":2,"capacity":15},{"id":25,"color":4,"capacity":10,"link":26},{"id":29,"color":0,"capacity":12,"hidden":true}],
+    [{"id":3,"color":3,"capacity":11},{"id":6,"color":4,"capacity":10,"lock":1},{"id":7,"color":3,"capacity":11,"hidden":true},{"id":11,"color":1,"capacity":26},{"id":15,"color":0,"capacity":20},{"id":23,"color":4,"capacity":8,"hidden":true},{"id":27,"color":4,"capacity":4}]
   ],
   "solution": [3,1,4,0,3,4,4,0,2,1,4,0,3,2,4,1,1,0,2,1,2,4,0,3,4,0,3],
   "meta": {
@@ -32,6 +32,7 @@
       "hiddenShare": 0.241,
       "lockCount": 3,
       "pairCount": 2,
+      "pushyCount": 0,
       "overflowPods": 10,
       "peakStalled": 4,
       "fastGreedyWinRate": 0.285,
@@ -41,7 +42,7 @@
       "longestDrainSec": 6.72,
       "minLanesProven": true
     },
-    "generatorVersion": "gen-3.5.1",
+    "generatorVersion": "gen-3.6.0",
     "sourceHash": "177a880b58938bae"
   }
 }

@@ -101,6 +101,40 @@ is completely buried, and a player who taps "whatever is showing" won most level
   always wide. `--background 0|1` forces it. The level select shows open levels as a dimmed color image (not a
   wireframe), since a filled background would read as a solid block.
 
+## Pushy pods (gen-3.6.0, rules v2, 2026-11-02)
+Asked for more pressure on 4- and 5-lane levels. The only way to lose is every lane stalled at once, and a pushy pod
+takes lane choice away from the player: a pushy pod whose color is buried becomes a forced stall.
+- **Rule (`src/game/sim.ts` header, `dropPushy`):** pod JSON `pushy?: true`. A pushy pod at the front of its column takes
+  a free lane by itself, exactly as if tapped, and **before the player can act**: at sim construction, at the end of
+  `tap()` (the tap exposed it and a lane is still free), and at the end of a tick right after completing pods free
+  lanes. Several waiting fronts drop lowest column first; a drop can expose another pushy pod, which drops too. So a
+  pushy pod only ever waits at a front while every lane is busy. Tapping it is legal by the normal rules, but in
+  practice it answers `noLane`. Deterministic and a pure function of state: the hash needs nothing new and settled play
+  (`tap` → `settle`) models it exactly. New event `{ t: 'pushed', podId, lane }`; `PodState.pushy`.
+- **Exclusive:** a pushy pod is never hidden, locked or linked (`validateLevel` counts pushy as a mechanic). Locks were
+  kept exclusive too: one mechanic per pod, as before.
+- **Count:** `pushyCountFor` (knobs.ts): uniform 0–`MAX_PUSHY` (5) from the seed on its own stream, 0 below the easy
+  cutoff or below `MIN_PUSHY_LANES` (4). The climb keeps the count fixed (a `pushy-move` mutation only moves the flag);
+  on non-fixed levels `lanes-` can't drop below 4 while pushy pods exist. A level that climbs to 4 lanes gets its pushy
+  pods in the end top-up (`bestTopUp`, now shared with keys: 4 measured placements, 0.03 per missing pod, pushy before keys).
+- **Plan:** `Plan.order` is lane-entry order (taps + pushy drops). `toLayout` skips pushy pods in the solution and
+  rejects a pushy pod at a column front. With pushy pods, order-preserving redeals are no longer automatically
+  solvable, so `planFromLayout(board, layout)` reads the order off the real Sim and every edit is validated (replay,
+  then the solver: `validatePlan` in mechanics.ts). `addPushy` weights candidates toward pods that would drop early
+  while their color is unreachable.
+- **Players:** the solver and every rollout player need no special code (the sim drops). The smart player does not
+  look ahead at pushy pods: a lookahead that judged them by reach *before* the tapped pod drained was too pessimistic
+  and the climb exploited it.
+- **Game:** orange ▼▼ badge on every visible pushy pod at any depth (`drawPushyGlyph`, `drawPushyBadge`); a waiting
+  front pushy pod pulses. `pushed` plays a flatter, faster orange flight via `PlaybackRunner`, plus its own sfx.
+  One-time intro card "PUSHY POD". The report marks pushy pods with ▼ and lists drops per step.
+- **Result (gen:all, 432 levels):** 323 levels have pushy pods (977 pods, all wanted placed). Counts 0/1/2/3/4/5 →
+  109/61/71/62/57/72 levels (the 0s include the 39 levels at 2–3 lanes and 2 of the 4 at 4 lanes). The score still targets the same
+  difficulty, so smart win rate barely moved (mean 0.376 → 0.375); the pressure replaced other sources (overflow pods
+  8.9 → 8.25 and solution taps 34.3 → 31.3 on pushy levels, same pairs/keys). Target miss mean 0.0108 → 0.0122
+  (>0.05: 12 → 13). None unlosable. Previous levels: /tmp/flow-levels-gen3.5.1. The `dev-*` levels were rebuilt with
+  `bun tools/dev/make-dev-levels.ts` for rules v2.
+
 ## Big boards (2026-11-02)
 - Boards go up to 64×64 (`MAX_DIM` in `src/game/level.ts`; the generator's `MAX_BOARD_SIZE` is the same constant). It
   used to be 48. 128×128 was tried (Demon) and dropped: cells got too small to see and to judge "is there enough of

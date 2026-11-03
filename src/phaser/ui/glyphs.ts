@@ -35,3 +35,27 @@ export function drawLinkGlyph(g: GameObjects.Graphics, cx: number, cy: number, s
     g.strokeCircle(cx - r * 0.7, cy, r);
     g.strokeCircle(cx + r * 0.7, cy, r);
 }
+
+/**
+ * Pushy pod marker: two stacked, bold, downward chevrons ("it drops by itself"). Filled polygons, so they stay
+ * solid at small sizes. `size` is the glyph width; `nudge` shifts both chevrons down (px) for the eager bob.
+ */
+export function drawPushyGlyph(g: GameObjects.Graphics, cx: number, cy: number, size: number, color: number, alpha = 1, nudge = 0): void {
+    const a = size / 2;
+    const depth = size * 0.34;
+    const thick = size * 0.2;
+    const gap = size * 0.38;
+    g.fillStyle(color, alpha);
+    for (let i = 0; i < 2; i++) {
+        const top = cy - (depth + thick + gap) / 2 + i * gap + nudge * (i === 0 ? 0.6 : 1);
+        g.beginPath();
+        g.moveTo(cx - a, top);
+        g.lineTo(cx, top + depth);
+        g.lineTo(cx + a, top);
+        g.lineTo(cx + a, top + thick);
+        g.lineTo(cx, top + depth + thick);
+        g.lineTo(cx - a, top + thick);
+        g.closePath();
+        g.fillPath();
+    }
+}

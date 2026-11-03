@@ -18,6 +18,8 @@ export interface Knobs {
     hiddenShare: number;
     keys: number;
     pairs: number;
+    /** Pushy pods to place (`pushyCountFor` for the candidate's lanes; `sampleKnobs` leaves it 0). */
+    pushy: number;
     /** Absolute cap on pod capacity on top of the per-color caps (`--max-pod` / levels.json; undefined = none). */
     maxPod?: number;
 }
@@ -145,6 +147,22 @@ export function keyCountFor(target: number, seed: number, boost: FewColorBoost =
     return new Rng(seed ^ 0x6b657973).int(boost.minKeys, MAX_KEYS);
 }
 
+/** Most pushy pods any level gets (see `pushyCountFor`). */
+export const MAX_PUSHY = 5;
+
+/** Fewest lanes a level needs for pushy pods: with fewer, a pod that takes a lane by itself is too punishing. */
+export const MIN_PUSHY_LANES = 4;
+
+/**
+ * Pushy pods a level should carry: uniform 0..MAX_PUSHY from the level seed (its own stream, so it does not shift
+ * the search), none below the easy cutoff or below `MIN_PUSHY_LANES` lanes. The count is drawn regardless of the
+ * lanes, so a level keeps the same count whatever lane count (≥ 4) it ends up with. The search keeps it fixed.
+ */
+export function pushyCountFor(target: number, seed: number, lanes: number): number {
+    if (target < EASY_CUTOFF || lanes < MIN_PUSHY_LANES) return 0;
+    return new Rng(seed ^ 0x70757368).int(0, MAX_PUSHY);
+}
+
 /**
  * Most pairs / hidden share a level at `target` may carry. Keeps lanes/overflow (the core puzzle) the main source
  * of difficulty: pairs are strong trap generators and the search would otherwise pile them on. Keys are not capped
@@ -205,13 +223,13 @@ export function sampleKnobs(target: number, rng: Rng, keys = 0, boost: FewColorB
     let pairs = 0;
     if (t >= 0.35) pairs = Math.min(caps.pairs, t < 0.6 ? rng.int(0, 1) : t < 0.8 ? rng.int(1, 2) : rng.int(1, 3));
     pairs = Math.min(caps.pairs, Math.max(pairs, boost.minPairs));
-    return { lanes, columns, podsPerColor: [lo, hi], overflowRate, parkRate, maxStalled, deal, hiddenShare, keys, pairs };
+    return { lanes, columns, podsPerColor: [lo, hi], overflowRate, parkRate, maxStalled, deal, hiddenShare, keys, pairs, pushy: 0 };
 }
 
 export function knobsSummary(k: Knobs): string {
     return (
         `lanes ${k.lanes}, cols ${k.columns}, pods/color ${k.podsPerColor[0]}-${k.podsPerColor[1]}, ` +
         `overflow ${k.overflowRate.toFixed(2)}, park ${k.parkRate.toFixed(2)}, maxStalled ${k.maxStalled}, deal ${k.deal}, ` +
-        `hidden ${k.hiddenShare.toFixed(2)}, keys ${k.keys}, pairs ${k.pairs}`
+        `hidden ${k.hiddenShare.toFixed(2)}, keys ${k.keys}, pairs ${k.pairs}, pushy ${k.pushy}`
     );
 }

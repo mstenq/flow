@@ -33,7 +33,7 @@ import type { PaletteArt } from '../theme';
 import { both, ui } from '../fx/CameraRig';
 import type { Fx } from '../fx/Fx';
 import { TEX } from '../fx/textures';
-import { capsuleRadius, drawColorPod, drawHiddenPod, drawLightning, drawLinkRings, drawLockedPod } from './podArt';
+import { PUSHY_COLOR, capsuleRadius, drawColorPod, drawHiddenPod, drawLightning, drawLinkRings, drawLockedPod, drawPushyBadge, pushyBadgeCenter } from './podArt';
 
 export interface QueueViewOptions {
     onColumnTap: (column: number) => void;
@@ -65,6 +65,8 @@ interface PodView {
     /** Drawn as locked until the key lands. */
     lockHeld: boolean;
     link: number | null;
+    /** Drops into a free lane by itself (badge on the pod; eager pulse while it waits at the front). */
+    pushy: boolean;
     color: number | null;
     deny: number;
     overlayDirty: boolean;
@@ -73,6 +75,8 @@ interface PodView {
 }
 
 const TWEEN_MS = 220;
+/** Radius of the pushy badge (pod-local px; deeper pods are scaled down, so it must be generous). */
+const PUSHY_BADGE_R = 23;
 const FLY_MS = 300;
 const GLITCH_MS = 70;
 /** Tween progress after which a sliding pod's texts start to fade in. */
@@ -174,8 +178,11 @@ export class QueueView {
         }
     }
 
-    /** The pods in `podIds` leave their columns and launch on an arc to `laneCenters[i]` (parallel arrays). */
-    onTapped(podIds: number[], laneCenters: Point2[], onLanded?: (index: number) => void): void {
+    /**
+     * The pods in `podIds` leave their columns and launch on an arc to `laneCenters[i]` (parallel arrays).
+     * `pushed` pods (they dropped by themselves) leave with an orange kick, a flatter and faster arc and an orange trail.
+     */
+    onTapped(podIds: number[], laneCenters: Point2[], onLanded?: (index: number) => void, pushed = false): void {
         podIds.forEach((id, i) => {
             const pv = this.pods.get(id);
             const to = laneCenters[i];
@@ -190,18 +197,25 @@ export class QueueView {
             pv.root.setDepth(DEPTH.goo + 1);
             this.flying++;
             pv.texts.setVisible(false);
+            pv.overlay.clear();
             const fromX = pv.root.x;
             const fromY = pv.root.y;
             const ctrlX = (fromX + to.x) / 2;
-            const ctrlY = Math.min(fromY, to.y) - 70;
-            const color = pv.color !== null ? (this.art[pv.color]?.glow ?? 0xffffff) : 0xffffff;
+            const ctrlY = Math.min(fromY, to.y) - (pushed ? 30 : 70);
+            const podColor = pv.color !== null ? (this.art[pv.color]?.glow ?? 0xffffff) : 0xffffff;
+            const color = pushed ? PUSHY_COLOR : podColor;
             const fx = this.fx;
-            fx?.flash(fromX, fromY, color, 120, 200, 0.7);
+            fx?.flash(fromX, fromY, color, pushed ? 190 : 120, 200, 0.7);
+            if (pushed) {
+                // The kick: sparks shoot back down the column, away from the direction of travel.
+                fx?.burst(fromX, fromY + 20, PUSHY_COLOR, { count: 14, speedMin: 120, speedMax: 320, angleMin: 70, angleMax: 110, scale: 0.55, life: 340 });
+                fx?.ring(fromX, fromY, PUSHY_COLOR, 70, 260, 0.8, 20);
+            }
             const state = { t: 0 };
             this.scene.tweens.add({
                 targets: state,
                 t: 1,
-                duration: FLY_MS,
+                duration: pushed ? FLY_MS * 0.8 : FLY_MS,
                 ease: 'Cubic.easeIn',
                 onUpdate: () => {
                     const t = state.t;
@@ -215,6 +229,7 @@ export class QueueView {
                     this.flying--;
                     onLanded?.(i);
                     fx?.flash(to.x, to.y, color, 170, 240, 0.9);
+                    if (pushed) fx?.ring(to.x, to.y, PUSHY_COLOR, this.layout.lanes.slotW * 0.9, 380, 0.9, 12);
                     this.destroyPod(pv);
                 },
             });
@@ -462,6 +477,7 @@ export class QueueView {
             locked: p.locked,
             lockHeld: false,
             link: p.link,
+            pushy: p.pushy,
             color: p.color,
             deny: 0,
             overlayDirty: false,
@@ -476,7 +492,7 @@ export class QueueView {
     }
 
     private applyState(pv: PodView, p: PodState, animate: boolean): void {
-        const key = `${p.hidden}|${p.locked}|${p.color}|${p.capacity}|${p.lock}|${p.link}|${pv.lockHeld}`;
+        const key = `${p.hidden}|${p.locked}|${p.color}|${p.capacity}|${p.lock}|${p.link}|${p.pushy}|${pv.lockHeld}`;
         if (pv.key === key) return;
         const wasHidden = pv.hidden;
         const wasLocked = pv.locked;
@@ -484,6 +500,7 @@ export class QueueView {
         pv.hidden = p.hidden;
         pv.locked = p.locked;
         pv.link = p.link;
+        pv.pushy = p.pushy;
         pv.color = p.color;
         this.lastState.set(pv.id, p);
         this.drawPod(pv, p);
@@ -495,7 +512,7 @@ export class QueueView {
     private redraw(pv: PodView): void {
         const p = this.lastState.get(pv.id);
         if (!p) return;
-        pv.key = `${p.hidden}|${p.locked}|${p.color}|${p.capacity}|${p.lock}|${p.link}|${pv.lockHeld}`;
+        pv.key = `${p.hidden}|${p.locked}|${p.color}|${p.capacity}|${p.lock}|${p.link}|${p.pushy}|${pv.lockHeld}`;
         this.drawPod(pv, p);
     }
 
@@ -524,7 +541,13 @@ export class QueueView {
             pv.glow.setTint(art?.glow ?? 0xffffff);
         }
         pv.glow.setAlpha(front && !p.hidden ? 0.28 : 0);
-        if (p.link !== null) drawLinkRings(g, w / 2 - 18, -h / 2 + 16, 20, 0xe8f6ff);
+        // A pushy front pod is drawn animated on the overlay (eager pulse); deeper ones carry a static badge.
+        if (p.pushy && !front) {
+            const b = pushyBadgeCenter(w, h);
+            drawPushyBadge(g, b.x, b.y, PUSHY_BADGE_R);
+        }
+        // Link rings sit top-right; a pushy badge takes that corner, so they step left of it.
+        if (p.link !== null) drawLinkRings(g, w / 2 - 18 - (p.pushy ? 46 : 0), -h / 2 + 16, 20, 0xe8f6ff);
     }
 
     private tickPod(pv: PodView, dt: number, timeMs: number, glitch: boolean): void {
@@ -532,17 +555,19 @@ export class QueueView {
         const o = pv.overlay;
         const showLocked = (pv.locked || pv.lockHeld) && !pv.hidden;
         const denying = pv.deny > 0;
+        const eager = pv.pushy && pv.index === 0;
         if (denying) pv.deny = Math.max(0, pv.deny - dt / 450);
-        if (!pv.hidden && !showLocked && !denying) {
+        if (!pv.hidden && !showLocked && !denying && !eager) {
             if (pv.overlayDirty) o.clear();
             pv.overlayDirty = false;
             return;
         }
-        if (pv.hidden && !glitch && !denying) return;
+        if (pv.hidden && !glitch && !denying && !eager) return;
         o.clear();
         pv.overlayDirty = true;
         if (pv.hidden) this.drawGlitch(pv, w, h, timeMs);
         if (showLocked) this.drawChains(o, w, h, timeMs);
+        if (eager) this.drawEager(o, w, h, timeMs);
         if (pv.deny > 0) {
             o.fillStyle(0xff1840, 0.35 * pv.deny);
             o.fillRoundedRect(-w / 2, -h / 2, w, h, capsuleRadius(w, h));
@@ -566,6 +591,18 @@ export class QueueView {
         }
         const jitter = Math.random() < 0.25;
         pv.label.setX(jitter ? (Math.random() - 0.5) * 6 : 0).setAlpha(Math.random() < 0.12 ? 0.25 : 0.75 + 0.25 * Math.sin(timeMs / 90));
+    }
+
+    /**
+     * A pushy pod waiting at the front means every lane is busy: it strains toward a lane. Orange rim pulse plus
+     * a badge whose chevrons bob downward.
+     */
+    private drawEager(o: GameObjects.Graphics, w: number, h: number, timeMs: number): void {
+        const beat = 0.5 + 0.5 * Math.sin(timeMs / 170);
+        o.lineStyle(3, PUSHY_COLOR, 0.35 + 0.5 * beat);
+        o.strokeRoundedRect(-w / 2 - 2, -h / 2 - 2, w + 4, h + 4, capsuleRadius(w, h) + 2);
+        const b = pushyBadgeCenter(w, h);
+        drawPushyBadge(o, b.x, b.y, PUSHY_BADGE_R, beat * 3, beat);
     }
 
     private drawChains(o: GameObjects.Graphics, w: number, h: number, timeMs: number): void {

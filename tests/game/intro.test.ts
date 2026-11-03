@@ -25,6 +25,12 @@ describe('mechanic intro cards', () => {
         expect(levelMechanics(linked)).toEqual(['linked']);
     });
 
+    test('levelMechanics finds pushy pods and lists them last', () => {
+        const pushy = { columns: [[{ id: 1, color: 0, capacity: 1 }, { id: 2, color: 0, capacity: 1, pushy: true as const, hidden: true as const }]] };
+        expect(levelMechanics(pushy)).toEqual(['hidden', 'pushy']);
+        expect(unseenMechanics(pushy, () => false).map((m) => m.title)).toEqual(['HIDDEN POD', 'PUSHY POD']);
+    });
+
     test('a card shows once: markSeen hides it for later levels', () => {
         expect(unseenMechanics(mixed, hasSeen).map((m) => m.id)).toEqual(['hidden', 'locked']);
         runActions.markSeen(introKey('hidden'));

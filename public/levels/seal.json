@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "rulesVersion": 1,
+  "rulesVersion": 2,
   "id": "seal",
   "name": "Seal",
   "width": 32,
@@ -12,9 +12,9 @@
   "tickMs": 109,
   "columns": [
     [{"id":9,"color":1,"capacity":15},{"id":11,"color":4,"capacity":4},{"id":12,"color":2,"capacity":36,"hidden":true},{"id":13,"color":5,"capacity":33,"lock":0},{"id":17,"color":5,"capacity":33},{"id":25,"color":3,"capacity":10}],
-    [{"id":5,"color":5,"capacity":33},{"id":6,"color":1,"capacity":42},{"id":10,"color":4,"capacity":4},{"id":14,"color":2,"capacity":36},{"id":15,"color":5,"capacity":24},{"id":24,"color":2,"capacity":8}],
-    [{"id":7,"color":1,"capacity":39},{"id":8,"color":1,"capacity":33,"hidden":true},{"id":16,"color":0,"capacity":43,"hidden":true},{"id":18,"color":5,"capacity":9},{"id":19,"color":0,"capacity":69},{"id":20,"color":3,"capacity":7},{"id":21,"color":0,"capacity":69,"hidden":true},{"id":22,"color":3,"capacity":9,"hidden":true}],
-    [{"id":1,"color":2,"capacity":36},{"id":2,"color":1,"capacity":37},{"id":3,"color":0,"capacity":69},{"id":4,"color":2,"capacity":28,"hidden":true},{"id":23,"color":0,"capacity":27}]
+    [{"id":5,"color":5,"capacity":33},{"id":6,"color":1,"capacity":42,"hidden":true},{"id":10,"color":4,"capacity":4},{"id":14,"color":2,"capacity":36},{"id":15,"color":5,"capacity":24},{"id":24,"color":2,"capacity":8}],
+    [{"id":7,"color":1,"capacity":39},{"id":8,"color":1,"capacity":33},{"id":16,"color":0,"capacity":43},{"id":18,"color":5,"capacity":9},{"id":19,"color":0,"capacity":69,"hidden":true},{"id":20,"color":3,"capacity":7,"hidden":true},{"id":21,"color":0,"capacity":69,"hidden":true},{"id":22,"color":3,"capacity":9}],
+    [{"id":1,"color":2,"capacity":36},{"id":2,"color":1,"capacity":37,"hidden":true},{"id":3,"color":0,"capacity":69},{"id":4,"color":2,"capacity":28},{"id":23,"color":0,"capacity":27}]
   ],
   "solution": [3,3,3,3,1,1,2,2,0,1,0,0,0,1,1,2,0,2,2,2,2,2,3,1,0],
   "meta": {
@@ -31,6 +31,7 @@
       "hiddenShare": 0.24,
       "lockCount": 1,
       "pairCount": 0,
+      "pushyCount": 0,
       "overflowPods": 8,
       "peakStalled": 4,
       "fastGreedyWinRate": 0.44,
@@ -40,7 +41,7 @@
       "longestDrainSec": 7.52,
       "minLanesProven": true
     },
-    "generatorVersion": "gen-3.5.1",
+    "generatorVersion": "gen-3.6.0",
     "sourceHash": "e6436cfaf042d2a5"
   }
 }

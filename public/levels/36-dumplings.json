@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "rulesVersion": 1,
+  "rulesVersion": 2,
   "id": "36-dumplings",
   "name": "Dumplings",
   "width": 32,
@@ -30,6 +30,7 @@
       "hiddenShare": 0,
       "lockCount": 0,
       "pairCount": 0,
+      "pushyCount": 0,
       "overflowPods": 0,
       "peakStalled": 0,
       "fastGreedyWinRate": 0.375,
@@ -39,7 +40,7 @@
       "longestDrainSec": 7.56,
       "minLanesProven": true
     },
-    "generatorVersion": "gen-3.5.1",
+    "generatorVersion": "gen-3.6.0",
     "sourceHash": "7af615639f76aaba"
   }
 }

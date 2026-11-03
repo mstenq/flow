@@ -73,6 +73,17 @@ describe('PlaybackRunner', () => {
         runner.dispose();
     });
 
+    test('pushed reuses the tapped flight for the pod and flashes its lane', () => {
+        const { targets, log } = setup();
+        const runner = new PlaybackRunner(targets);
+        runner.pump();
+        log.length = 0;
+        runner.enqueue([{ t: 'pushed', podId: 7, lane: 1 }]);
+        runner.pump();
+        expect(log).toEqual(['queue.tapped 7', 'lanes.flash 1', 'board.sync', 'lanes.sync', 'queue.sync']);
+        runner.dispose();
+    });
+
     test('claims run concurrently: every claimed event launches goo that ends at its lane slot', () => {
         const { facade, targets, log, launches } = setup();
         const runner = new PlaybackRunner(targets);

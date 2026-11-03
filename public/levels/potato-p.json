@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "rulesVersion": 1,
+  "rulesVersion": 2,
   "id": "potato-p",
   "name": "Potato (Alt)",
   "width": 32,
@@ -11,37 +11,38 @@
   "lanes": 5,
   "tickMs": 200,
   "columns": [
-    [{"id":1,"color":1,"capacity":27},{"id":8,"color":4,"capacity":8},{"id":16,"color":4,"capacity":8},{"id":19,"color":0,"capacity":22,"hidden":true},{"id":22,"color":1,"capacity":27,"hidden":true},{"id":25,"color":1,"capacity":27},{"id":37,"color":5,"capacity":6},{"id":38,"color":2,"capacity":26,"link":39}],
-    [{"id":7,"color":1,"capacity":5},{"id":13,"color":3,"capacity":25,"hidden":true},{"id":17,"color":6,"capacity":1,"hidden":true},{"id":21,"color":2,"capacity":24},{"id":23,"color":5,"capacity":10},{"id":28,"color":1,"capacity":21},{"id":31,"color":7,"capacity":18,"hidden":true},{"id":33,"color":3,"capacity":10},{"id":35,"color":5,"capacity":11},{"id":36,"color":2,"capacity":26,"hidden":true}],
-    [{"id":4,"color":0,"capacity":25,"link":5},{"id":5,"color":4,"capacity":8,"link":4},{"id":6,"color":5,"capacity":5},{"id":10,"color":5,"capacity":10,"hidden":true},{"id":15,"color":3,"capacity":25},{"id":24,"color":3,"capacity":9},{"id":26,"color":0,"capacity":27},{"id":30,"color":7,"capacity":21},{"id":32,"color":0,"capacity":7}],
-    [{"id":9,"color":6,"capacity":3},{"id":12,"color":7,"capacity":22,"hidden":true},{"id":14,"color":6,"capacity":2},{"id":34,"color":7,"capacity":27,"hidden":true},{"id":39,"color":2,"capacity":26,"link":38}],
-    [{"id":2,"color":4,"capacity":12},{"id":3,"color":7,"capacity":20},{"id":11,"color":4,"capacity":11},{"id":18,"color":3,"capacity":18},{"id":20,"color":7,"capacity":21,"hidden":true},{"id":27,"color":3,"capacity":14},{"id":29,"color":0,"capacity":27}]
+    [{"id":11,"color":6,"capacity":3},{"id":12,"color":6,"capacity":1,"pushy":true},{"id":13,"color":5,"capacity":7,"hidden":true},{"id":14,"color":0,"capacity":27},{"id":15,"color":5,"capacity":3}],
+    [{"id":1,"color":7,"capacity":29},{"id":2,"color":7,"capacity":32},{"id":7,"color":0,"capacity":18},{"id":8,"color":4,"capacity":12},{"id":9,"color":4,"capacity":11,"hidden":true},{"id":10,"color":3,"capacity":16,"hidden":true},{"id":20,"color":5,"capacity":10,"hidden":true},{"id":33,"color":0,"capacity":27,"link":34},{"id":35,"color":2,"capacity":23,"pushy":true}],
+    [{"id":3,"color":6,"capacity":2},{"id":4,"color":1,"capacity":26,"hidden":true},{"id":5,"color":1,"capacity":24,"pushy":true},{"id":6,"color":5,"capacity":11,"hidden":true},{"id":16,"color":2,"capacity":11},{"id":30,"color":1,"capacity":3,"link":31},{"id":32,"color":5,"capacity":11,"hidden":true},{"id":34,"color":7,"capacity":28,"link":33},{"id":36,"color":7,"capacity":21}],
+    [{"id":17,"color":4,"capacity":12},{"id":18,"color":2,"capacity":16},{"id":19,"color":3,"capacity":20,"pushy":true},{"id":21,"color":3,"capacity":22,"hidden":true},{"id":22,"color":3,"capacity":25},{"id":23,"color":0,"capacity":19},{"id":24,"color":2,"capacity":26}],
+    [{"id":25,"color":4,"capacity":12},{"id":26,"color":2,"capacity":26,"hidden":true},{"id":27,"color":7,"capacity":19},{"id":28,"color":3,"capacity":13},{"id":29,"color":1,"capacity":27,"hidden":true},{"id":31,"color":1,"capacity":27,"link":30},{"id":37,"color":3,"capacity":5},{"id":38,"color":0,"capacity":17,"pushy":true}]
   ],
-  "solution": [0,4,4,2,2,1,0,3,2,4,3,1,3,2,0,1,4,0,4,1,0,1,2,0,2,4,1,4,2,1,2,1,3,1,1,0,0],
+  "solution": [1,1,2,2,2,1,1,1,1,0,0,0,0,2,3,3,1,3,3,3,3,4,4,4,4,4,2,2,1,2,4],
   "meta": {
     "seed": 2995671591,
     "targetDifficulty": 0.68,
-    "difficulty": 0.672,
+    "difficulty": 0.67,
     "stats": {
-      "randomWinRate": 0.027,
-      "greedyWinRate": 0.3,
-      "smartWinRate": 0.29,
-      "deadEndRatio": 0.094,
+      "randomWinRate": 0.05,
+      "greedyWinRate": 0.313,
+      "smartWinRate": 0.297,
+      "deadEndRatio": 0.166,
       "minLanes": 4,
-      "branching": 4.46,
-      "hiddenShare": 0.256,
+      "branching": 3.26,
+      "hiddenShare": 0.263,
       "lockCount": 0,
       "pairCount": 2,
-      "overflowPods": 15,
+      "pushyCount": 5,
+      "overflowPods": 12,
       "peakStalled": 4,
-      "fastGreedyWinRate": 0.15,
-      "fastRandomWinRate": 0,
-      "maxPodCapacity": 27,
+      "fastGreedyWinRate": 0.295,
+      "fastRandomWinRate": 0.05,
+      "maxPodCapacity": 32,
       "medianPodCapacity": 18,
-      "longestDrainSec": 5.4,
-      "minLanesProven": true
+      "longestDrainSec": 6.4,
+      "minLanesProven": false
     },
-    "generatorVersion": "gen-3.5.1",
+    "generatorVersion": "gen-3.6.0",
     "sourceHash": "143e56ae1d6e576e"
   }
 }

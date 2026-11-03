@@ -6,6 +6,7 @@ import type { GameObjects } from 'phaser';
 import type { ColorGlyph } from '@data/themeColors';
 import { COLORS } from '../theme';
 import type { PaletteArt } from '../theme';
+import { drawPushyGlyph } from '../ui/glyphs';
 
 export interface CapsuleStyle {
     /** Body fill (deep tint). */
@@ -330,4 +331,25 @@ export function drawLinkRings(g: GameObjects.Graphics, cx: number, cy: number, s
     g.lineStyle(Math.max(1.5, size * 0.13), color, 0.9);
     g.strokeCircle(cx - r * 0.7, cy, r);
     g.strokeCircle(cx + r * 0.7, cy, r);
+}
+
+/** Hot orange used for everything "pushy" (queue badge, drop flourish, intro card). */
+export const PUSHY_COLOR = 0xff7a1f;
+
+/** Where the pushy badge sits on a pod: top-right corner. */
+export function pushyBadgeCenter(w: number, h: number): { x: number; y: number } {
+    return { x: w / 2 - 24, y: -h / 2 + 24 };
+}
+
+/** Pushy badge: dark disc, orange ring, double chevron. `nudge` bobs the chevrons down (eager pulse). */
+export function drawPushyBadge(g: GameObjects.Graphics, cx: number, cy: number, radius: number, nudge = 0, glow = 0): void {
+    if (glow > 0) {
+        g.fillStyle(PUSHY_COLOR, 0.25 * glow);
+        g.fillCircle(cx, cy, radius * 1.35);
+    }
+    g.fillStyle(0x1a0a02, 0.92);
+    g.fillCircle(cx, cy, radius);
+    g.lineStyle(2.5, PUSHY_COLOR, 1);
+    g.strokeCircle(cx, cy, radius);
+    drawPushyGlyph(g, cx, cy, radius * 1.3, 0xffc890, 1, nudge);
 }

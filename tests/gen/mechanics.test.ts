@@ -14,7 +14,7 @@ function build(seed: number) {
     const rng = new Rng(seed * 104729 + 1);
     const knobs = { ...sampleKnobs(0.6 + rng.next() * 0.4, rng), lanes: 4, maxStalled: 2 };
     const built = construct(board, knobs, rng);
-    const placed = applyMechanics(board, planFromLayout(built.layout), { hiddenShare: 0.3, keys: 3, pairs: 2 }, rng);
+    const placed = applyMechanics(board, planFromLayout(board, built.layout), { hiddenShare: 0.3, keys: 3, pairs: 2 }, rng);
     const layout = toLayout(placed.plan)!;
     return { name, board, placed, layout, level: toLevel(board, layout, { id: `${name}-${seed}`, name }) };
 }

@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "rulesVersion": 1,
+  "rulesVersion": 2,
   "id": "soil-patch",
   "name": "Soil Patch",
   "width": 33,
@@ -11,8 +11,8 @@
   "lanes": 5,
   "tickMs": 144,
   "columns": [
-    [{"id":3,"color":2,"capacity":13},{"id":4,"color":0,"capacity":47},{"id":10,"color":0,"capacity":47,"hidden":true},{"id":12,"color":0,"capacity":47,"lock":1},{"id":14,"color":3,"capacity":25,"link":15},{"id":15,"color":0,"capacity":8,"link":14},{"id":16,"color":3,"capacity":25}],
-    [{"id":1,"color":0,"capacity":37},{"id":2,"color":1,"capacity":30,"hidden":true},{"id":5,"color":3,"capacity":19,"hidden":true},{"id":6,"color":2,"capacity":13,"hidden":true},{"id":7,"color":1,"capacity":30},{"id":8,"color":1,"capacity":35},{"id":9,"color":1,"capacity":37,"lock":0},{"id":13,"color":3,"capacity":25},{"id":19,"color":2,"capacity":13}],
+    [{"id":3,"color":2,"capacity":13},{"id":4,"color":0,"capacity":47,"hidden":true},{"id":10,"color":0,"capacity":47},{"id":12,"color":0,"capacity":47,"lock":1},{"id":14,"color":3,"capacity":25,"link":15},{"id":15,"color":0,"capacity":8,"link":14},{"id":16,"color":3,"capacity":25}],
+    [{"id":1,"color":0,"capacity":37},{"id":2,"color":1,"capacity":30,"hidden":true},{"id":5,"color":3,"capacity":19},{"id":6,"color":2,"capacity":13,"hidden":true},{"id":7,"color":1,"capacity":30},{"id":8,"color":1,"capacity":35},{"id":9,"color":1,"capacity":37,"lock":0},{"id":13,"color":3,"capacity":25,"hidden":true},{"id":19,"color":2,"capacity":13}],
     [{"id":11,"color":1,"capacity":41},{"id":17,"color":2,"capacity":13,"link":18},{"id":18,"color":3,"capacity":6,"link":17}]
   ],
   "solution": [1,1,0,0,1,1,1,1,1,0,2,0,1,0,0,2,1],
@@ -30,6 +30,7 @@
       "hiddenShare": 0.211,
       "lockCount": 2,
       "pairCount": 2,
+      "pushyCount": 0,
       "overflowPods": 5,
       "peakStalled": 4,
       "fastGreedyWinRate": 0.52,
@@ -39,7 +40,7 @@
       "longestDrainSec": 6.77,
       "minLanesProven": true
     },
-    "generatorVersion": "gen-3.5.1",
+    "generatorVersion": "gen-3.6.0",
     "sourceHash": "402d986836506b97"
   }
 }

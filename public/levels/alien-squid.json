@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "rulesVersion": 1,
+  "rulesVersion": 2,
   "id": "alien-squid",
   "name": "Alien Squid",
   "width": 64,
@@ -11,10 +11,10 @@
   "lanes": 3,
   "tickMs": 90,
   "columns": [
-    [{"id":1,"color":1,"capacity":86},{"id":5,"color":5,"capacity":9,"hidden":true},{"id":9,"color":3,"capacity":25,"hidden":true},{"id":13,"color":0,"capacity":118},{"id":17,"color":0,"capacity":137},{"id":21,"color":0,"capacity":7},{"id":25,"color":5,"capacity":9}],
-    [{"id":2,"color":4,"capacity":7},{"id":6,"color":3,"capacity":25},{"id":10,"color":2,"capacity":63},{"id":14,"color":3,"capacity":25},{"id":18,"color":1,"capacity":83,"hidden":true},{"id":22,"color":4,"capacity":7,"hidden":true},{"id":26,"color":4,"capacity":7}],
-    [{"id":3,"color":0,"capacity":134},{"id":7,"color":2,"capacity":56},{"id":11,"color":0,"capacity":172},{"id":15,"color":1,"capacity":106,"lock":1},{"id":19,"color":3,"capacity":23,"hidden":true},{"id":23,"color":1,"capacity":65},{"id":27,"color":4,"capacity":9,"lock":2}],
-    [{"id":4,"color":5,"capacity":7},{"id":8,"color":0,"capacity":118},{"id":12,"color":2,"capacity":62},{"id":16,"color":2,"capacity":73,"hidden":true},{"id":20,"color":2,"capacity":50},{"id":24,"color":1,"capacity":83,"lock":0}]
+    [{"id":1,"color":1,"capacity":86},{"id":5,"color":5,"capacity":9},{"id":9,"color":3,"capacity":25,"hidden":true},{"id":13,"color":0,"capacity":118},{"id":17,"color":0,"capacity":137,"hidden":true},{"id":21,"color":0,"capacity":7},{"id":25,"color":5,"capacity":9}],
+    [{"id":2,"color":4,"capacity":7},{"id":6,"color":3,"capacity":25},{"id":10,"color":2,"capacity":63},{"id":14,"color":3,"capacity":25,"hidden":true},{"id":18,"color":1,"capacity":83},{"id":22,"color":4,"capacity":7},{"id":26,"color":4,"capacity":7,"hidden":true}],
+    [{"id":3,"color":0,"capacity":134},{"id":7,"color":2,"capacity":56,"hidden":true},{"id":11,"color":0,"capacity":172},{"id":15,"color":1,"capacity":106,"lock":1},{"id":19,"color":3,"capacity":23,"hidden":true},{"id":23,"color":1,"capacity":65},{"id":27,"color":4,"capacity":9,"lock":2}],
+    [{"id":4,"color":5,"capacity":7},{"id":8,"color":0,"capacity":118},{"id":12,"color":2,"capacity":62},{"id":16,"color":2,"capacity":73},{"id":20,"color":2,"capacity":50},{"id":24,"color":1,"capacity":83,"lock":0}]
   ],
   "solution": [0,1,2,3,0,1,2,3,0,1,2,3,0,1,2,3,0,1,2,3,0,1,2,3,0,1,2],
   "meta": {
@@ -31,6 +31,7 @@
       "hiddenShare": 0.222,
       "lockCount": 3,
       "pairCount": 0,
+      "pushyCount": 0,
       "overflowPods": 4,
       "peakStalled": 2,
       "fastGreedyWinRate": 0.16,
@@ -40,7 +41,7 @@
       "longestDrainSec": 15.48,
       "minLanesProven": true
     },
-    "generatorVersion": "gen-3.5.1",
+    "generatorVersion": "gen-3.6.0",
     "sourceHash": "432f11260db00b0d"
   }
 }

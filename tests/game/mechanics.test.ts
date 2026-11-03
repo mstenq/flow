@@ -210,3 +210,98 @@ describe('linked pairs', () => {
         expect(s.isWon()).toBe(true);
     });
 });
+
+describe('pushy pods', () => {
+    test('drops into a free lane by itself when the pod ahead of it is tapped', () => {
+        const s = Sim.fromLevel(lvl(`
+            0011
+        `, [[[0, 2], { color: 1, capacity: 2, pushy: true }]], 2));
+        expect(s.snapshot().columns[0][1]).toMatchObject({ id: 2, pushy: true });
+        expect(s.tap(0)).toEqual([
+            { t: 'tapped', podIds: [1], lanes: [0] },
+            { t: 'pushed', podId: 2, lane: 1 },
+        ]);
+        expect(s.snapshot().columns[0]).toEqual([]);
+        expect(s.snapshot().lanes.map((l) => l?.podId)).toEqual([1, 2]);
+        s.settle();
+        expect(s.isWon()).toBe(true);
+    });
+
+    test('waits at the front while every lane is busy, then takes the lane in the tick it frees (before any tap)', () => {
+        const s = Sim.fromLevel(lvl(`
+            0122
+        `, [[[0, 1], { color: 2, capacity: 2, pushy: true }], [[1, 1]]], 1));
+        s.tap(0);
+        expect(s.snapshot().columns[0][0]).toMatchObject({ id: 2, pushy: true });
+        expect(s.tapReason(0)).toBe('noLane');
+        expect(s.tick()).toEqual([
+            { t: 'claimed', podId: 1, lane: 0, x: 0, y: 0, color: 0, path: [] },
+            { t: 'podCompleted', podId: 1, lane: 0 },
+            { t: 'pushed', podId: 2, lane: 0 },
+        ]);
+        // The freed lane went to the pushy pod, so column 1 cannot be tapped until it drains.
+        expect(s.tapReason(1)).toBe('noLane');
+        s.settle();
+        s.tap(1);
+        s.settle();
+        expect(s.isWon()).toBe(true);
+    });
+
+    test('a pushy pod whose color is buried becomes a forced stall: dead', () => {
+        // Color 1 is walled in by color 0. Draining one cell frees the only lane, the pushy pod takes it, and
+        // nothing is left that could open the wall.
+        const dead = Sim.fromLevel(lvl(`
+            000
+            010
+            000
+        `, [[[0, 1], { color: 1, capacity: 1, pushy: true }], [[0, 7]]], 1));
+        dead.tap(0);
+        dead.settle();
+        expect(dead.snapshot().lanes[0]).toMatchObject({ podId: 2, state: 'stalled' });
+        expect(dead.isDead()).toBe(true);
+    });
+
+    test('several waiting pushy pods take free lanes lowest column first; a drop can expose another pushy pod', () => {
+        const s = Sim.fromLevel(lvl(`
+            0123
+        `, [
+            [[0, 1], { color: 1, capacity: 1, pushy: true }, { color: 2, capacity: 1, pushy: true }],
+            [{ color: 3, capacity: 1, pushy: true }],
+        ], 3));
+        // At start column 1's front is pushy and lanes are free, so it starts in a lane (no event at construction).
+        expect(s.snapshot().lanes.map((l) => l?.podId ?? null)).toEqual([4, null, null]);
+        expect(s.tap(0)).toEqual([
+            { t: 'tapped', podIds: [1], lanes: [1] },
+            { t: 'pushed', podId: 2, lane: 2 },
+        ]);
+        expect(s.snapshot().columns[0][0]).toMatchObject({ id: 3, pushy: true });
+        const ev = s.tick();
+        expect(ofType(ev, 'pushed')).toEqual([{ t: 'pushed', podId: 3, lane: 0 }]);
+        s.settle();
+        expect(s.isWon()).toBe(true);
+    });
+
+    test('a pushy drop reveals the hidden pod behind it', () => {
+        const s = Sim.fromLevel(lvl('012', [[[0, 1], { color: 1, capacity: 1, pushy: true }, { color: 2, capacity: 1, hidden: true }]], 3));
+        expect(s.tap(0)).toEqual([
+            { t: 'tapped', podIds: [1], lanes: [0] },
+            { t: 'pushed', podId: 2, lane: 1 },
+            { t: 'revealed', podId: 3 },
+        ]);
+    });
+
+    test('settled play and hashes stay consistent through auto-drops', () => {
+        const s = Sim.fromLevel(lvl(`
+            0011
+            2233
+        `, [[[0, 2], { color: 1, capacity: 2, pushy: true }], [[2, 2], { color: 3, capacity: 2, pushy: true }]], 2));
+        s.tap(0);
+        expect(s.hash()).toBe(s.hashFromScratch());
+        s.settle();
+        expect(s.hash()).toBe(s.hashFromScratch());
+        s.tap(1);
+        s.settle();
+        expect(s.hash()).toBe(s.hashFromScratch());
+        expect(s.isWon()).toBe(true);
+    });
+});

@@ -116,11 +116,15 @@ describe('validateLevel', () => {
         expectError((l) => ((l.columns[0][0] as { hidden: unknown }).hidden = false), /hidden must be true or absent/);
         expectError((l) => ((l.columns[0][0] as { lock: unknown }).lock = 'k'), /lock must be an integer/);
         expectError((l) => ((l.columns[0][0] as { link: unknown }).link = 'k'), /link must be an integer/);
+        expectError((l) => ((l.columns[0][0] as { pushy: unknown }).pushy = false), /pushy must be true or absent/);
     });
 
     test('no combined mechanics', () => {
         expectError((l) => (l.columns[1][0].hidden = true), /pod 3 combines mechanics/);
         expectError((l) => (l.columns[2][0].lock = 5), /combines mechanics/);
+        expectError((l) => (l.columns[0][1].pushy = true), /pod 2 combines mechanics/);
+        expectError((l) => (l.columns[1][0].pushy = true), /pod 3 combines mechanics/);
+        expectError((l) => (l.columns[2][0].pushy = true), /pod 4 combines mechanics/);
     });
 
     test('keys reference an existing locked pod and sit on a colored cell', () => {

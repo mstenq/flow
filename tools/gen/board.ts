@@ -2,14 +2,14 @@
  * Generator-side level plumbing: the simplified board, the layout being searched (columns + lanes + keys +
  * solution), conversion to `LevelData`, and settled replay of a stored solution on the real `Sim`.
  */
-import type { DifficultyStats, KeySpec, LevelData, PodSpec, ViewState } from '@game/types';
+import type { DifficultyStats, KeySpec, LevelData, PodSpec, SimEvent, ViewState } from '@game/types';
 import { EMPTY } from '@game/types';
 import { RULES_VERSION } from '@game/level';
 import { cellColor, cellsToString } from '@game/grid';
 import { Sim } from '@game/sim';
 
 /** Bump whenever generator output for the same inputs changes (invalidates the gen:all cache). */
-export const GENERATOR_VERSION = 'gen-3.5.1';
+export const GENERATOR_VERSION = 'gen-3.6.0';
 
 export interface Board {
     width: number;
@@ -119,6 +119,7 @@ export function toLevel(board: Board, layout: Layout, info: LevelInfo): LevelDat
 function normalizePod(p: PodSpec): PodSpec {
     const out: PodSpec = { id: p.id, color: p.color, capacity: p.capacity };
     if (p.hidden) out.hidden = true;
+    if (p.pushy) out.pushy = true;
     if (p.lock !== undefined) out.lock = p.lock;
     if (p.link !== undefined) out.link = p.link;
     return out;
@@ -151,8 +152,47 @@ export function replay(level: LevelData): ReplayResult {
     return { won: true, failedAt: -1, reason: '' };
 }
 
-/** Pods in the order the solution taps them (partners of linked pairs follow their tapped pod). */
-export function solutionPodOrder(layout: Layout): PodSpec[] {
+export function hasPushy(layout: Layout): boolean {
+    return layout.columns.some((col) => col.some((p) => p.pushy));
+}
+
+/**
+ * Pods in the order they enter lanes when the solution is played (settled play). Partners of linked pairs follow
+ * their tapped pod. Without pushy pods this is a pure walk of the solution; pushy pods enter whenever the board
+ * frees a lane for them, so then the level is replayed on the real `Sim` (which needs the board) and the order is
+ * read from its `tapped` / `pushed` events. Throws if the solution makes an illegal tap.
+ */
+export function laneEntryOrder(board: Board, layout: Layout): PodSpec[] {
+    if (!hasPushy(layout)) return tappedPodOrder(layout);
+    const byId = new Map<number, PodSpec>();
+    layout.columns.forEach((col) => col.forEach((p) => byId.set(p.id, p)));
+    const ids: number[] = [];
+    const collect = (events: SimEvent[]) => {
+        for (const e of events) {
+            if (e.t === 'tapped') ids.push(...e.podIds);
+            else if (e.t === 'pushed') ids.push(e.podId);
+        }
+    };
+    const sim = Sim.fromLevel(toLevel(board, layout, { id: 'order', name: 'order' }), { events: true });
+    // Pushy pods at a front at level start dropped while the sim was built (lowest lane first = drop order).
+    for (const lane of sim.snapshot().lanes) if (lane !== null) ids.push(lane.podId);
+    collect(sim.settle());
+    layout.solution.forEach((col, s) => {
+        const why = sim.tapReason(col);
+        if (why !== null) throw new Error(`laneEntryOrder: step ${s}: column ${col} ${why}`);
+        collect(sim.tap(col));
+        collect(sim.settle());
+    });
+    const seen = new Set(ids);
+    // A winning solution places every pod; anything left (a losing solution) goes last in column order.
+    layout.columns.forEach((col) => col.forEach((p) => {
+        if (!seen.has(p.id)) ids.push(p.id);
+    }));
+    return ids.map((id) => byId.get(id)!);
+}
+
+/** Pods the solution taps, in tap order (partners follow their tapped pod). Ignores pushy drops. */
+function tappedPodOrder(layout: Layout): PodSpec[] {
     const heads = layout.columns.map(() => 0);
     const byId = new Map<number, { col: number }>();
     layout.columns.forEach((col, c) => col.forEach((p) => byId.set(p.id, { col: c })));
@@ -172,9 +212,20 @@ export interface TraceFrame {
     step: number;
     /** Column tapped to reach this frame (-1 for the initial frame). */
     tapped: number;
+    /** Pushy pods that dropped into lanes by themselves during this step (tap + settle), in drop order. */
+    pushed: number[];
     cells: string;
     lanes: ({ podId: number; color: number; capacity: number; remaining: number; state: string; link: number | null } | null)[];
-    columns: { id: number; color: number; capacity: number; hidden: boolean; locked: boolean; lock: number | null; link: number | null }[][];
+    columns: {
+        id: number;
+        color: number;
+        capacity: number;
+        hidden: boolean;
+        locked: boolean;
+        lock: number | null;
+        link: number | null;
+        pushy: boolean;
+    }[][];
     keys: { id: number; x: number; y: number; podId: number }[];
     /** Cells drained by this step's settle. */
     drained: number;
@@ -192,15 +243,19 @@ export interface Trace {
     stalledAfter: number[];
     /** Legal taps just before each solution tap. */
     legalBefore: number[];
-    /** Whether the pod tapped at each step stalled (did not complete in its own settle). */
+    /**
+     * Whether a pod that entered a lane at each step stalled (did not complete in that step's settle). Counts the
+     * tapped pod(s) and any pushy pods that dropped during the step: a pushy pod that stalls is lane pressure too.
+     */
     stalledPod: boolean[];
 }
 
-function frameOf(view: ViewState, step: number, tapped: number, drained: number): TraceFrame {
+function frameOf(view: ViewState, step: number, tapped: number, pushed: number[], drained: number): TraceFrame {
     const cells = cellsToString(view.cells);
     return {
         step,
         tapped,
+        pushed,
         cells,
         lanes: view.lanes.map((l) =>
             l === null ? null : { podId: l.podId, color: l.color, capacity: l.capacity, remaining: l.remaining, state: l.state, link: l.link },
@@ -214,6 +269,7 @@ function frameOf(view: ViewState, step: number, tapped: number, drained: number)
                 locked: p.locked,
                 lock: p.lock,
                 link: p.link,
+                pushy: p.pushy,
             })),
         ),
         keys: view.keys.map((k) => ({ id: k.id, x: k.x, y: k.y, podId: k.podId })),
@@ -221,6 +277,16 @@ function frameOf(view: ViewState, step: number, tapped: number, drained: number)
         won: view.won,
         dead: view.dead,
     };
+}
+
+/** Ids of pods that entered lanes in `events`: tapped (with linked partners) and pushed. */
+function enteredIds(events: SimEvent[], into: { entered: number[]; pushed: number[] }): void {
+    for (const e of events) {
+        if (e.t === 'tapped') into.entered.push(...e.podIds);
+        if (e.t !== 'pushed') continue;
+        into.entered.push(e.podId);
+        into.pushed.push(e.podId);
+    }
 }
 
 /**
@@ -236,7 +302,7 @@ export function traceSolution(level: LevelData, withFrames: boolean): Trace {
     const stalledAfter: number[] = [];
     const legalBefore: number[] = [];
     const stalledPod: boolean[] = [];
-    const record = (events: ReturnType<Sim['settle']>, step: number): number => {
+    const record = (events: SimEvent[], step: number): number => {
         let drained = 0;
         for (const e of events) {
             if (e.t !== 'claimed') continue;
@@ -245,21 +311,26 @@ export function traceSolution(level: LevelData, withFrames: boolean): Trace {
         }
         return drained;
     };
-    const initial = record(sim.settle(), -1);
-    if (withFrames) frames.push(frameOf(sim.snapshot(), 0, -1, initial));
+    // Pushy pods at a front at level start are already in lanes when the sim is built.
+    const startPushed = sim.snapshot().lanes.flatMap((l) => (l === null ? [] : [l.podId]));
+    const startEvents = sim.settle();
+    const start = { entered: [] as number[], pushed: startPushed };
+    enteredIds(startEvents, start);
+    const initial = record(startEvents, -1);
+    if (withFrames) frames.push(frameOf(sim.snapshot(), 0, -1, start.pushed, initial));
     level.solution.forEach((col, s) => {
         freeBefore.push(sim.freeLaneCount());
         legalBefore.push(sim.legalTaps().length);
-        const tapEvents = sim.tap(col);
-        const tappedIds = new Set<number>();
-        for (const e of tapEvents) if (e.t === 'tapped') e.podIds.forEach((id) => tappedIds.add(id));
+        const step = { entered: [] as number[], pushed: [] as number[] };
+        enteredIds(sim.tap(col), step);
         const events = sim.settle();
+        enteredIds(events, step);
         const drained = record(events, s);
         const completed = new Set<number>();
         for (const e of events) if (e.t === 'podCompleted') completed.add(e.podId);
-        stalledPod.push([...tappedIds].some((id) => !completed.has(id)));
+        stalledPod.push(step.entered.some((id) => !completed.has(id)));
         stalledAfter.push(sim.laneCount - sim.freeLaneCount());
-        if (withFrames) frames.push(frameOf(sim.snapshot(), s + 1, col, drained));
+        if (withFrames) frames.push(frameOf(sim.snapshot(), s + 1, col, step.pushed, drained));
     });
     return { frames, drainStep, freeBefore, stalledAfter, legalBefore, stalledPod };
 }

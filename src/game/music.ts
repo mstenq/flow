@@ -184,6 +184,7 @@ export class ClaimLimiter {
 
 export type SoundCue =
     | { sfx: 'tap' }
+    | { sfx: 'pushed' }
     | { sfx: 'claim'; color: number }
     | { sfx: 'tick' }
     | { sfx: 'podComplete' }
@@ -207,7 +208,7 @@ const CUE_MAP: { [K in SimEventType]: (e: Extract<SimEvent, { t: K }>) => SoundC
     keyCollected: () => [{ sfx: 'keyCollected' }],
     unlocked: () => [{ sfx: 'lockShatter' }],
     revealed: () => [{ sfx: 'reveal' }],
-    pushed: () => [{ sfx: 'tap' }],
+    pushed: () => [{ sfx: 'pushed' }],
     podCompleted: () => [{ sfx: 'podComplete' }],
     won: () => [{ sfx: 'win' }],
     dead: () => [{ sfx: 'overload' }],

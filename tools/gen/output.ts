@@ -180,7 +180,7 @@ export function runOne(opts: RunOptions): RunResult {
     writeFileSync(path, json);
 
     const pods = level.columns.flat();
-    const mech = `${stats.lockCount} lock(s), ${stats.pairCount} pair(s), ${pods.filter((p) => p.hidden).length} hidden`;
+    const mech = `${stats.lockCount} lock(s), ${stats.pairCount} pair(s), ${stats.pushyCount ?? 0} pushy, ${pods.filter((p) => p.hidden).length} hidden`;
     const summary = [
         `== ${level.name} (${level.id}) ==`,
         `board    ${level.width}x${level.height}, ${pods.reduce((s, p) => s + p.capacity, 0)} cells, ${level.palette.length} colors`,
