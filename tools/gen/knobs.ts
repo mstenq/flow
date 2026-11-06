@@ -91,7 +91,7 @@ export const MAX_SEARCH_LANES = 4;
 /**
  * Fill-first lanes (`LevelData.fillFirst`): every eligible level whose search picks at most this many lanes drains in
  * waves. The climb never moves a plan across this boundary, so a level with 2-3 lanes is always fill-first and a
- * 4-lane level never is. Fixed-lane (wide, sealed) levels never get it.
+ * 4-lane level never is. Fixed-lane (wide, sealed: 4-5 lanes) levels never get it.
  */
 export const FILL_FIRST_MAX_LANES = 3;
 
@@ -106,20 +106,28 @@ export function fillFirstEligible(index: number): boolean {
     return index < 0 || index >= FILL_FIRST_EXEMPT_LEVELS;
 }
 
-/** Lane count of a wide level (see `laneCountFor`). */
+/** Most lanes a wide level gets (see `wideLanesFor`). */
 export const WIDE_LANES = 5;
+
+/** Share of wide levels that get one lane fewer than `WIDE_LANES`, so 4-lane levels sit between narrow and 5-lane ones. */
+export const FOUR_LANE_SHARE = 0.5;
+
+/** Lane count of a wide level (sealed, or wide by `laneCountFor`): 4 or 5, from the level seed (its own stream). */
+export function wideLanesFor(seed: number): number {
+    return new Rng(seed ^ 0x77696465).chance(FOUR_LANE_SHARE) ? WIDE_LANES - 1 : WIDE_LANES;
+}
 
 /** Share of levels at or above the easy cutoff that are wide. */
 export const WIDE_SHARE = 0.5;
 
 /**
- * Fixed lane count for this level, or null to let the search pick (2-4). Wide levels keep `WIDE_LANES` lanes for the
+ * Fixed lane count for this level, or null to let the search pick (2-4). Wide levels keep `wideLanesFor` lanes for the
  * whole search, so their difficulty has to come from traps that more lanes don't fix (keys, pairs, buried colors).
  */
 export function laneCountFor(target: number, seed: number): number | null {
-    // Without keys and pairs nothing traps a player with 5 lanes, so easy levels stay narrow.
+    // Without keys and pairs nothing traps a player with 4-5 lanes, so easy levels stay narrow.
     if (target < EASY_CUTOFF) return null;
-    return new Rng(seed ^ 0x6c616e65).chance(WIDE_SHARE) ? WIDE_LANES : null;
+    return new Rng(seed ^ 0x6c616e65).chance(WIDE_SHARE) ? wideLanesFor(seed) : null;
 }
 
 /**

@@ -8,39 +8,39 @@
   "palette": ["#ffd0a0","#ffb000","#a0431a","#ff7a1a","#ffe600","#ff2950"],
   "cells": "...............................................................................................................................................................................555............................531333..........................11333333.......................11111133333.....................1111111133135..................111111111113335................1111111111111135...............11001111111111135..............200000001111313113.............2000000000011131111............24440000000110000001...........244444444000000000000...........200004444000000000000...........244440000000000000005...........240000000000000000225...........00000000000000022225............0000000000002222225.............00000000022222222...............50000022222222..................53322222222......................5322222..........................555.....................................................................................................................................................................................",
   "keys": [{"id":0,"x":9,"y":24},{"id":1,"x":22,"y":12},{"id":2,"x":22,"y":20}],
-  "lanes": 5,
+  "lanes": 4,
   "tickMs": 270,
   "columns": [
-    [{"id":4,"color":1,"capacity":17},{"id":8,"color":2,"capacity":12},{"id":10,"color":2,"capacity":9},{"id":11,"color":5,"capacity":5,"lock":0},{"id":14,"color":4,"capacity":5},{"id":15,"color":0,"capacity":33,"pushy":true},{"id":16,"color":1,"capacity":9},{"id":19,"color":1,"capacity":18,"hidden":true},{"id":20,"color":1,"capacity":5,"link":21},{"id":21,"color":4,"capacity":5,"link":20},{"id":27,"color":2,"capacity":3,"lock":2},{"id":28,"color":3,"capacity":4,"hidden":true}],
-    [{"id":2,"color":5,"capacity":5},{"id":3,"color":3,"capacity":6,"pushy":true},{"id":9,"color":0,"capacity":32},{"id":13,"color":5,"capacity":5},{"id":17,"color":2,"capacity":12},{"id":23,"color":0,"capacity":22},{"id":24,"color":2,"capacity":12,"pushy":true},{"id":25,"color":4,"capacity":3,"hidden":true}],
-    [{"id":1,"color":1,"capacity":14},{"id":5,"color":5,"capacity":3,"lock":1},{"id":6,"color":4,"capacity":7,"hidden":true},{"id":7,"color":0,"capacity":25,"hidden":true},{"id":12,"color":0,"capacity":20},{"id":18,"color":1,"capacity":10},{"id":22,"color":3,"capacity":10},{"id":26,"color":3,"capacity":10,"hidden":true}]
+    [{"id":4,"color":1,"capacity":17},{"id":8,"color":2,"capacity":12},{"id":10,"color":2,"capacity":9},{"id":11,"color":5,"capacity":5,"lock":0},{"id":14,"color":4,"capacity":5},{"id":15,"color":0,"capacity":33,"pushy":true},{"id":16,"color":1,"capacity":9},{"id":19,"color":1,"capacity":18,"hidden":true},{"id":20,"color":1,"capacity":5,"link":21},{"id":28,"color":3,"capacity":4}],
+    [{"id":2,"color":5,"capacity":5},{"id":3,"color":3,"capacity":6,"pushy":true},{"id":9,"color":0,"capacity":32},{"id":13,"color":5,"capacity":5,"hidden":true},{"id":17,"color":2,"capacity":12},{"id":23,"color":0,"capacity":22},{"id":24,"color":2,"capacity":12,"pushy":true},{"id":25,"color":4,"capacity":3,"hidden":true},{"id":27,"color":2,"capacity":3,"lock":2}],
+    [{"id":1,"color":1,"capacity":14},{"id":5,"color":5,"capacity":3,"lock":1},{"id":6,"color":4,"capacity":7,"hidden":true},{"id":7,"color":0,"capacity":25},{"id":12,"color":0,"capacity":20,"hidden":true},{"id":18,"color":1,"capacity":10},{"id":21,"color":4,"capacity":5,"link":20},{"id":22,"color":3,"capacity":10},{"id":26,"color":3,"capacity":10,"hidden":true}]
   ],
-  "solution": [2,1,0,2,2,2,0,1,0,0,2,1,0,0,1,2,0,0,2,1,1,2,0,0],
+  "solution": [2,1,0,2,2,2,0,1,0,0,2,1,0,0,1,2,0,0,2,1,1,2,1,0],
   "meta": {
     "seed": 524270113,
     "targetDifficulty": 0.35,
-    "difficulty": 0.358,
+    "difficulty": 0.343,
     "stats": {
-      "randomWinRate": 0.623,
-      "greedyWinRate": 0.6,
-      "smartWinRate": 0.6,
+      "randomWinRate": 0.593,
+      "greedyWinRate": 0.59,
+      "smartWinRate": 0.637,
       "deadEndRatio": 0,
-      "minLanes": 2,
-      "branching": 2.63,
+      "minLanes": 3,
+      "branching": 2.75,
       "hiddenShare": 0.214,
       "lockCount": 3,
       "pairCount": 1,
       "pushyCount": 3,
       "overflowPods": 2,
       "peakStalled": 2,
-      "fastGreedyWinRate": 0.84,
-      "fastRandomWinRate": 0.935,
+      "fastGreedyWinRate": 0.83,
+      "fastRandomWinRate": 0.87,
       "maxPodCapacity": 33,
       "medianPodCapacity": 10,
       "longestDrainSec": 8.91,
       "minLanesProven": true
     },
-    "generatorVersion": "gen-3.6.0",
+    "generatorVersion": "gen-3.8.0",
     "sourceHash": "efcc2e06c484a93e"
   }
 }

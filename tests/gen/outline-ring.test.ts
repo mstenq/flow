@@ -5,7 +5,7 @@ import { EMPTY } from '@game/types';
 import { NEON_PALETTE } from '../../src/data/palette';
 import { boardFromAscii, replay } from '../../tools/gen/board';
 import { generateLevel } from '../../tools/gen/generate';
-import { EASY_CUTOFF, WIDE_LANES, backgroundChance, outlineChance, podCaps } from '../../tools/gen/knobs';
+import { EASY_CUTOFF, backgroundChance, outlineChance, podCaps, wideLanesFor } from '../../tools/gen/knobs';
 import { addBackground, addOutlineRing, freeNeon } from '../../tools/gen/outline-ring';
 import type { SimplifiedImage } from '../../tools/gen/palette';
 import { neonsConflict } from '../../tools/gen/palette';
@@ -90,7 +90,7 @@ describe('outline ring', () => {
         const ring = r.simplified.palette.length - 1;
         expect(r.board.seals).toEqual([ring]);
         expect([r.level.width, r.level.height]).toEqual([10, 8]);
-        expect(r.level.lanes).toBe(WIDE_LANES);
+        expect(r.level.lanes).toBe(wideLanesFor(5));
         expect(replay(r.level).won).toBe(true);
         const caps = podCaps(r.board.counts);
         for (const p of r.level.columns.flat()) expect(p.capacity).toBeLessThanOrEqual(caps[p.color]);
@@ -175,7 +175,7 @@ describe('background fill', () => {
         const image: RgbaImage = { width: 8, height: 7, data };
         const r = generateLevel({ image, id: 'bg', name: 'Bg', difficulty: 0.6, seed: 9, outline: false, background: true, candidates: 6, climb: 4, quick: true });
         expect(r.board.seals).toEqual([r.simplified.palette.length - 1]);
-        expect(r.level.lanes).toBe(WIDE_LANES);
+        expect(r.level.lanes).toBe(wideLanesFor(9));
         expect(replay(r.level).won).toBe(true);
     });
 });

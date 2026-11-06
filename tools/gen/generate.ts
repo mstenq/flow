@@ -17,7 +17,6 @@ import type { Knobs } from './knobs.ts';
 import {
     FILL_FIRST_MAX_LANES,
     MAX_SEARCH_LANES,
-    WIDE_LANES,
     backgroundFor,
     fewColorBoost,
     keyCountFor,
@@ -28,6 +27,7 @@ import {
     podCaps,
     pushyCountFor,
     sampleKnobs,
+    wideLanesFor,
 } from './knobs.ts';
 import { addBackground, addOutlineRing } from './outline-ring.ts';
 import type { Construction } from './construct.ts';
@@ -65,7 +65,7 @@ export interface GenerateInput {
     lanes?: number;
     /**
      * Eligible for fill-first lanes (default false; gen:all passes `fillFirstEligible`): candidates with at most
-     * `FILL_FIRST_MAX_LANES` lanes are fill-first, the rest are not. Wide (fixed 5-lane) levels never are.
+     * `FILL_FIRST_MAX_LANES` lanes are fill-first, the rest are not. Wide (fixed 4-5 lane) levels never are.
      */
     fillFirst?: boolean;
     /** Lighter measures everywhere (tests). */
@@ -256,8 +256,8 @@ export function generateLevel(input: GenerateInput): GenerateResult {
     const maxCandidates = input.candidates ?? 40;
     const wantKeys = keyCountFor(target, input.seed, boost);
     // Wide levels have a fixed lane count: the search finds traps that hold with that many lanes instead of cutting lanes.
-    // A seal traps through parked pods, which needs spare lanes: sealed levels are always wide.
-    const fixedLanes = input.lanes ?? (seals.length > 0 ? WIDE_LANES : laneCountFor(target, input.seed));
+    // A seal traps through parked pods, which needs spare lanes: sealed levels are always wide (4 or 5 lanes).
+    const fixedLanes = input.lanes ?? (seals.length > 0 ? wideLanesFor(input.seed) : laneCountFor(target, input.seed));
     if (fixedLanes !== null) log.push(`lanes fixed at ${fixedLanes}`);
     // Eligible levels: every candidate with few lanes drains in waves (see knobs.ts). Wide levels never qualify.
     const fillFirst = input.fillFirst ?? false;

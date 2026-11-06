@@ -101,6 +101,16 @@ is completely buried, and a player who taps "whatever is showing" won most level
   always wide. `--background 0|1` forces it. The level select shows open levels as a dimmed color image (not a
   wireframe), since a filled background would read as a solid block.
 
+## 4-lane wide levels (gen-3.8.0, 2026-11-05)
+There were no 4-lane levels: sealed levels (ring or background) and `laneCountFor` wide levels were fixed at 5, and the
+free search cuts lanes, so it settles on 2-3. Now every fixed-lane level takes `wideLanesFor(seed)` (knobs.ts): 4 lanes
+for `FOUR_LANE_SHARE` (0.5) of seeds, else `WIDE_LANES` (5), on its own seed stream. 4 is above
+`FILL_FIRST_MAX_LANES`, so these levels are not fill-first, and pushy pods still apply (`MIN_PUSHY_LANES` 4).
+- **Result:** regenerated the 191 five-lane levels whose seed now picks 4 (`gen:all --only ... --force`, 2m01s wall on
+  15 workers; 8 hit the wall-clock budget). Mean target miss 0.0107 (0.0135 at 5 lanes), 5 miss by > 0.05 (7 before),
+  none unlosable; pod and pushy counts unchanged. The other 241 entries are byte-identical: cache keys refreshed,
+  generatorVersion unchanged. Lanes now: 27 at 2, 17 at 3, 192 at 4, 200 at 5. Previous levels: /tmp/flow-levels-gen3.7.0.
+
 ## Fill-first lanes (gen-3.7.0, rules v3, 2026-11-05)
 Asked for every 2–3 lane level to drain in waves, except the first 3 beginner levels (Heart, Invader, Mushroom).
 - **Rule (`src/game/sim.ts` header, `updateWave`):** level JSON `fillFirst?: true` (written right after `lanes`).

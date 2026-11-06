@@ -2,7 +2,7 @@ import { describe, expect, test } from 'bun:test';
 import { Rng } from '@game/rng';
 import { replay, toLevel, traceSolution } from '../../tools/gen/board';
 import { construct, deal } from '../../tools/gen/construct';
-import { EASY_CUTOFF, MAX_KEYS, MAX_POD_CELLS, MIN_POD_CAP, POD_SHARE, WIDE_LANES, fewColorBoost, keyCountFor, laneCountFor, mechanicCaps, podCaps, sampleKnobs } from '../../tools/gen/knobs';
+import { EASY_CUTOFF, MAX_KEYS, MAX_POD_CELLS, MIN_POD_CAP, POD_SHARE, WIDE_LANES, fewColorBoost, keyCountFor, laneCountFor, mechanicCaps, podCaps, sampleKnobs, wideLanesFor } from '../../tools/gen/knobs';
 import { fixtureBoards } from './fixtures';
 
 describe('construct', () => {
@@ -84,11 +84,22 @@ describe('construct', () => {
             expect(laneCountFor(EASY_CUTOFF - 0.01, seed)).toBeNull();
             const lanes = laneCountFor(0.5, seed);
             if (lanes === null) continue;
-            expect(lanes).toBe(WIDE_LANES);
+            expect(lanes).toBe(wideLanesFor(seed));
             wide++;
         }
         expect(wide).toBeGreaterThan(70);
         expect(wide).toBeLessThan(130);
+    });
+
+    test('about half the wide levels get 4 lanes, the rest WIDE_LANES', () => {
+        let four = 0;
+        for (let seed = 0; seed < 200; seed++) {
+            const lanes = wideLanesFor(seed);
+            expect([WIDE_LANES - 1, WIDE_LANES]).toContain(lanes);
+            if (lanes === WIDE_LANES - 1) four++;
+        }
+        expect(four).toBeGreaterThan(70);
+        expect(four).toBeLessThan(130);
     });
 
     test('a fixed lane count wins over the sampled one without shifting the rest of the knobs', () => {
