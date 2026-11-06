@@ -26,6 +26,7 @@ import { syncLevelParam } from '../bootstrap';
 import { introContent } from '../ui/IntroCard';
 import { ModalOverlay } from '../ui/ModalOverlay';
 import { settingsContent } from '../ui/SettingsOverlay';
+import { solutionContent } from '../ui/SolutionOverlay';
 import { Toast } from '../ui/Toast';
 import { BoardView } from '../view/BoardView';
 import { WaveBanner } from '../view/WaveBanner';
@@ -430,10 +431,23 @@ export class Play extends Scene {
             buttons: [
                 { label: 'RESUME', primary: true, onPress: () => this.closePause() },
                 { label: 'SETTINGS', onPress: () => this.modal.show(settingsContent(this, () => this.showPauseMenu())) },
+                { label: 'SOLUTION', onPress: () => this.showSolution() },
                 { label: 'RESTART', onPress: () => this.restartLevel() },
                 { label: 'LEVEL SELECT', onPress: () => this.toLevelSelect() },
             ],
         });
+    }
+
+    private showSolution(): void {
+        this.modal.show(
+            solutionContent(this, {
+                guide: gameFacade.solutionGuide(),
+                art: paletteArtFromNums(this.palette),
+                columns: this.layout.queue.centers.length,
+                onResume: () => this.closePause(),
+                onBack: () => this.showPauseMenu(),
+            }),
+        );
     }
 
     private closePause(): void {

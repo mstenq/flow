@@ -9,10 +9,19 @@
 import type { LevelData, SimEvent, TapDenial, ViewState } from './types';
 import { Sim } from './sim';
 import { INF } from './reach';
+import { solutionSteps } from './solutionGuide';
+import type { SolutionStep } from './solutionGuide';
 
 export type GameSpeed = 1 | 2;
 
 export type TapResult = { ok: true; events: SimEvent[] } | { ok: false; reason: TapDenial };
+
+/** The stored solution as player-facing steps, plus where this round stands on it. */
+export interface SolutionGuide {
+    steps: readonly SolutionStep[];
+    /** Steps already tapped, if every tap so far followed the solution; null once the round left it. */
+    current: number | null;
+}
 
 /** Max ticks run by a single `advance()` call; the rest of the backlog is dropped (no burst after a hidden tab). */
 export const MAX_TICKS_PER_ADVANCE = 8;
@@ -27,6 +36,8 @@ export class GameFacade {
     private paused = false;
     private history: number[] = [];
     private onSolution = true;
+    /** `solutionSteps` of the loaded level, built on first use. */
+    private steps: SolutionStep[] | null = null;
     private readonly maxTicksPerAdvance: number;
 
     constructor(opts: { maxTicksPerAdvance?: number } = {}) {
@@ -38,6 +49,7 @@ export class GameFacade {
         const sim = Sim.fromLevel(level, { emitPaths: true });
         this.levelData = level;
         this.sim = sim;
+        this.steps = null;
         this.resetRound();
     }
 
@@ -189,6 +201,13 @@ export class GameFacade {
         if (level === null || !this.onSolution) return null;
         const next = level.solution[this.history.length];
         return next === undefined ? null : next;
+    }
+
+    /** Walkthrough for the pause menu. Assumes settled play: tap, then let the lanes finish. */
+    solutionGuide(): SolutionGuide {
+        const level = this.requireLevel();
+        this.steps ??= solutionSteps(level);
+        return { steps: this.steps, current: this.onSolution ? this.history.length : null };
     }
 
     private resetRound(): void {

@@ -101,6 +101,13 @@ is completely buried, and a player who taps "whatever is showing" won most level
   always wide. `--background 0|1` forces it. The level select shows open levels as a dimmed color image (not a
   wireframe), since a filled background would read as a solid block.
 
+## Solution walkthrough (pause menu, 2026-11-05)
+Pause → SOLUTION shows the stored `level.solution` as steps (`src/phaser/ui/SolutionOverlay.ts`, paged 8 rows). Built by
+`solutionSteps` (`src/game/solutionGuide.ts`), which replays the solution in settled play: column, front pod (color,
+capacity, started hidden / locked), linked partner, and outcome after the settle (CLEARS / STALLS / fill-first WAITS).
+`gameFacade.solutionGuide()` adds the round's position (null once a tap left the path). All 432 levels replay in full,
+≤5 ms each.
+
 ## 4-lane wide levels (gen-3.8.0, 2026-11-05)
 There were no 4-lane levels: sealed levels (ring or background) and `laneCountFor` wide levels were fixed at 5, and the
 free search cuts lanes, so it settles on 2-3. Now every fixed-lane level takes `wideLanesFor(seed)` (knobs.ts): 4 lanes
