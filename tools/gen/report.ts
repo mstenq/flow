@@ -272,6 +272,8 @@ canvas { background:var(--bg); border-radius:10px; border:1px solid var(--line);
 .lane.full { border-style:solid; }
 .lane .fill { position:absolute; left:0; bottom:0; height:6px; }
 .lane.stalled { animation:pulse 1.2s infinite; }
+.lane.held { opacity:.7; border-style:dashed; }
+.badge.ff { background:#0a3a40; border-color:var(--accent); color:var(--accent); font-weight:700; }
 @keyframes pulse { 50% { box-shadow:0 0 14px rgba(255,41,80,.7) inset; } }
 .cols { display:flex; gap:10px; align-items:flex-start; flex-wrap:wrap; }
 .col { min-width:74px; display:flex; flex-direction:column; gap:5px; padding:6px; border-radius:10px; border:1px solid var(--line); background:rgba(0,0,0,.25); }
@@ -293,7 +295,7 @@ canvas { background:var(--bg); border-radius:10px; border:1px solid var(--line);
 <div class="grid top">
   <div>
     <h1>${esc(level.name)}</h1>
-    <div class="sub">id <b>${esc(level.id)}</b> · ${level.width}×${level.height} · ${level.palette.length} colors · ${pods.length} pods${pods.some((p) => p.pushy) ? ` (${pods.filter((p) => p.pushy).length} pushy ▼)` : ''} · ${level.lanes} lanes · ${level.columns.length} columns · tick ${level.tickMs}ms · seed ${level.meta.seed} · ${esc(level.meta.generatorVersion)}</div>
+    <div class="sub">id <b>${esc(level.id)}</b> · ${level.width}×${level.height} · ${level.palette.length} colors · ${pods.length} pods${pods.some((p) => p.pushy) ? ` (${pods.filter((p) => p.pushy).length} pushy ▼)` : ''} · ${level.lanes} lanes${level.fillFirst ? ' <span class="badge ff">FILL-FIRST</span>' : ''} · ${level.columns.length} columns · tick ${level.tickMs}ms · seed ${level.meta.seed} · ${esc(level.meta.generatorVersion)}</div>
     <div class="sub">${timing}</div>
   </div>
   <div style="text-align:right"><div class="dim">difficulty</div><div class="score">${level.meta.difficulty.toFixed(2)}</div><div class="dim">target ${level.meta.targetDifficulty.toFixed(2)}</div></div>
@@ -333,7 +335,7 @@ canvas { background:var(--bg); border-radius:10px; border:1px solid var(--line);
       <div class="lanes" id="lanes"></div>
       <h2>Columns <span class="dim" style="text-transform:none;letter-spacing:0">(front on top · white ring = next solution tap)</span></h2>
       <div class="cols" id="cols"></div>
-      <div class="legend">striped = hidden (true color shown as border) · dashed outline = locked (K = key id) · ⇄ = linked partner · ▼ = pushy (drops into a free lane by itself at the front, never tapped) · red pulse = stalled lane</div>
+      <div class="legend">striped = hidden (true color shown as border) · dashed outline = locked (K = key id) · ⇄ = linked partner · ▼ = pushy (drops into a free lane by itself at the front, never tapped) · red pulse = stalled lane${level.fillFirst ? ' · fill-first: faded dashed lane = held (waits until every lane is full, or nothing is left to tap, then the whole wave drains)' : ''}</div>
     </div>
   </div>
 </div>
@@ -434,8 +436,13 @@ function render(i) {
     const truth = podById.get(tappedPod.id);
     const pair = truth.link !== undefined ? ' + partner #' + truth.link : '';
     const stalled = f.lanes.filter((l) => l && l.state === 'stalled').length;
+    // Fill-first: a pod tapped while no wave ran this step is held; waves are noted per step.
+    const held = L.fillFirst && !f.waves && f.lanes.some((l) => l && l.podId === truth.id);
+    const freeBefore = prev.lanes.filter((l) => !l).length;
+    const wave = f.waves ? ' · <b style="color:#00f0ff">' + (freeBefore <= (pair ? 2 : 1) ? 'lanes filled' : 'nothing left to tap') + ' → wave</b>' : '';
+    const fate = held ? ' <b style="color:#ffd23a">held</b>' : D.stalledPod[i-1] ? ' <b style="color:#ff2950">stalls</b>' : ' completes';
     msg = 'Step <b>' + i + '</b>: tapped column <b>' + f.tapped + '</b> → pod #' + truth.id + pair + ' (<span style="color:' + pal[truth.color] + '">■</span> cap ' + truth.capacity + ')' +
-      (D.stalledPod[i-1] ? ' <b style="color:#ff2950">stalls</b>' : ' completes') + pushedMsg + ' · drained <b>' + f.drained + '</b> · <b>' + left + '</b> left · stalled lanes ' + stalled + '/' + L.lanes;
+      fate + wave + pushedMsg + ' · drained <b>' + f.drained + '</b> · <b>' + left + '</b> left · stalled lanes ' + stalled + '/' + L.lanes;
     if (f.won) msg += ' · <span class="win">WON</span>';
     if (f.dead) msg += ' · <span class="dead">DEAD</span>';
   }

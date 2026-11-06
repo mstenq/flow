@@ -5,13 +5,14 @@
  * the hot path. Cell keys are precomputed tables; column-head / lane / key features are derived on the fly with
  * a seeded integer mixer (equivalent to a lazily-filled random table).
  *
- * Features hashed: emptied cells, column heads, lanes (lane, pod, remaining), collected keys.
+ * Features hashed: emptied cells, column heads, lanes (lane, pod, remaining), collected keys, fill-first wave lanes.
  */
 import { mix32, mulberry32 } from './rng';
 
 export const TAG_HEAD = 0x48454144;
 export const TAG_LANE = 0x4c414e45;
 export const TAG_KEY = 0x4b455921;
+export const TAG_WAVE = 0x57415645;
 
 export class Zobrist {
     readonly cellA: Int32Array;

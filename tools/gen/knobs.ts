@@ -22,6 +22,8 @@ export interface Knobs {
     pushy: number;
     /** Absolute cap on pod capacity on top of the per-color caps (`--max-pod` / levels.json; undefined = none). */
     maxPod?: number;
+    /** Fill-first lanes (`LevelData.fillFirst`): construction plans waves (see `FILL_FIRST_MAX_LANES`). */
+    fillFirst?: boolean;
 }
 
 /** Below this target a level gets no mechanics at all. */
@@ -85,6 +87,24 @@ export function fewColorBoost(numColors: number, target: number): FewColorBoost 
 
 /** Most lanes the search may pick on its own (it cuts lanes to raise difficulty, so it rarely goes this high). */
 export const MAX_SEARCH_LANES = 4;
+
+/**
+ * Fill-first lanes (`LevelData.fillFirst`): every eligible level whose search picks at most this many lanes drains in
+ * waves. The climb never moves a plan across this boundary, so a level with 2-3 lanes is always fill-first and a
+ * 4-lane level never is. Fixed-lane (wide, sealed) levels never get it.
+ */
+export const FILL_FIRST_MAX_LANES = 3;
+
+/**
+ * The first levels in levels-src/levels.json order (Heart, Invader, Mushroom) are beginner levels and keep plain
+ * lanes: fill-first is not something to meet before the basics.
+ */
+export const FILL_FIRST_EXEMPT_LEVELS = 3;
+
+/** Whether the level at `index` in levels.json order (-1 = not listed) may get fill-first lanes (see `FILL_FIRST_EXEMPT_LEVELS`). */
+export function fillFirstEligible(index: number): boolean {
+    return index < 0 || index >= FILL_FIRST_EXEMPT_LEVELS;
+}
 
 /** Lane count of a wide level (see `laneCountFor`). */
 export const WIDE_LANES = 5;
@@ -230,6 +250,6 @@ export function knobsSummary(k: Knobs): string {
     return (
         `lanes ${k.lanes}, cols ${k.columns}, pods/color ${k.podsPerColor[0]}-${k.podsPerColor[1]}, ` +
         `overflow ${k.overflowRate.toFixed(2)}, park ${k.parkRate.toFixed(2)}, maxStalled ${k.maxStalled}, deal ${k.deal}, ` +
-        `hidden ${k.hiddenShare.toFixed(2)}, keys ${k.keys}, pairs ${k.pairs}, pushy ${k.pushy}`
+        `hidden ${k.hiddenShare.toFixed(2)}, keys ${k.keys}, pairs ${k.pairs}, pushy ${k.pushy}${k.fillFirst ? ', fill-first' : ''}`
     );
 }

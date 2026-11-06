@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "rulesVersion": 2,
+  "rulesVersion": 3,
   "id": "soil-patch",
   "name": "Soil Patch",
   "width": 33,

@@ -1,4 +1,4 @@
-/** Level list helpers (pure). The index file is written by the generator: `[{ id, name, width, height, difficulty }]`. */
+/** Level list helpers (pure). The index file is written by the generator: `[{ id, name, width, height, difficulty, lanes }]`. */
 
 export interface LevelEntry {
     id: string;
@@ -6,6 +6,8 @@ export interface LevelEntry {
     width: number;
     height: number;
     difficulty: number;
+    /** Lane count (0 = unknown, e.g. an old index). */
+    lanes: number;
     /** Palette and image (row-major, '.' = empty) for thumbnails. Missing for dev levels / old indexes; fetch the level instead. */
     palette?: string[];
     cells?: string;
@@ -14,10 +16,10 @@ export interface LevelEntry {
 }
 
 export const DEV_LEVELS: readonly LevelEntry[] = [
-    { id: 'dev-basic', name: 'Dev Basic', width: 10, height: 10, difficulty: 0.2, dev: true },
-    { id: 'dev-mechanics', name: 'Dev Mechanics', width: 12, height: 12, difficulty: 0.5, dev: true },
-    { id: 'dev-big', name: 'Dev Big', width: 40, height: 40, difficulty: 0.8, dev: true },
-    { id: 'dev-colors', name: 'Dev Colors', width: 18, height: 18, difficulty: 0.6, dev: true },
+    { id: 'dev-basic', name: 'Dev Basic', width: 10, height: 10, difficulty: 0.2, lanes: 3, dev: true },
+    { id: 'dev-mechanics', name: 'Dev Mechanics', width: 12, height: 12, difficulty: 0.5, lanes: 4, dev: true },
+    { id: 'dev-big', name: 'Dev Big', width: 40, height: 40, difficulty: 0.8, lanes: 5, dev: true },
+    { id: 'dev-colors', name: 'Dev Colors', width: 18, height: 18, difficulty: 0.6, lanes: 5, dev: true },
 ];
 
 /** Keep only well-formed entries from parsed index JSON (anything else is ignored). */
@@ -36,6 +38,7 @@ export function parseLevelIndex(json: unknown): LevelEntry[] {
             width: typeof e.width === 'number' ? e.width : 0,
             height: typeof e.height === 'number' ? e.height : 0,
             difficulty: typeof e.difficulty === 'number' ? e.difficulty : 0,
+            lanes: typeof e.lanes === 'number' ? e.lanes : 0,
         });
     }
     return out;
@@ -47,6 +50,13 @@ function parseThumb(e: Record<string, unknown>): Pick<LevelEntry, 'palette' | 'c
     if (typeof cells !== 'string' || typeof width !== 'number' || typeof height !== 'number') return {};
     if (cells.length !== width * height) return {};
     return { palette: palette as string[], cells };
+}
+
+export const DIFFICULTY_TIERS = 5;
+
+/** Difficulty score (0..1) as a tier 1..`DIFFICULTY_TIERS`, in equal slices of the score. */
+export function difficultyTier(difficulty: number): number {
+    return Math.max(1, Math.min(DIFFICULTY_TIERS, Math.floor(difficulty * DIFFICULTY_TIERS) + 1));
 }
 
 /** Index entries first (in index order), then dev levels when `includeDev`. Duplicate ids keep the first. */

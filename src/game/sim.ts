@@ -11,6 +11,13 @@
  * tapping one is legal by the normal rules, but it only waits at the front when every lane is busy (`noLane`).
  * The drop is a pure function of the state, so the hash needs no extra feature and settled play models it exactly.
  *
+ * Fill-first lanes (rules v3, `LevelData.fillFirst`): lanes drain in waves. Pods in lanes only drain while they are
+ * part of the running wave. A wave starts when no wave runs, some pod in a lane can drain, and the player has no
+ * legal tap (every lane is full, or nothing in the queue can go in); all pods in lanes at that moment join it.
+ * Pods tapped while a wave runs are `held` until the next one. The wave ends at the end of the tick where none of
+ * its pods can drain any more (all complete or stalled); the next wave may start in that same tick.
+ * In settled play a wave always ends before the next tap, so the solver sees "fill every lane, then drain".
+ *
  * Used by the game (via `gameFacade`, ticks on a clock, taps any time) and by the generator/solver
  * (`clone()` → `tap()` → `settle()`, memo on `hashKey()`).
  */
@@ -30,7 +37,7 @@ import type { CompiledLevel } from './level';
 import { compileLevel } from './level';
 import { buildColorLists, removeFromColorList } from './grid';
 import { INF, buildDist, relaxOpened, tracePath } from './reach';
-import { TAG_HEAD, TAG_KEY, TAG_LANE, toBigHash, toNumberHash } from './hash';
+import { TAG_HEAD, TAG_KEY, TAG_LANE, TAG_WAVE, toBigHash, toNumberHash } from './hash';
 
 export interface SimOptions {
     /** Compute exit paths on `claimed` events (the game wants them, the solver doesn't). Default false. */
@@ -58,6 +65,10 @@ export class Sim {
     private colHead: Int32Array;
     private lanePod: Int32Array;
     private laneRem: Int32Array;
+    /** Fill-first: 1 = the lane's pod is part of the running wave. */
+    private laneWave: Uint8Array;
+    /** Fill-first: a wave is running. */
+    private waveOn: boolean;
     private podRevealed: Uint8Array;
     private keyCollected: Uint8Array;
     private cellsLeft: number;
@@ -94,6 +105,8 @@ export class Sim {
         s.colHead = new Int32Array(numCols);
         s.lanePod = new Int32Array(numLanes).fill(-1);
         s.laneRem = new Int32Array(numLanes);
+        s.laneWave = new Uint8Array(numLanes);
+        s.waveOn = false;
         s.podRevealed = new Uint8Array(numPods);
         s.keyCollected = new Uint8Array(numKeys);
         let left = 0;
@@ -107,6 +120,7 @@ export class Sim {
         s.deadEmitted = false;
         for (let col = 0; col < numCols; col++) s.revealFront(col, null);
         s.dropPushy(null);
+        s.updateWave(null);
         return s;
     }
 
@@ -122,6 +136,8 @@ export class Sim {
         s.colHead = this.colHead.slice();
         s.lanePod = this.lanePod.slice();
         s.laneRem = this.laneRem.slice();
+        s.laneWave = this.laneWave.slice();
+        s.waveOn = this.waveOn;
         s.podRevealed = this.podRevealed.slice();
         s.keyCollected = this.keyCollected.slice();
         s.cellsLeft = this.cellsLeft;
@@ -273,15 +289,17 @@ export class Sim {
         return false;
     }
 
-    /** No active pod can claim anything this tick. */
+    /** No active pod can claim anything this tick (fill-first: no pod of the running wave). */
     isSettled(): boolean {
-        const { numLanes, podColor } = this.compiled;
-        for (let l = 0; l < numLanes; l++) {
-            const p = this.lanePod[l];
-            if (p < 0 || this.laneRem[l] === 0) continue;
-            if (this.hasReachable(podColor[p])) return false;
+        for (let l = 0; l < this.compiled.numLanes; l++) {
+            if (this.laneDrains(l) && this.laneCanDrain(l)) return false;
         }
         return true;
+    }
+
+    /** Fill-first: a wave is running. Always true on other levels. */
+    get waveRunning(): boolean {
+        return !this.compiled.fillFirst || this.waveOn;
     }
 
     isWon(): boolean {
@@ -329,6 +347,11 @@ export class Sim {
             a ^= zobrist.featureA(TAG_KEY, k, 0);
             b ^= zobrist.featureB(TAG_KEY, k, 0);
         }
+        for (let l = 0; l < numLanes; l++) {
+            if (this.laneWave[l] === 0) continue;
+            a ^= zobrist.featureA(TAG_WAVE, l, 0);
+            b ^= zobrist.featureB(TAG_WAVE, l, 0);
+        }
         return toBigHash(a, b);
     }
 
@@ -348,6 +371,7 @@ export class Sim {
             ev?.push({ t: 'tapped', podIds: [podId[p]], lanes: [l1] });
             this.revealFront(column, ev);
             this.dropPushy(ev);
+            this.updateWave(ev);
             return ev ?? NO_EVENTS;
         }
         const l2 = this.placeInFreeLane(q);
@@ -357,6 +381,7 @@ export class Sim {
         this.revealFront(column, ev);
         if (qc !== column) this.revealFront(qc, ev);
         this.dropPushy(ev);
+        this.updateWave(ev);
         return ev ?? NO_EVENTS;
     }
 
@@ -418,6 +443,8 @@ export class Sim {
             lanes,
             columns,
             settled,
+            fillFirst: c.fillFirst,
+            wave: this.waveRunning,
             won,
             dead: !won && settled && !this.hasLegalTap(),
             ticks: this.tickCount,
@@ -442,7 +469,59 @@ export class Sim {
 
     private laneStatus(l: number): LaneStatus {
         if (this.laneRem[l] === 0) return 'waiting';
-        return this.hasReachable(this.compiled.podColor[this.lanePod[l]]) ? 'draining' : 'stalled';
+        if (!this.hasReachable(this.compiled.podColor[this.lanePod[l]])) return 'stalled';
+        return this.laneDrains(l) ? 'draining' : 'held';
+    }
+
+    /** The lane's pod has room left and something of its color is reachable. */
+    private laneCanDrain(l: number): boolean {
+        const p = this.lanePod[l];
+        return p >= 0 && this.laneRem[l] > 0 && this.hasReachable(this.compiled.podColor[p]);
+    }
+
+    /** The lane may claim cells this tick (fill-first: only lanes of the running wave). */
+    private laneDrains(l: number): boolean {
+        return !this.compiled.fillFirst || this.laneWave[l] === 1;
+    }
+
+    /** Fill-first: end a wave none of whose pods can drain, then start the next if the player can't tap. */
+    private updateWave(ev: SimEvent[] | null): void {
+        const { fillFirst, numLanes } = this.compiled;
+        if (!fillFirst) return;
+        if (this.waveOn && !this.waveCanDrain()) this.endWave(ev);
+        if (this.waveOn || this.hasLegalTap()) return;
+        let any = false;
+        for (let l = 0; l < numLanes && !any; l++) any = this.laneCanDrain(l);
+        if (!any) return;
+        const lanes: number[] = [];
+        for (let l = 0; l < numLanes; l++) {
+            if (this.lanePod[l] < 0) continue;
+            this.setLaneWave(l, 1);
+            lanes.push(l);
+        }
+        this.waveOn = true;
+        ev?.push({ t: 'waveStarted', lanes });
+    }
+
+    private waveCanDrain(): boolean {
+        for (let l = 0; l < this.compiled.numLanes; l++) {
+            if (this.laneWave[l] === 1 && this.laneCanDrain(l)) return true;
+        }
+        return false;
+    }
+
+    private endWave(ev: SimEvent[] | null): void {
+        for (let l = 0; l < this.compiled.numLanes; l++) this.setLaneWave(l, 0);
+        this.waveOn = false;
+        ev?.push({ t: 'waveEnded' });
+    }
+
+    private setLaneWave(l: number, v: number): void {
+        if (this.laneWave[l] === v) return;
+        this.laneWave[l] = v;
+        const z = this.compiled.zobrist;
+        this.hA ^= z.featureA(TAG_WAVE, l, 0);
+        this.hB ^= z.featureB(TAG_WAVE, l, 0);
     }
 
     private podView(p: number): PodState {
@@ -570,7 +649,7 @@ export class Sim {
         let claimed = false;
         for (let l = 0; l < c.numLanes; l++) {
             const p = this.lanePod[l];
-            if (p < 0 || this.laneRem[l] === 0) continue;
+            if (p < 0 || this.laneRem[l] === 0 || !this.laneDrains(l)) continue;
             const color = c.podColor[p];
             const i = this.pickNearest(color);
             if (i < 0) continue;
@@ -590,11 +669,13 @@ export class Sim {
             this.completePods(ev);
             this.dropPushy(ev);
         }
+        this.updateWave(ev);
         if (this.cellsLeft === 0 && !this.wonEmitted) {
             this.wonEmitted = true;
             ev?.push({ t: 'won' });
         }
-        if (!claimed && !this.deadEmitted && this.cellsLeft > 0 && !this.hasLegalTap()) {
+        // A fill-first wave may have just started (`updateWave`): then the board is not settled yet.
+        if (!claimed && !this.deadEmitted && this.cellsLeft > 0 && !this.hasLegalTap() && this.isSettled()) {
             this.deadEmitted = true;
             ev?.push({ t: 'dead' });
         }
@@ -642,6 +723,7 @@ export class Sim {
     private freeLane(l: number, p: number, ev: SimEvent[] | null): void {
         this.xorLane(l, p, 0);
         this.lanePod[l] = -1;
+        this.setLaneWave(l, 0);
         ev?.push({ t: 'podCompleted', podId: this.compiled.podId[p], lane: l });
     }
 }

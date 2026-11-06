@@ -31,6 +31,14 @@ describe('mechanic intro cards', () => {
         expect(unseenMechanics(pushy, () => false).map((m) => m.title)).toEqual(['HIDDEN POD', 'PUSHY POD']);
     });
 
+    test('a fill-first level gets the FILL FIRST card, listed last', () => {
+        const ff = { ...mixed, fillFirst: true as const };
+        expect(levelMechanics(plain)).toEqual([]);
+        expect(levelMechanics({ ...plain, fillFirst: true })).toEqual(['fillFirst']);
+        expect(levelMechanics(ff)).toEqual(['hidden', 'locked', 'fillFirst']);
+        expect(unseenMechanics({ ...plain, fillFirst: true }, () => false).map((m) => m.title)).toEqual(['FILL FIRST']);
+    });
+
     test('a card shows once: markSeen hides it for later levels', () => {
         expect(unseenMechanics(mixed, hasSeen).map((m) => m.id)).toEqual(['hidden', 'locked']);
         runActions.markSeen(introKey('hidden'));
@@ -44,6 +52,11 @@ describe('mechanic intro cards', () => {
         runActions.markSeen(introKey('locked'));
         runActions.resetSeen();
         expect(unseenMechanics(mixed, hasSeen).map((m) => m.id)).toEqual(['hidden', 'locked']);
+    });
+
+    test('?fillFirst=1 flag', () => {
+        expect(parseFlags('?fillFirst=1').fillFirst).toBe(true);
+        expect(parseFlags('?level=heart').fillFirst).toBe(false);
     });
 
     test('?intro=off flag', () => {

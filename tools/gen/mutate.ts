@@ -5,6 +5,9 @@
  *
  * The pushy count is fixed per level (`pushyCountFor`): the climb only moves the flag to another pod
  * (`pushy-move`), and never cuts lanes below `MIN_PUSHY_LANES` while the plan has pushy pods.
+ *
+ * Fill-first (`fillFirstLanes`): a fill-first plan keeps at most that many lanes and any other plan keeps more, so the
+ * lane mutations never move a level across the fill-first boundary.
  */
 import type { Rng } from '@game/rng';
 import type { Board } from './board.ts';
@@ -42,6 +45,8 @@ export interface MutationRules {
     maxPairs: number;
     minLanes: number;
     maxLanes: number;
+    /** Level eligible for fill-first lanes: fill-first plans stay at ≤ this many lanes, other plans above it. */
+    fillFirstLanes?: number;
     /** Largest pod per color (`podCaps`; undefined = no cap). */
     podCaps?: number[];
     /** Set once the climb relaxed the mechanic caps to make an unlosable level losable. */
@@ -65,6 +70,13 @@ function weightsFor(direction: number, rules: MutationRules): [MutationKind, num
     if (rules.pairs) w.push(['pair', harder ? 1.5 : 0.2], ['unpair', harder ? 0.2 : 1.5]);
     if (rules.pushy) w.push(['pushy-move', 1.5]);
     return w;
+}
+
+/** Lane bounds from the fill-first boundary (`MutationRules.fillFirstLanes`); unbounded when the level is not eligible. */
+function laneRange(plan: Plan, rules: MutationRules): { min: number; max: number } {
+    const ff = rules.fillFirstLanes;
+    if (ff === undefined) return { min: 1, max: Infinity };
+    return plan.fillFirst ? { min: 1, max: ff } : { min: ff + 1, max: Infinity };
 }
 
 function plainIdx(plan: Plan, i: number): boolean {
@@ -140,13 +152,13 @@ function apply(kind: MutationKind, board: Board, plan: Plan, rng: Rng, rules: Mu
         }
         case 'lanes-': {
             const hasPair = plan.order.some((p) => p.link !== undefined);
-            const floor = Math.max(rules.minLanes, hasPair ? 2 : 1, planHasPushy(plan) ? MIN_PUSHY_LANES : 1);
+            const floor = Math.max(rules.minLanes, hasPair ? 2 : 1, planHasPushy(plan) ? MIN_PUSHY_LANES : 1, laneRange(plan, rules).min);
             if (plan.lanes <= floor) return false;
             plan.lanes--;
             return true;
         }
         case 'lanes+': {
-            if (plan.lanes >= rules.maxLanes) return false;
+            if (plan.lanes >= Math.min(rules.maxLanes, laneRange(plan, rules).max)) return false;
             plan.lanes++;
             return true;
         }

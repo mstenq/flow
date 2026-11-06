@@ -17,6 +17,8 @@
  *   flash(lane)                 pod entered or completed (brief highlight)
  *   destroy()
  * Added: update(dtMs), expectGoo(lane, podId), busyCount, overload(), setHooks().
+ * Fill-first levels: a `held` pod (tapped mid-wave) is dimmed with a HELD label until the next wave; `setInvite(on)`
+ * makes the empty slots pulse while the board waits for every lane to fill; `release(lanes)` is the wave-start punch.
  */
 import { BlendModes } from 'phaser';
 import type { GameObjects, Scene } from 'phaser';
@@ -75,6 +77,8 @@ interface Slot {
     phase: number;
     pop: number;
     flash: number;
+    /** 1 -> 0 wave-start punch: the slot swells and its liquid sloshes. */
+    punch: number;
     deny: number;
     shellKey: string;
     lastCount: number;
@@ -92,6 +96,8 @@ const LIQUID_POINTS = 18;
 /** After a pod launches, its slot texts stay hidden this long (the ghost capsule is still rising off the slot). */
 const LAUNCH_TEXT_HOLD_MS = 330;
 const INBOUND_MAX_MS = 900;
+const STATUS_LABELS: Record<LaneState['state'], string> = { draining: '', stalled: 'STALLED', waiting: 'CHARGED', held: 'HELD' };
+const STATUS_COLORS: Record<LaneState['state'], string> = { draining: COLORS.warn, stalled: COLORS.warn, waiting: '#bff8ff', held: '#b9b4e6' };
 const SURFACE_X = new Float32Array(LIQUID_POINTS);
 
 export class LaneView {
@@ -103,6 +109,7 @@ export class LaneView {
     private hooks: LaneHooks = {};
     private heat = 0;
     private heatTarget = 0;
+    private invite = false;
     private timeS = 0;
     private linkMs = 0;
     private readonly w: number;
@@ -153,6 +160,7 @@ export class LaneView {
                 phase: Math.random() * 6,
                 pop: 0,
                 flash: 0,
+                punch: 0,
                 deny: 0,
                 shellKey: '',
                 lastCount: -1,
@@ -252,6 +260,29 @@ export class LaneView {
         const s = this.slots[lane];
         if (!s) return;
         s.flash = 1;
+    }
+
+    /** Fill-first: the board waits for every lane to fill; empty slots pulse to invite a tap. */
+    setInvite(on: boolean): void {
+        this.invite = on;
+    }
+
+    /** Fill-first wave start: these lanes let go (a punch on the slot, a ring and a burst in the pod's color). */
+    release(lanes: readonly number[]): void {
+        const fx = this.hooks.fx;
+        for (const i of lanes) {
+            const s = this.slots[i];
+            if (!s) continue;
+            s.punch = 1;
+            s.flash = 1;
+            s.wave = 7;
+            const shown = s.shown;
+            if (!fx || !shown) continue;
+            const color = this.art[shown.color]?.glow ?? 0xffffff;
+            const p = this.slotCenter(i);
+            fx.ring(p.x, p.y, color, this.w * 1.5, 380, 0.85, this.w * 0.35);
+            fx.burst(p.x, p.y, color, { count: 14, speedMin: 100, speedMax: 300, angleMin: 230, angleMax: 310, scale: 0.5, life: 420 });
+        }
     }
 
     /** Overload: every lane flashes red and its pod cracks into shards. */
@@ -390,12 +421,16 @@ export class LaneView {
         s.flash = Math.max(0, s.flash - dt * 3.5);
         s.deny = Math.max(0, s.deny - dt * 1.4);
         s.pop = Math.max(0, s.pop - dt * 7);
+        s.punch = Math.max(0, s.punch - dt * 4);
+        s.root.setScale(1 + s.punch * 0.1);
         s.hold = Math.max(0, s.hold - dt * 1000);
         this.updateSlotVisibility(s, dt);
         if (!shown) {
-            const breathe = 0.55 + 0.35 * Math.sin(this.timeS * 1.8 + s.index * 0.9);
+            // While the board waits for every lane to fill, empty slots pulse together to ask for a pod.
+            const breathe = this.invite ? 0.7 + 0.3 * Math.sin(this.timeS * 4) : 0.55 + 0.35 * Math.sin(this.timeS * 1.8 + s.index * 0.9);
+            const invite = this.invite ? 0.16 + 0.16 * Math.sin(this.timeS * 4) : 0;
             s.outline.setAlpha(breathe);
-            s.aura.setAlpha(s.flash * 0.6 + s.deny * 0.8).setTint(s.deny > 0 ? 0xff2950 : COLORS.frame);
+            s.aura.setAlpha(s.flash * 0.6 + s.deny * 0.8 + invite).setTint(s.deny > 0 ? 0xff2950 : COLORS.frame);
             s.liquid.clear();
             return;
         }
@@ -409,6 +444,8 @@ export class LaneView {
         s.level += (target - s.level) * Math.min(1, dt * 10);
         s.wave = Math.max(0.6, s.wave * Math.exp(-dt * 2.2));
         s.phase += dt * (5 + s.wave * 0.6);
+        const held = shown.state === 'held';
+        s.liquid.setAlpha(held ? 0.5 : 1);
         if (inbound) s.liquid.clear();
         else this.drawLiquid(s, shown);
         if (displayed !== s.lastCount) {
@@ -474,8 +511,11 @@ export class LaneView {
         }
         s.shellKey = `${shown.podId}:${shown.state}`;
         const art = this.art[shown.color]!;
-        const rim = shown.state === 'waiting' ? mixColor(art.glow, 0xffffff, 0.4) : art.core;
-        drawCapsule(g, 0, 0, w, h, { body: art.deep, bodyAlpha: 0.9, rim, rimAlpha: 1, rimWidth: 2.5, glowAlpha: 0.9 });
+        const held = shown.state === 'held';
+        let rim = shown.state === 'waiting' ? mixColor(art.glow, 0xffffff, 0.4) : art.core;
+        // Held: a muted shell with almost no glow, so the pod reads as parked until the next wave.
+        if (held) rim = mixColor(art.core, COLORS.unknownPod, 0.6);
+        drawCapsule(g, 0, 0, w, h, { body: art.deep, bodyAlpha: held ? 0.7 : 0.9, rim, rimAlpha: held ? 0.85 : 1, rimWidth: 2.5, glowAlpha: held ? 0.2 : 0.9 });
         // Bottom-left: the top edge carries the STALLED / CHARGED label and the link rings.
         const gx = -w / 2 + 20;
         const gy = h / 2 - 20;
@@ -483,10 +523,10 @@ export class LaneView {
         s.mark.fillCircle(gx, gy, 14);
         drawGlyph(s.mark, art.glyph, gx, gy, 9, 0xffffff, 1);
         if (shown.link !== null) drawLinkRings(g, w / 2 - 15, -h / 2 + 13, 14, 0xe8f6ff);
-        s.count.setColor('#ffffff');
+        s.count.setColor(held ? '#a8a4cc' : '#ffffff');
         s.cap.setText(`/${shown.capacity}`);
-        s.status.setText(shown.state === 'stalled' ? 'STALLED' : shown.state === 'waiting' ? 'CHARGED' : '');
-        s.status.setColor(shown.state === 'waiting' ? '#bff8ff' : COLORS.warn);
+        s.status.setText(STATUS_LABELS[shown.state]);
+        s.status.setColor(STATUS_COLORS[shown.state]);
     }
 
     private drawLiquid(s: Slot, shown: Shown): void {

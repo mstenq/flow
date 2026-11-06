@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "rulesVersion": 2,
+  "rulesVersion": 3,
   "id": "36-dumplings",
   "name": "Dumplings",
   "width": 32,
@@ -9,38 +9,39 @@
   "cells": ".....................................................................................................................................................................................................................................................................................2222........................22220022...........222..222..2222000002............00022222222111100000............0000111111110000103..223.........000111000000001113.2003.........00001100001111113330003..........0001111111111111100003..........302222222211110010000............33112000000110001000.............3110000000010000000..............11000000000000013...............31100000000011113................311111111111113..................3311111111113.....................1111111113........................333333...........................................................................................................................................................................................................................................",
   "keys": [],
   "lanes": 2,
+  "fillFirst": true,
   "tickMs": 270,
   "columns": [
-    [{"id":1,"color":1,"capacity":17},{"id":2,"color":2,"capacity":4},{"id":3,"color":0,"capacity":19},{"id":4,"color":2,"capacity":10},{"id":5,"color":2,"capacity":7},{"id":6,"color":0,"capacity":26},{"id":7,"color":0,"capacity":20},{"id":14,"color":3,"capacity":10}],
-    [{"id":8,"color":1,"capacity":23},{"id":9,"color":1,"capacity":21},{"id":10,"color":2,"capacity":10},{"id":11,"color":0,"capacity":18},{"id":12,"color":0,"capacity":28}],
-    [{"id":13,"color":1,"capacity":24},{"id":15,"color":1,"capacity":10},{"id":16,"color":3,"capacity":10},{"id":17,"color":3,"capacity":3},{"id":18,"color":3,"capacity":5},{"id":19,"color":2,"capacity":10}]
+    [{"id":1,"color":3,"capacity":10},{"id":2,"color":2,"capacity":5},{"id":3,"color":0,"capacity":25},{"id":5,"color":1,"capacity":6},{"id":9,"color":0,"capacity":20},{"id":17,"color":2,"capacity":7},{"id":18,"color":0,"capacity":19},{"id":20,"color":2,"capacity":7}],
+    [{"id":7,"color":1,"capacity":11},{"id":12,"color":1,"capacity":17},{"id":13,"color":1,"capacity":7},{"id":15,"color":3,"capacity":9},{"id":19,"color":2,"capacity":7},{"id":21,"color":1,"capacity":17}],
+    [{"id":4,"color":1,"capacity":4},{"id":6,"color":1,"capacity":19},{"id":8,"color":1,"capacity":6},{"id":10,"color":3,"capacity":9},{"id":11,"color":0,"capacity":19},{"id":14,"color":0,"capacity":28},{"id":16,"color":2,"capacity":7},{"id":22,"color":2,"capacity":8},{"id":23,"color":1,"capacity":8}]
   ],
-  "solution": [0,0,0,0,0,0,0,1,1,1,1,1,2,0,2,2,2,2,2],
+  "solution": [0,0,0,2,0,2,1,2,0,2,2,1,1,2,1,2,0,0,1,0,1,2,2],
   "meta": {
     "seed": 764452842,
     "targetDifficulty": 0.24,
-    "difficulty": 0.216,
+    "difficulty": 0.232,
     "stats": {
-      "randomWinRate": 0.15,
-      "greedyWinRate": 0.71,
-      "smartWinRate": 0.893,
-      "deadEndRatio": 0,
+      "randomWinRate": 0.34,
+      "greedyWinRate": 0.553,
+      "smartWinRate": 0.903,
+      "deadEndRatio": 0.016,
       "minLanes": 1,
-      "branching": 2.37,
+      "branching": 2.78,
       "hiddenShare": 0,
       "lockCount": 0,
       "pairCount": 0,
       "pushyCount": 0,
       "overflowPods": 0,
       "peakStalled": 0,
-      "fastGreedyWinRate": 0.375,
-      "fastRandomWinRate": 0.105,
+      "fastGreedyWinRate": 0.535,
+      "fastRandomWinRate": 0.37,
       "maxPodCapacity": 28,
-      "medianPodCapacity": 10,
+      "medianPodCapacity": 9,
       "longestDrainSec": 7.56,
       "minLanesProven": true
     },
-    "generatorVersion": "gen-3.6.0",
+    "generatorVersion": "gen-3.7.0",
     "sourceHash": "7af615639f76aaba"
   }
 }

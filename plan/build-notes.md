@@ -101,6 +101,32 @@ is completely buried, and a player who taps "whatever is showing" won most level
   always wide. `--background 0|1` forces it. The level select shows open levels as a dimmed color image (not a
   wireframe), since a filled background would read as a solid block.
 
+## Fill-first lanes (gen-3.7.0, rules v3, 2026-11-05)
+Asked for every 2–3 lane level to drain in waves, except the first 3 beginner levels (Heart, Invader, Mushroom).
+- **Rule (`src/game/sim.ts` header, `updateWave`):** level JSON `fillFirst?: true` (written right after `lanes`).
+  Nothing drains until a wave starts: no wave running, some lane pod can drain, and the player has no legal tap (every
+  lane full, or nothing in the queue can go in: the endgame release). All pods in lanes join; pods tapped mid-wave are
+  `held` for the next one. The wave ends at the end of the tick where none of its pods can drain. Settled play is
+  "fill every lane, then drain to idle". Hash feature `TAG_WAVE`; events `waveStarted` / `waveEnded`.
+- **Eligibility:** `fillFirstEligible(index)` (knobs.ts): every levels.json entry except the first
+  `FILL_FIRST_EXEMPT_LEVELS` (3); `bun run gen` defaults to the entry's index (a PNG not in levels.json is eligible),
+  `--fill-first 0|1` forces it. gen:all puts eligibility in the cache key (it is positional). On an eligible level
+  every candidate with ≤ `FILL_FIRST_MAX_LANES` (3) lanes is fill-first, a 4-lane one is not, and the climb's lane
+  mutations never cross that line (`MutationRules.fillFirstLanes`). Wide (5-lane) levels never are.
+- **Construction:** `PlaySim` wave mode drains only when the lanes are full or no cell is unassigned. construct's
+  `waveView` counts held pods' cells as promised (a color's pool for new fit pods is reachable minus in-lane
+  capacity), so fit pods of one color never outgrow the pool and all complete in the wave. Each fill keeps room for
+  a fit pod (frees a lane), and a held color gets no park/overflow pod in the same fill. Out of options →
+  `ConstructStuck`, candidate skipped (4 of 1584 candidates in the regen). A candidate that doesn't replay after
+  mechanics goes to the solver (`FILL_FIRST_SOLVER_BUDGET` 20k; never needed in the regen). Non-fill-first output is byte-identical to gen-3.6.0.
+- **Stats:** for fill-first levels the trace counts a pod as stalled when a wave it is in ends with it still in its
+  lane (`WaveStalls` in board.ts), and `stalledAfter` counts only those lanes: a held pod is not a stall, so
+  overflowPods / peakStalled keep their meaning in the search objective.
+- **Result:** regenerated the 43 levels at ≤4 lanes (`gen:all --only`, 51s wall on 15 workers; 3 big boards hit the wall-clock budget there and were rerun with `--jobs 3`, alien-squid and circuit-board still hit it on 64×64 boards — circuit-board did under gen-3.6.0 too). 40 are fill-first
+  (27 at 2 lanes, 13 at 3), including the four former 4-lane levels; none ended at 4 lanes. Mean target miss 0.0052,
+  none > 0.05, none unlosable. The first 3 are byte-identical. The other 389 levels and the dev-* fixtures were
+  restamped to rules v3 in place (cache keys refreshed, generatorVersion unchanged). Previous levels: /tmp/flow-levels-gen3.6.0.
+
 ## Pushy pods (gen-3.6.0, rules v2, 2026-11-02)
 Asked for more pressure on 4- and 5-lane levels. The only way to lose is every lane stalled at once, and a pushy pod
 takes lane choice away from the player: a pushy pod whose color is buried becomes a forced stall.

@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "rulesVersion": 2,
+  "rulesVersion": 3,
   "id": "power-strip-typea",
   "name": "Power Strip Type A",
   "width": 32,

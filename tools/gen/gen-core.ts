@@ -11,6 +11,8 @@ export interface GenJob {
     maxColors?: number;
     minRegion?: number;
     maxPod?: number;
+    /** Eligible for fill-first lanes (see `fillFirstEligible`). */
+    fillFirst?: boolean;
     report: boolean;
     /** Override the level output directory (tests). */
     outDir?: string;
@@ -43,7 +45,7 @@ export function failedGen(job: Pick<GenJob, 'id'>, error: string, ms = 0): GenRe
 export function processGenJob(job: GenJob): GenResult {
     const t = performance.now();
     try {
-        const run = runOne({ png: job.png, id: job.id, name: job.name, difficulty: job.difficulty, seed: job.seed, maxColors: job.maxColors, minRegion: job.minRegion, maxPod: job.maxPod, report: job.report, outDir: job.outDir, quick: job.quick });
+        const run = runOne({ png: job.png, id: job.id, name: job.name, difficulty: job.difficulty, seed: job.seed, maxColors: job.maxColors, minRegion: job.minRegion, maxPod: job.maxPod, fillFirst: job.fillFirst, report: job.report, outDir: job.outDir, quick: job.quick });
         const ms = performance.now() - t;
         const level = run.result.level;
         const m = level.meta;
@@ -53,7 +55,7 @@ export function processGenJob(job: GenJob): GenResult {
             `  smart ${(s.smartWinRate * 100).toFixed(0).padStart(3)}%  greedy ${(s.greedyWinRate * 100).toFixed(0).padStart(3)}%  random ${(s.randomWinRate * 100).toFixed(0).padStart(3)}%` +
             `  fast ${((s.fastGreedyWinRate ?? 0) * 100).toFixed(0).padStart(3)}%/${((s.fastRandomWinRate ?? 0) * 100).toFixed(0).padStart(3)}%${isFastPlayTrap(s) ? ' TRAP' : ''}` +
             `  maxPod ${s.maxPodCapacity} drain ${(s.longestDrainSec ?? 0).toFixed(1)}s` +
-            `  colors ${level.palette.length}  lanes ${level.lanes}  pods ${level.columns.flat().length}`;
+            `  colors ${level.palette.length}  lanes ${level.lanes}${level.fillFirst ? ' ff' : ''}  pods ${level.columns.flat().length}`;
         return {
             id: job.id,
             status: 'ok',

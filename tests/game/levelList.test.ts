@@ -1,14 +1,19 @@
 import { describe, expect, test } from 'bun:test';
-import { DEV_LEVELS, mergeLevelEntries, nextLevelId, parseLevelIndex, repeatEntries } from '@game/levelList';
+import { DEV_LEVELS, difficultyTier, mergeLevelEntries, nextLevelId, parseLevelIndex, repeatEntries } from '@game/levelList';
 import { parseFlags } from '@game/urlParams';
 
 describe('levelList', () => {
     test('parseLevelIndex keeps well-formed entries only', () => {
         expect(parseLevelIndex(null)).toEqual([]);
         expect(parseLevelIndex({})).toEqual([]);
-        const out = parseLevelIndex([{ id: 'a', name: 'A', width: 3, height: 4, difficulty: 0.5 }, { name: 'no id' }, 7, { id: 'b' }]);
+        const out = parseLevelIndex([{ id: 'a', name: 'A', width: 3, height: 4, difficulty: 0.5, lanes: 3 }, { name: 'no id' }, 7, { id: 'b' }]);
         expect(out.map((e) => e.id)).toEqual(['a', 'b']);
-        expect(out[1]).toEqual({ id: 'b', name: 'b', width: 0, height: 0, difficulty: 0 });
+        expect(out[0]!.lanes).toBe(3);
+        expect(out[1]).toEqual({ id: 'b', name: 'b', width: 0, height: 0, difficulty: 0, lanes: 0 });
+    });
+
+    test('difficultyTier slices 0..1 into tiers 1..5', () => {
+        expect([0, 0.19, 0.2, 0.45, 0.6, 0.79, 0.8, 1, 1.4, -1].map(difficultyTier)).toEqual([1, 1, 2, 3, 4, 4, 5, 5, 5, 1]);
     });
 
     test('mergeLevelEntries appends dev levels, deduped', () => {

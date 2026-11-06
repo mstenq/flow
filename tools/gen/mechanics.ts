@@ -37,6 +37,9 @@ export interface MechanicsWanted {
 /** Node budget for the solver fallback when a pushy placement breaks the stored solution. */
 export const PUSHY_SOLVER_BUDGET = 2000;
 
+/** Node budget for the solver fallback when a fill-first candidate does not replay after mechanics placement. */
+export const FILL_FIRST_SOLVER_BUDGET = 20_000;
+
 /** Carries no mechanic (pushy counts as one: at most one mechanic per pod). */
 export function isPlainPod(p: { hidden?: true; pushy?: true; lock?: number; link?: number }): boolean {
     return !p.hidden && !p.pushy && p.lock === undefined && p.link === undefined;

@@ -9,6 +9,8 @@
  *   the board decides, so it can steal a lane a later tap needed. Edits must be re-validated (replay, else the
  *   solver), and `planFromLayout` reads the real entry order off the `Sim`. A plan built by `planFromLayout` (or
  *   re-synced with `syncPlan`) has its pushy pods exactly where the sim drops them.
+ * - Fill-first plans: a wave starts once nothing is tappable, so a redeal that puts a locked pod or a pair at a front
+ *   can start a wave early. Edits are re-validated the same way.
  */
 import type { KeySpec, PodSpec } from '@game/types';
 import type { Board, Layout } from './board.ts';
@@ -16,6 +18,8 @@ import { laneEntryOrder } from './board.ts';
 
 export interface Plan {
     lanes: number;
+    /** Fill-first lanes (`LevelData.fillFirst`). */
+    fillFirst?: boolean;
     numCols: number;
     keys: KeySpec[];
     /** Pods in lane-entry order (taps and pushy drops). Linked partners are consecutive. */
@@ -31,6 +35,7 @@ export function planFromLayout(board: Board, layout: Layout): Plan {
     const order = laneEntryOrder(board, layout).map((p) => ({ ...p }));
     return {
         lanes: layout.lanes,
+        ...(layout.fillFirst ? { fillFirst: true } : {}),
         numCols: layout.columns.length,
         keys: layout.keys.map((k) => ({ ...k })),
         order,
@@ -41,6 +46,7 @@ export function planFromLayout(board: Board, layout: Layout): Plan {
 export function clonePlan(plan: Plan): Plan {
     return {
         lanes: plan.lanes,
+        ...(plan.fillFirst ? { fillFirst: true } : {}),
         numCols: plan.numCols,
         keys: plan.keys.map((k) => ({ ...k })),
         order: plan.order.map((p) => ({ ...p })),
@@ -122,7 +128,7 @@ export function toLayout(plan: Plan): Layout | null {
     });
     if (columns.some((c) => c.length === 0)) return null;
     if (columns.some((c) => c[0].lock !== undefined || c[0].pushy)) return null;
-    return { lanes: plan.lanes, columns, keys: plan.keys.map((k) => ({ ...k })), solution };
+    return { lanes: plan.lanes, ...(plan.fillFirst ? { fillFirst: true } : {}), columns, keys: plan.keys.map((k) => ({ ...k })), solution };
 }
 
 /** Drop empty columns and renumber the rest (keeps relative order). */

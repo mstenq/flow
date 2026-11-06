@@ -4,6 +4,7 @@
  *   locked     dark tile with a padlock
  *   open       the image, dimmed (the current level, the first one not yet cleared, pulses)
  *   cleared    the full neon image, slowly shimmering, with the best time
+ * Name and status sit above the image; along the bottom every tile shows the lane count and the difficulty tier (pips, cooler to hotter).
  * The list is virtualized: only the tiles in or near the viewport exist as display objects (a small pool of
  * `TileView`s, rebound to other levels while scrolling). Mini images are drawn lazily into canvas textures (see
  * `miniArt.ts`) held in a bounded LRU (`MiniCache`), so 400 levels cost the same as 12.
@@ -13,7 +14,7 @@
 import { BlendModes, Scene } from 'phaser';
 import type { GameObjects, Input, Time, Tweens } from 'phaser';
 import type { LevelEntry } from '@game/levelList';
-import { campaignIds } from '@game/levelList';
+import { DIFFICULTY_TIERS, campaignIds, difficultyTier } from '@game/levelList';
 import { currentLevelIn, formatTime } from '@game/progress';
 import { LOGICAL_H, LOGICAL_W } from '@game/layout';
 import { SELECT, TILE_W, clampScroll, hitRect, isTap, layoutSelect, maxScroll, nearestRect, scrollFromTrack, scrollThumb, scrollToCenter, visibleRange } from '@game/selectLayout';
@@ -40,7 +41,17 @@ const VIEW_H = LOGICAL_H - LIST_TOP;
 /** On-screen box for the mini image inside a tile. */
 const ART_W = TILE_W - 36;
 const ART_H = 256;
-const ART_DY = -SELECT.tileH / 2 + 18 + ART_H / 2;
+/** Tile rows, as offsets from the tile center: name and status on top, the image, then the stats row. */
+const NAME_DY = -SELECT.tileH / 2 + 28;
+const META_DY = NAME_DY + 24;
+const ART_DY = META_DY + 16 + ART_H / 2;
+/** Stats row (lanes left, difficulty pips right), inset from the tile edges. */
+const STATS_DY = SELECT.tileH / 2 - 20;
+const STATS_INSET = 22;
+const PIP_R = 5;
+const PIP_GAP = 15;
+/** Pip color per difficulty tier (1..DIFFICULTY_TIERS). */
+const TIER_COLORS = [0x7dff3a, 0x22e6ff, 0xffe600, 0xffb020, 0xff3b5c] as const;
 /** Pixels of movement before a press becomes a drag (never a tap). */
 const DRAG_THRESHOLD = 14;
 /** Scroll friction (per ms) and the minimum speed (px/ms) that still coasts. */
@@ -77,6 +88,8 @@ interface TileView {
     sheen: GameObjects.Image;
     name: GameObjects.Text;
     meta: GameObjects.Text;
+    lanes: GameObjects.Text;
+    pips: GameObjects.Graphics;
     tweens: Tweens.Tween[];
 }
 
@@ -292,6 +305,8 @@ export class LevelSelect extends Scene {
         const sheen = this.add.image(0, 0, '__DEFAULT').setBlendMode(BlendModes.ADD).setAlpha(0);
         const name = ui(this.add.text(0, 0, '', font(22)).setOrigin(0.5));
         const meta = ui(this.add.text(0, 0, '', font(16)).setOrigin(0.5));
+        const lanes = ui(this.add.text(0, 0, '', { ...font(14, COLORS.dim), letterSpacing: 2 }).setOrigin(0, 0.5));
+        const pips = ui(this.add.graphics());
         const view: TileView = {
             index: -1,
             entry: null,
@@ -307,6 +322,8 @@ export class LevelSelect extends Scene {
             sheen,
             name,
             meta,
+            lanes,
+            pips,
             tweens: [],
         };
         this.views.push(view);
@@ -315,7 +332,7 @@ export class LevelSelect extends Scene {
     }
 
     private hide(view: TileView): void {
-        for (const o of [view.frame, view.halo, view.padlock, view.art, view.sheen, view.name, view.meta]) o.setVisible(false);
+        for (const o of [view.frame, view.halo, view.padlock, view.art, view.sheen, view.name, view.meta, view.lanes, view.pips]) o.setVisible(false);
     }
 
     private drawFrame(view: TileView): void {
@@ -362,10 +379,31 @@ export class LevelSelect extends Scene {
                   ? { text: view.current ? 'PLAY' : entry.width > 0 ? `${entry.width} x ${entry.height}` : '', color: view.current ? COLORS.accent : COLORS.dim }
                   : { text: 'LOCKED', color: '#46426e' };
         view.meta.setText(meta.text).setColor(meta.color);
+        this.drawStats(view, entry);
         view.art.setTexture('__DEFAULT');
         view.sheen.setTexture('__DEFAULT');
         if (state !== 'locked') this.requestArt(view);
         this.animate(view);
+    }
+
+    /** Lane count (left) and difficulty pips (right, filled up to the tier in its color). Locked tiles show them muted. */
+    private drawStats(view: TileView, entry: LevelEntry): void {
+        const locked = view.state === 'locked';
+        view.lanes.setText(entry.lanes > 0 ? `${entry.lanes} LANES` : '').setColor(locked ? '#46426e' : COLORS.dim);
+        const tier = difficultyTier(entry.difficulty);
+        const color = TIER_COLORS[tier - 1]!;
+        const g = view.pips;
+        g.clear();
+        for (let i = 0; i < DIFFICULTY_TIERS; i++) {
+            const x = -(DIFFICULTY_TIERS - 1 - i) * PIP_GAP;
+            if (i < tier) {
+                g.fillStyle(color, locked ? 0.35 : 1);
+                g.fillCircle(x, 0, PIP_R);
+                continue;
+            }
+            g.lineStyle(1.5, 0x4a4f9a, locked ? 0.5 : 0.9);
+            g.strokeCircle(x, 0, PIP_R - 0.5);
+        }
     }
 
     /** Return a view to the pool: stop its tweens, drop its texture reference, hide it. */
@@ -674,8 +712,11 @@ export class LevelSelect extends Scene {
             view.padlock.setVisible(onScreen && view.state === 'locked').setPosition(x, artY);
             view.art.setVisible(artOn).setPosition(x, artY);
             view.sheen.setVisible(artOn && view.state === 'done').setPosition(x, artY);
-            const nameY = cy + h - 44;
-            const metaY = cy + h - 20;
+            const statsY = cyMid + STATS_DY;
+            const nameY = cyMid + NAME_DY;
+            const metaY = cyMid + META_DY;
+            view.lanes.setVisible(onScreen).setPosition(x - w / 2 + STATS_INSET, statsY).setAlpha(fadeAt(statsY));
+            view.pips.setVisible(onScreen).setPosition(x + w / 2 - STATS_INSET - PIP_R, statsY).setAlpha(fadeAt(statsY));
             view.name.setVisible(onScreen).setPosition(x, nameY).setAlpha(fadeAt(nameY));
             view.meta.setVisible(onScreen).setPosition(x, metaY).setAlpha(fadeAt(metaY));
         }

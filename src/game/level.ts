@@ -5,7 +5,7 @@ import { parseCells } from './grid';
 import { Zobrist } from './hash';
 
 /** Bump when sim rules change; `bun run verify` re-checks levels. */
-export const RULES_VERSION = 2;
+export const RULES_VERSION = 3;
 /** Largest supported board dimension (the generator reads PNGs up to this size too). Bigger boards are too small to read. */
 export const MAX_DIM = 64;
 /** Cell strings encode colors as one base-36 character (see `CELL_CHARS` in grid.ts). */
@@ -47,6 +47,8 @@ export interface CompiledLevel {
     podPushy: Uint8Array;
     /** Any pushy pod in the level (lets the sim skip the auto-drop scan). */
     hasPushy: boolean;
+    /** Lanes drain in waves (`LevelData.fillFirst`). */
+    fillFirst: boolean;
     /** Key index locking each pod, -1 = none. */
     podLock: Int16Array;
     /** Partner pod index, -1 = none. */
@@ -80,6 +82,7 @@ export function validateLevel(level: LevelData): void {
     if (typeof level.cells !== 'string') fail('cells must be a string');
     if (!Array.isArray(level.palette)) fail('palette must be an array');
     if (!isInt(level.lanes) || level.lanes < 1) fail(`lanes must be an integer >= 1, got ${level.lanes}`);
+    if (level.fillFirst !== undefined && level.fillFirst !== true) fail('fillFirst must be true or absent');
     if (typeof level.tickMs !== 'number' || !(level.tickMs > 0)) fail(`tickMs must be > 0, got ${level.tickMs}`);
     if (!Array.isArray(level.columns) || level.columns.length < 1) fail('columns must be a non-empty array');
     if (!Array.isArray(level.keys)) fail('keys must be an array');
@@ -276,6 +279,7 @@ export function compileLevel(level: LevelData): CompiledLevel {
         podHidden,
         podPushy,
         hasPushy,
+        fillFirst: level.fillFirst === true,
         podLock,
         podLink,
         podCol,

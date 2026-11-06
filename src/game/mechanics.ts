@@ -5,7 +5,7 @@
  */
 import type { LevelData } from './types';
 
-export type MechanicId = 'hidden' | 'locked' | 'linked' | 'pushy';
+export type MechanicId = 'hidden' | 'locked' | 'linked' | 'pushy' | 'fillFirst';
 
 export interface MechanicInfo {
     id: MechanicId;
@@ -19,15 +19,17 @@ export const MECHANICS: readonly MechanicInfo[] = [
     { id: 'locked', title: 'LOCKED POD', text: 'Drain the key out of the image to open it.' },
     { id: 'linked', title: 'LINKED PODS', text: 'Tap one and its partner joins it. Needs two free lanes.' },
     { id: 'pushy', title: 'PUSHY POD', text: 'Drops into a free lane by itself when it reaches the front. Plan around it.' },
+    { id: 'fillFirst', title: 'FILL FIRST', text: 'Nothing drains until every lane is full. Pods added mid-drain wait for the next wave.' },
 ];
 
 export function introKey(id: MechanicId): string {
     return `intro:${id}`;
 }
 
-/** Mechanics present in `level`, in `MECHANICS` order. */
-export function levelMechanics(level: Pick<LevelData, 'columns'>): MechanicId[] {
+/** Mechanics present in `level` (pod flags, plus level-wide rules such as fill-first lanes), in `MECHANICS` order. */
+export function levelMechanics(level: Pick<LevelData, 'columns' | 'fillFirst'>): MechanicId[] {
     const found = new Set<MechanicId>();
+    if (level.fillFirst) found.add('fillFirst');
     for (const column of level.columns) {
         for (const pod of column) {
             if (pod.hidden) found.add('hidden');
@@ -40,7 +42,7 @@ export function levelMechanics(level: Pick<LevelData, 'columns'>): MechanicId[] 
 }
 
 /** The intro cards still to show for `level`, given a `hasSeen` lookup. */
-export function unseenMechanics(level: Pick<LevelData, 'columns'>, hasSeen: (key: string) => boolean): MechanicInfo[] {
+export function unseenMechanics(level: Pick<LevelData, 'columns' | 'fillFirst'>, hasSeen: (key: string) => boolean): MechanicInfo[] {
     const present = new Set(levelMechanics(level));
     return MECHANICS.filter((m) => present.has(m.id) && !hasSeen(introKey(m.id)));
 }

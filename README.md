@@ -55,6 +55,7 @@ All flags work in dev; the ones marked (prod) also work in a production build.
 | `?reset=1` (prod) | Wipe saved progress, settings and seen intro cards. The flag is removed from the URL so a reload keeps the fresh state |
 | `?intro=reset` (prod) | Forget only the one-time mechanic intro cards (hidden / locked / linked) so you can see them again |
 | `?intro=off` (prod) | Never show the intro cards this session |
+| `?fillFirst=1` (prod) | Force fill-first lanes (drain in waves once every lane is full) on whatever level loads; the stored solution/hints do not apply |
 | `?unlockall=1` (prod) | Every level selectable (this session only, not saved) |
 | `?progress=heart,invader` (prod) | Mark those levels as cleared (best time 1:30) |
 | `?spike=1` | The FX spike scene (visual experiments) |

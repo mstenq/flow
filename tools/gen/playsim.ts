@@ -3,6 +3,10 @@
  * (the real `Sim` needs every pod up front). Same tick semantics: lanes left→right each claim the nearest
  * reachable cell by `(dist, -y, x)`, other colors' distances update immediately, full pods free their lane.
  * No keys, links or pushy pods: mechanics are placed afterwards and every result is replayed on the real `Sim`.
+ *
+ * Wave mode mirrors fill-first lanes (`LevelData.fillFirst`) in settled play: `settle()` only drains once every lane
+ * is full, or once no cell is left unassigned (nothing more will be tapped: the sim's endgame release). All pods in
+ * lanes then drain together until none can, so the wave always ends inside the settle.
  */
 import { EMPTY } from '@game/types';
 import { INF, buildDist, relaxOpened } from '@game/reach';
@@ -15,6 +19,8 @@ interface Statics {
     n: number;
     numColors: number;
     numLanes: number;
+    /** Fill-first: drain in waves. */
+    waves: boolean;
     orderKey: Int32Array;
     colorOff: Int32Array;
     queue: Int32Array;
@@ -29,13 +35,17 @@ export class PlaySim {
     private dist: Int16Array;
     laneColor: Int32Array;
     laneRem: Int32Array;
+    /** Wave mode: 1 = the lane's pod went through a wave and stalled (0 = held, waiting for the lanes to fill). */
+    laneWaved: Uint8Array;
+    /** Wave mode: waves run so far. */
+    waveCount: number;
     cellsLeft: number;
 
     private constructor(s: Statics) {
         this.s = s;
     }
 
-    static create(board: Board, lanes: number): PlaySim {
+    static create(board: Board, lanes: number, waves = false): PlaySim {
         const { width, height, numColors } = board;
         const n = width * height;
         const orderKey = new Int32Array(n);
@@ -45,7 +55,7 @@ export class PlaySim {
         }
         const cells = board.cells.slice();
         const lists = buildColorLists(cells, numColors);
-        const s: Statics = { width, height, n, numColors, numLanes: lanes, orderKey, colorOff: lists.offset, queue: new Int32Array(n) };
+        const s: Statics = { width, height, n, numColors, numLanes: lanes, waves, orderKey, colorOff: lists.offset, queue: new Int32Array(n) };
         const sim = new PlaySim(s);
         sim.cells = cells;
         sim.list = lists.list;
@@ -55,6 +65,8 @@ export class PlaySim {
         for (let c = 0; c < numColors; c++) buildDist(cells, width, height, c, sim.dist, c * n, s.queue);
         sim.laneColor = new Int32Array(lanes).fill(-1);
         sim.laneRem = new Int32Array(lanes);
+        sim.laneWaved = new Uint8Array(lanes);
+        sim.waveCount = 0;
         sim.cellsLeft = cells.reduce((a, v) => a + (v === EMPTY ? 0 : 1), 0);
         return sim;
     }
@@ -68,6 +80,8 @@ export class PlaySim {
         c.dist = this.dist.slice();
         c.laneColor = this.laneColor.slice();
         c.laneRem = this.laneRem.slice();
+        c.laneWaved = this.laneWaved.slice();
+        c.waveCount = this.waveCount;
         c.cellsLeft = this.cellsLeft;
         return c;
     }
@@ -78,6 +92,10 @@ export class PlaySim {
 
     get numLanes(): number {
         return this.s.numLanes;
+    }
+
+    get waves(): boolean {
+        return this.s.waves;
     }
 
     reachableCount(color: number): number {
@@ -103,17 +121,29 @@ export class PlaySim {
         return u;
     }
 
+    /** Cells not yet promised to a pod in a lane, all colors. */
+    totalUnassigned(): number {
+        let u = 0;
+        for (let c = 0; c < this.s.numColors; c++) u += this.unassigned(c);
+        return u;
+    }
+
     tap(color: number, capacity: number): void {
         let l = 0;
         while (this.laneColor[l] >= 0) l++;
         this.laneColor[l] = color;
         this.laneRem[l] = capacity;
+        this.laneWaved[l] = 0;
     }
 
+    /** Wave mode: drains only when the lanes are full or nothing is left to tap (see the file header). */
     settle(): void {
-        while (this.step()) {
-            // keep ticking
-        }
+        if (this.s.waves && this.freeLanes() > 0 && this.totalUnassigned() > 0) return;
+        let claimed = false;
+        while (this.step()) claimed = true;
+        if (!this.s.waves || !claimed) return;
+        this.waveCount++;
+        for (let l = 0; l < this.s.numLanes; l++) this.laneWaved[l] = this.laneColor[l] >= 0 ? 1 : 0;
     }
 
     private step(): boolean {

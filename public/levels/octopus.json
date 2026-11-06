@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "rulesVersion": 2,
+  "rulesVersion": 3,
   "id": "octopus",
   "name": "Octopus",
   "width": 32,

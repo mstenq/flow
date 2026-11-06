@@ -9,7 +9,7 @@ export const SELECT = {
     margin: 40,
     gapX: 24,
     gapY: 26,
-    tileH: 332,
+    tileH: 362,
     sectionH: 78,
     topPad: 20,
     bottomPad: 60,

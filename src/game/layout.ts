@@ -5,7 +5,7 @@
  *    0 -  90  top bar (pause, level name, speed; debug strip under the name)
  *  100 - 780  board area 680x680, cell = floor(680 / max(W, H)), board centered in the area
  *  800 - 910  lanes row, L slots evenly spaced
- *  912 - 940  toast line (denied-tap reasons)
+ *  912 - 940  toast line (denied-tap reasons; fill-first "fill N more lanes" hint)
  *  940 - 1280 queue: C columns, front pod + next 3 pods, "+n" badge for deeper pods
  * ```
  */

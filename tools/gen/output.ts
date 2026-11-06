@@ -78,6 +78,7 @@ export function formatLevel(level: LevelData): string {
         ['cells', j(level.cells)],
         ['keys', j(level.keys)],
         ['lanes', j(level.lanes)],
+        ...(level.fillFirst ? [['fillFirst', j(level.fillFirst)] as [string, string]] : []),
         ['tickMs', j(level.tickMs)],
         ['columns', `[\n${level.columns.map((c) => `    ${j(c)}`).join(',\n')}\n  ]`],
         ['solution', j(level.solution)],
@@ -95,6 +96,8 @@ export interface IndexEntry {
     width: number;
     height: number;
     difficulty: number;
+    /** Lane count, shown on the level select tile. */
+    lanes: number;
     /** Level palette and image (row-major, '.' = empty), so the level select can draw thumbnails without fetching every level. */
     palette: string[];
     cells: string;
@@ -113,6 +116,7 @@ export function writeIndex(): IndexEntry[] {
             width: level.width,
             height: level.height,
             difficulty: level.meta.difficulty,
+            lanes: level.lanes,
             palette: level.palette,
             cells: level.cells,
         });
@@ -135,6 +139,8 @@ export interface RunOptions {
     outline?: boolean;
     /** Force the background fill on or off (default: random per level seed). */
     background?: boolean;
+    /** Eligible for fill-first lanes (`GenerateInput.fillFirst`; see `fillFirstEligible`). */
+    fillFirst?: boolean;
     report: boolean;
     /** Override the output directory (tests). */
     outDir?: string;
@@ -169,6 +175,7 @@ export function runOne(opts: RunOptions): RunResult {
         maxPod: opts.maxPod,
         outline: opts.outline,
         background: opts.background,
+        fillFirst: opts.fillFirst,
         sourceHash: sourceHash(opts.png),
         quick: opts.quick,
     });
@@ -185,7 +192,7 @@ export function runOne(opts: RunOptions): RunResult {
         `== ${level.name} (${level.id}) ==`,
         `board    ${level.width}x${level.height}, ${pods.reduce((s, p) => s + p.capacity, 0)} cells, ${level.palette.length} colors`,
         ...result.simplified.log.map((l) => `  simplify: ${l}`),
-        `pods     ${pods.length} in ${level.columns.length} columns (${level.columns.map((c) => c.length).join('/')}), ${level.lanes} lanes, tick ${level.tickMs}ms, ${level.solution.length} solution taps`,
+        `pods     ${pods.length} in ${level.columns.length} columns (${level.columns.map((c) => c.length).join('/')}), ${level.lanes} lanes${level.fillFirst ? ' (fill-first)' : ''}, tick ${level.tickMs}ms, ${level.solution.length} solution taps`,
         `mechanics ${mech}`,
         `knobs    (start) ${knobsSummary(result.knobs)}`,
         `stats    smart ${pct(stats.smartWinRate)}, greedy ${pct(stats.greedyWinRate)}, random ${pct(stats.randomWinRate)}, deadEnd ${stats.deadEndRatio.toFixed(3)}, ` +

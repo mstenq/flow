@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "rulesVersion": 2,
+  "rulesVersion": 3,
   "id": "88-salmon",
   "name": "Salmon (2)",
   "width": 32,
@@ -9,38 +9,40 @@
   "cells": "..............................................................................................................................................................................................................................................................................000...........................2000000........................2000000000.....................2000000000000...................20100000000000................22.31110000000000..............2303300111000000002............230000000011100000002..........2300000000000110000002..........0010010000003311000002...........01110000000003111002.............111110000000000122...............111111010000002..................11111100000002....................111110000002......................111100002.........................111222...........................122.............................................................................................................................................................................................................",
   "keys": [],
   "lanes": 3,
+  "fillFirst": true,
   "tickMs": 270,
   "columns": [
-    [{"id":1,"color":0,"capacity":39},{"id":5,"color":1,"capacity":12},{"id":6,"color":1,"capacity":14},{"id":10,"color":1,"capacity":14},{"id":14,"color":3,"capacity":2}],
-    [{"id":2,"color":1,"capacity":14},{"id":3,"color":3,"capacity":4},{"id":7,"color":2,"capacity":7},{"id":8,"color":0,"capacity":39},{"id":11,"color":0,"capacity":39},{"id":12,"color":2,"capacity":4}],
-    [{"id":4,"color":0,"capacity":39},{"id":9,"color":3,"capacity":3},{"id":13,"color":2,"capacity":5},{"id":15,"color":2,"capacity":9}]
+    [{"id":4,"color":0,"capacity":39},{"id":10,"color":3,"capacity":2},{"id":12,"color":3,"capacity":3},{"id":13,"color":2,"capacity":3},{"id":15,"color":2,"capacity":5}],
+    [{"id":8,"color":1,"capacity":13},{"id":9,"color":1,"capacity":14}],
+    [{"id":2,"color":0,"capacity":32},{"id":5,"color":3,"capacity":2},{"id":6,"color":3,"capacity":2},{"id":7,"color":2,"capacity":7},{"id":14,"color":1,"capacity":14},{"id":17,"color":0,"capacity":29},{"id":18,"color":0,"capacity":17}],
+    [{"id":1,"color":0,"capacity":39},{"id":3,"color":2,"capacity":10},{"id":11,"color":1,"capacity":10},{"id":16,"color":1,"capacity":3}]
   ],
-  "solution": [0,1,1,2,0,0,1,1,2,0,1,1,2,0,2],
+  "solution": [3,2,3,0,2,2,2,1,1,0,3,0,0,2,0,3,2,2],
   "meta": {
     "seed": 1061067550,
     "targetDifficulty": 0.21,
-    "difficulty": 0.219,
+    "difficulty": 0.195,
     "stats": {
-      "randomWinRate": 0.74,
-      "greedyWinRate": 0.89,
-      "smartWinRate": 0.717,
-      "deadEndRatio": 0.095,
+      "randomWinRate": 0.887,
+      "greedyWinRate": 0.807,
+      "smartWinRate": 0.757,
+      "deadEndRatio": 0.016,
       "minLanes": 1,
-      "branching": 2.73,
+      "branching": 3.22,
       "hiddenShare": 0,
       "lockCount": 0,
       "pairCount": 0,
       "pushyCount": 0,
       "overflowPods": 2,
       "peakStalled": 2,
-      "fastGreedyWinRate": 0.68,
-      "fastRandomWinRate": 0.66,
+      "fastGreedyWinRate": 0.785,
+      "fastRandomWinRate": 0.86,
       "maxPodCapacity": 39,
-      "medianPodCapacity": 12,
+      "medianPodCapacity": 10,
       "longestDrainSec": 10.53,
       "minLanesProven": true
     },
-    "generatorVersion": "gen-3.6.0",
+    "generatorVersion": "gen-3.7.0",
     "sourceHash": "f969158b4ff48c12"
   }
 }

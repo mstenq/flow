@@ -127,13 +127,16 @@ describe('event -> cue mapping', () => {
         { t: 'unlocked', podId: 2 },
         { t: 'revealed', podId: 2 },
         { t: 'pushed', podId: 3, lane: 1 },
+        { t: 'waveStarted', lanes: [0, 1] },
+        { t: 'waveEnded' },
         { t: 'podCompleted', podId: 1, lane: 0 },
         { t: 'won' },
         { t: 'dead' },
     ];
     test('covers every event type', () => {
         expect(new Set(samples.map((e) => e.t))).toEqual(new Set(CUE_EVENT_TYPES));
-        for (const e of samples) expect(cuesForEvent(e).length).toBeGreaterThan(0);
+        // A wave ending is silent: the last pod's completion already sounds.
+        for (const e of samples) expect(cuesForEvent(e).length).toBeGreaterThan(e.t === 'waveEnded' ? -1 : 0);
     });
     test('claim carries its color', () => {
         expect(cuesForEvent(samples[1]!)).toEqual([{ sfx: 'claim', color: 3 }]);

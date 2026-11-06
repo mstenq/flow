@@ -9,7 +9,7 @@ import { cellColor, cellsToString } from '@game/grid';
 import { Sim } from '@game/sim';
 
 /** Bump whenever generator output for the same inputs changes (invalidates the gen:all cache). */
-export const GENERATOR_VERSION = 'gen-3.6.0';
+export const GENERATOR_VERSION = 'gen-3.7.0';
 
 export interface Board {
     width: number;
@@ -27,6 +27,8 @@ export interface Board {
 /** The searchable part of a level. `columns[i][0]` is the front; `solution` lists the column tapped per step. */
 export interface Layout {
     lanes: number;
+    /** Fill-first lanes (`LevelData.fillFirst`). */
+    fillFirst?: boolean;
     columns: PodSpec[][];
     keys: KeySpec[];
     solution: number[];
@@ -80,6 +82,7 @@ export interface LevelInfo {
 export function cloneLayout(layout: Layout): Layout {
     return {
         lanes: layout.lanes,
+        ...(layout.fillFirst ? { fillFirst: true } : {}),
         columns: layout.columns.map((col) => col.map((p) => ({ ...p }))),
         keys: layout.keys.map((k) => ({ ...k })),
         solution: layout.solution.slice(),
@@ -102,6 +105,7 @@ export function toLevel(board: Board, layout: Layout, info: LevelInfo): LevelDat
             .sort((a, b) => a.id - b.id)
             .map((k) => ({ id: k.id, x: k.x, y: k.y })),
         lanes: layout.lanes,
+        ...(layout.fillFirst ? { fillFirst: true as const } : {}),
         tickMs: info.tickMs ?? 60,
         columns: layout.columns.map((col) => col.map(normalizePod)),
         solution: layout.solution.slice(),
@@ -229,6 +233,8 @@ export interface TraceFrame {
     keys: { id: number; x: number; y: number; podId: number }[];
     /** Cells drained by this step's settle. */
     drained: number;
+    /** Fill-first: waves that started during this step (tap + settle). */
+    waves: number;
     won: boolean;
     dead: boolean;
 }
@@ -239,18 +245,20 @@ export interface Trace {
     drainStep: Int32Array;
     /** Free lanes just before each solution tap. */
     freeBefore: number[];
-    /** Occupied (stalled) lanes after each step's settle. */
+    /** Occupied (stalled) lanes after each step's settle. Fill-first: lanes whose pod stalled through a wave (held pods don't count). */
     stalledAfter: number[];
     /** Legal taps just before each solution tap. */
     legalBefore: number[];
     /**
      * Whether a pod that entered a lane at each step stalled (did not complete in that step's settle). Counts the
      * tapped pod(s) and any pushy pods that dropped during the step: a pushy pod that stalls is lane pressure too.
+     * Fill-first: whether a pod that entered at the step did not complete in the first wave it drained in (a pod held
+     * until the lanes fill is not a stall by itself).
      */
     stalledPod: boolean[];
 }
 
-function frameOf(view: ViewState, step: number, tapped: number, pushed: number[], drained: number): TraceFrame {
+function frameOf(view: ViewState, step: number, tapped: number, pushed: number[], drained: number, waves: number): TraceFrame {
     const cells = cellsToString(view.cells);
     return {
         step,
@@ -274,9 +282,69 @@ function frameOf(view: ViewState, step: number, tapped: number, pushed: number[]
         ),
         keys: view.keys.map((k) => ({ id: k.id, x: k.x, y: k.y, podId: k.podId })),
         drained,
+        waves,
         won: view.won,
         dead: view.dead,
     };
+}
+
+function waveCount(events: SimEvent[]): number {
+    return events.filter((e) => e.t === 'waveStarted').length;
+}
+
+/**
+ * Fill-first stall bookkeeping for `traceSolution`, fed the sim's events in order: a pod stalls when a wave it is
+ * part of ends while it is still in its lane. Held pods (waiting for the lanes to fill) are not stalls.
+ */
+class WaveStalls {
+    private lanePod: number[];
+    /** Solution step each pod entered a lane at (-1 = level start). */
+    private enteredAt = new Map<number, number>();
+    private inWave = new Set<number>();
+    /** Pods that stalled through a wave (they may still be in a lane). */
+    private stalled = new Set<number>();
+    private stalledPod: boolean[];
+
+    constructor(view: ViewState, stalledPod: boolean[]) {
+        this.stalledPod = stalledPod;
+        this.lanePod = view.lanes.map((l) => (l === null ? -1 : l.podId));
+        for (const id of this.lanePod) {
+            if (id < 0) continue;
+            this.enteredAt.set(id, -1);
+            // A wave can start while the sim is built (pushy pods filled the lanes, or nothing is tappable).
+            if (view.wave) this.inWave.add(id);
+        }
+    }
+
+    feed(events: SimEvent[], step: number): void {
+        for (const e of events) {
+            if (e.t === 'tapped') e.podIds.forEach((id, k) => this.enter(id, e.lanes[k], step));
+            else if (e.t === 'pushed') this.enter(e.podId, e.lane, step);
+            else if (e.t === 'podCompleted') this.lanePod[e.lane] = -1;
+            else if (e.t === 'waveStarted') e.lanes.forEach((l) => this.inWave.add(this.lanePod[l]));
+            else if (e.t === 'waveEnded') this.endWave();
+        }
+    }
+
+    /** Lanes held by pods that stalled through a wave. */
+    stalledLanes(): number {
+        return this.lanePod.filter((id) => id >= 0 && this.stalled.has(id)).length;
+    }
+
+    private enter(id: number, lane: number, step: number): void {
+        this.lanePod[lane] = id;
+        this.enteredAt.set(id, step);
+    }
+
+    private endWave(): void {
+        for (const id of this.lanePod) {
+            if (id < 0 || !this.inWave.has(id) || this.stalled.has(id)) continue;
+            this.stalled.add(id);
+            const step = this.enteredAt.get(id) ?? -1;
+            if (step >= 0) this.stalledPod[step] = true;
+        }
+        this.inWave.clear();
+    }
 }
 
 /** Ids of pods that entered lanes in `events`: tapped (with linked partners) and pushed. */
@@ -317,20 +385,30 @@ export function traceSolution(level: LevelData, withFrames: boolean): Trace {
     const start = { entered: [] as number[], pushed: startPushed };
     enteredIds(startEvents, start);
     const initial = record(startEvents, -1);
-    if (withFrames) frames.push(frameOf(sim.snapshot(), 0, -1, start.pushed, initial));
+    const waves = level.fillFirst ? new WaveStalls(sim.snapshot(), stalledPod) : null;
+    waves?.feed(startEvents, -1);
+    if (withFrames) frames.push(frameOf(sim.snapshot(), 0, -1, start.pushed, initial, waveCount(startEvents)));
     level.solution.forEach((col, s) => {
         freeBefore.push(sim.freeLaneCount());
         legalBefore.push(sim.legalTaps().length);
         const step = { entered: [] as number[], pushed: [] as number[] };
-        enteredIds(sim.tap(col), step);
+        const tapEvents = sim.tap(col);
+        enteredIds(tapEvents, step);
         const events = sim.settle();
         enteredIds(events, step);
         const drained = record(events, s);
-        const completed = new Set<number>();
-        for (const e of events) if (e.t === 'podCompleted') completed.add(e.podId);
-        stalledPod.push(step.entered.some((id) => !completed.has(id)));
-        stalledAfter.push(sim.laneCount - sim.freeLaneCount());
-        if (withFrames) frames.push(frameOf(sim.snapshot(), s + 1, col, step.pushed, drained));
+        if (waves) {
+            stalledPod.push(false);
+            waves.feed(tapEvents, s);
+            waves.feed(events, s);
+            stalledAfter.push(waves.stalledLanes());
+        } else {
+            const completed = new Set<number>();
+            for (const e of events) if (e.t === 'podCompleted') completed.add(e.podId);
+            stalledPod.push(step.entered.some((id) => !completed.has(id)));
+            stalledAfter.push(sim.laneCount - sim.freeLaneCount());
+        }
+        if (withFrames) frames.push(frameOf(sim.snapshot(), s + 1, col, step.pushed, drained, waveCount(tapEvents) + waveCount(events)));
     });
     return { frames, drainStep, freeBefore, stalledAfter, legalBefore, stalledPod };
 }
