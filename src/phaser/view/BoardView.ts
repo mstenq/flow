@@ -5,13 +5,17 @@
  * Around it: a translucent panel and a thin neon frame (the goo rides it). Keys are crystal icons in the color of the
  * cell they sit on (drain that color to collect them), with a sparkle.
  * Claimed tiles "melt" (pooled squash + additive flash). `showHologram` ghosts the original image back in (win).
+ * Zoom: as the image is eaten away the view zooms in on what is left (`nextZoom`), inside the fixed frame. Tiles are
+ * re-stamped at the new integer cell size, then the composite (and glyphs, keys) tween from the old view, scaled down,
+ * so nothing is ever upscaled blurry. `cellCenter` / `cellSize` follow the on-screen view.
  *
  * Public interface (kept from the gray box):
  *   constructor(scene, layout, palette, width, height)
  *   sync(snapshot)            full refresh from the sim (never drifts)
  *   onClaimed(event)          remove the claimed cell instantly (the GooStream carries the visual)
  *   update(dtMs?)             per-frame housekeeping (redraw if dirty, melts, sparkles)
- *   cellCenter(x, y)          logical pixel center of a cell
+ *   cellCenter(x, y)          logical pixel center of a cell (as currently shown, zoom included)
+ *   cellSize()                cell size in logical px (as currently shown)
  *   keyCenterFor(podId)       center of the cell holding the key that unlocks `podId`, or null
  *   setDistProvider(fn)/setShowDist(on)   dev overlay
  *   destroy()
@@ -19,8 +23,8 @@
  */
 import { BlendModes } from 'phaser';
 import type { GameObjects, Scene, Textures } from 'phaser';
-import type { Layout, Point2, Rect } from '@game/layout';
-import { cellCenter } from '@game/layout';
+import type { BoardZoom, Layout, Point2, Rect } from '@game/layout';
+import { baseZoom, cellBounds, nextZoom, zoomCellCenter } from '@game/layout';
 import type { KeyView, LaneState, SimEvent, ViewState } from '@game/types';
 import { EMPTY } from '@game/types';
 import { mixColor } from '@data/themeColors';
@@ -28,6 +32,7 @@ import { COLORS, DEPTH, font, keyLetter, paletteArtFromNums } from '../theme';
 import type { PaletteArt } from '../theme';
 import { ui } from '../fx/CameraRig';
 import { TEX, ensureTileCoreTexture, ensureTileTexture } from '../fx/textures';
+import { isReducedFx } from '../fx/fxSettings';
 import { drawGlyph } from './podArt';
 
 type ClaimedEvent = Extract<SimEvent, { t: 'claimed' }>;
@@ -45,6 +50,8 @@ const TILE_TINT_SCALE = 0.86;
 const UNFOCUSED_TINT_SCALE = 0.2;
 const UNFOCUSED_CORE = 0.2;
 const UNFOCUSED_ALPHA = 0.25;
+/** Zoom-in tween length. */
+const ZOOM_MS = 650;
 
 const BOARD_FRAG = `
 precision mediump float;
@@ -71,6 +78,17 @@ interface Melt {
     life: number;
     /** Alpha scale (a melt on a dimmed cell stays dim). */
     fade: number;
+    /** Tile scale when it started (the tile texture is the zoom cell; mid-tween the shown cell is smaller). */
+    scale: number;
+    /** Shown cell size when it started. */
+    cell: number;
+}
+
+/** What to stamp a board texture with: the view and the tile textures sized for its cell. */
+interface StampView {
+    zoom: BoardZoom;
+    tile: string;
+    core: string;
 }
 
 interface KeySprite {
@@ -82,6 +100,10 @@ interface KeySprite {
     /** Color of the cell it sits on (EMPTY if none). */
     color: number;
     phase: number;
+    /** Center in render space (the zoom the textures are drawn at). */
+    x: number;
+    y: number;
+    size: number;
 }
 
 let uid = 0;
@@ -90,11 +112,20 @@ export class BoardView {
     private readonly width: number;
     private readonly height: number;
     private readonly art: PaletteArt[];
-    private readonly cell: number;
     private readonly rect: Rect;
     private readonly frame: Rect;
-    private readonly tileKey: string;
-    private readonly coreKey: string;
+    /** The unzoomed view and its tiles (the win hologram shows the whole original image). */
+    private readonly baseView: StampView;
+    /** The view the board textures, glyphs and keys are drawn at (the zoom target while tweening). */
+    private view: StampView;
+    /** Zoom tween: the shown view runs from `from` to `view.zoom`. */
+    private zoomAnim: { from: BoardZoom; ms: number } | null = null;
+    private zoomDirty = true;
+    private zoomChecked = false;
+    /** Shown = render-space * zs + (ztx, zty). */
+    private zs = 1;
+    private ztx = 0;
+    private zty = 0;
     private readonly boardKey: string;
     private readonly reachKey: string;
     private readonly ghostKey: string;
@@ -146,12 +177,11 @@ export class BoardView {
         this.width = width;
         this.height = height;
         this.art = paletteArtFromNums(palette);
-        this.cell = layout.board.cell;
         this.rect = layout.board.rect;
         this.frame = { x: this.rect.x - FRAME_PAD, y: this.rect.y - FRAME_PAD, w: this.rect.w + FRAME_PAD * 2, h: this.rect.h + FRAME_PAD * 2 };
         this.cells = new Uint8Array(width * height).fill(EMPTY);
-        this.tileKey = ensureTileTexture(scene, this.cell);
-        this.coreKey = ensureTileCoreTexture(scene, this.cell);
+        this.baseView = this.stampView(baseZoom(layout));
+        this.view = this.baseView;
         const id = uid++;
         this.boardKey = `board-tex-${id}`;
         this.reachKey = `board-reach-${id}`;
@@ -191,14 +221,20 @@ export class BoardView {
         this.frameGfx = scene.add.graphics().setDepth(DEPTH.board + 0.05);
         this.drawFrame();
         for (let i = 0; i < MELT_POOL; i++) {
-            const tile = scene.add.image(0, 0, this.tileKey).setDepth(DEPTH.board + 0.2).setVisible(false);
+            const tile = scene.add.image(0, 0, this.view.tile).setDepth(DEPTH.board + 0.2).setVisible(false);
             const flash = scene.add.image(0, 0, TEX.glow).setDepth(DEPTH.board + 0.25).setBlendMode(BlendModes.ADD).setVisible(false);
-            this.melts.push({ tile, flash, life: 0, fade: 1 });
+            this.melts.push({ tile, flash, life: 0, fade: 1, scale: 1, cell: this.view.zoom.cell });
         }
     }
 
+    /** On-screen center of cell `(x, y)` (follows the zoom). Works for out-of-grid cells too. */
     cellCenter(x: number, y: number): Point2 {
-        return cellCenter(this.layout, x, y);
+        return zoomCellCenter(this.shownZoom(), x, y);
+    }
+
+    /** On-screen cell size in logical px (follows the zoom). */
+    cellSize(): number {
+        return this.shownZoom().cell;
     }
 
     /** Center of the cell holding the (uncollected) key that unlocks `podId`, or null. */
@@ -231,6 +267,7 @@ export class BoardView {
         this.cleared.push(i);
         this.reachDirty = true;
         this.distDirty = true;
+        this.zoomDirty = true;
         this.startMelt(e.x, e.y, color);
     }
 
@@ -281,7 +318,7 @@ export class BoardView {
         if (!this.ghostTex) {
             this.ghostTex = this.scene.textures.addDynamicTexture(this.ghostKey, this.rect.w, this.rect.h);
             if (!this.ghostTex) return;
-            this.stampAll(this.ghostTex, this.initialCells, 1);
+            this.stampAll(this.ghostTex, this.initialCells, this.baseView, 1);
             this.ghostTex.render();
             const cx = this.rect.x + this.rect.w / 2;
             const cy = this.rect.y + this.rect.h / 2;
@@ -299,6 +336,7 @@ export class BoardView {
     update(dtMs?: number): void {
         const dt = dtMs ?? this.scene.game.loop.delta;
         this.timeS += dt / 1000;
+        this.tickZoom(dt);
         this.renderTiles();
         if (this.keysDirty) {
             this.keysDirty = false;
@@ -343,6 +381,7 @@ export class BoardView {
         if (next.length !== this.cells.length) {
             this.cells = next.slice();
             this.fullRedraw = true;
+            this.zoomDirty = true;
             return;
         }
         let changed = false;
@@ -358,6 +397,7 @@ export class BoardView {
         if (changed) {
             this.reachDirty = true;
             this.distDirty = true;
+            this.zoomDirty = true;
         }
     }
 
@@ -377,27 +417,32 @@ export class BoardView {
             this.fullRedraw = false;
             this.cleared.length = 0;
             tex.clear();
-            this.stampAll(tex, this.cells, TILE_TINT_SCALE, this.focus);
+            this.stampAll(tex, this.cells, this.view, TILE_TINT_SCALE, this.focus);
             tex.render();
             this.drawGlyphOverlay();
             return;
         }
         if (this.cleared.length === 0) return;
-        const c = this.cell;
+        const { zoom } = this.view;
         for (const i of this.cleared) {
             const x = i % this.width;
             const y = (i - x) / this.width;
-            tex.clear(x * c, y * c, c, c);
+            const p = this.texPos(zoom, x, y);
+            tex.clear(p.x, p.y, zoom.cell, zoom.cell);
         }
         this.cleared.length = 0;
         tex.render();
         if (this.showGlyphs) this.drawGlyphOverlay();
     }
 
-    /** Stamp every non-empty cell; with a `focus` color mask, cells outside it are stamped dim. */
-    private stampAll(tex: Textures.DynamicTexture, cells: Uint8Array, tintScale: number, focus = 0): void {
-        const c = this.cell;
-        const coreAlpha = c >= 12 ? 0.42 : 0.3;
+    /** Top-left of cell `(x, y)` inside the board textures (they cover the board rect). */
+    private texPos(zoom: BoardZoom, x: number, y: number): Point2 {
+        return { x: zoom.x - this.rect.x + x * zoom.cell, y: zoom.y - this.rect.y + y * zoom.cell };
+    }
+
+    /** Stamp every non-empty cell at `view`; with a `focus` color mask, cells outside it are stamped dim. */
+    private stampAll(tex: Textures.DynamicTexture, cells: Uint8Array, view: StampView, tintScale: number, focus = 0): void {
+        const coreAlpha = view.zoom.cell >= 12 ? 0.42 : 0.3;
         for (let y = 0; y < this.height; y++) {
             const row = y * this.width;
             for (let x = 0; x < this.width; x++) {
@@ -408,8 +453,9 @@ export class BoardView {
                 const dim = focus !== 0 && (focus & (1 << v)) === 0;
                 const scale = dim ? UNFOCUSED_TINT_SCALE : tintScale;
                 const tint = scale === 1 ? art.core : mixColor(0x000000, art.core, scale);
-                tex.stamp(this.tileKey, undefined, x * c, y * c, { tint, originX: 0, originY: 0 });
-                tex.stamp(this.coreKey, undefined, x * c, y * c, { tint: art.glow, originX: 0, originY: 0, alpha: dim ? coreAlpha * UNFOCUSED_CORE : coreAlpha, blendMode: BlendModes.ADD });
+                const p = this.texPos(view.zoom, x, y);
+                tex.stamp(view.tile, undefined, p.x, p.y, { tint, originX: 0, originY: 0 });
+                tex.stamp(view.core, undefined, p.x, p.y, { tint: art.glow, originX: 0, originY: 0, alpha: dim ? coreAlpha * UNFOCUSED_CORE : coreAlpha, blendMode: BlendModes.ADD });
             }
         }
     }
@@ -422,14 +468,15 @@ export class BoardView {
         this.lastActiveColors = this.activeColors;
         const provider = this.distProvider;
         if (this.activeColors !== 0 && provider !== null) {
-            const c = this.cell;
+            const { zoom, tile } = this.view;
             for (let y = 0; y < this.height; y++) {
                 const row = y * this.width;
                 for (let x = 0; x < this.width; x++) {
                     const v = this.cells[row + x]!;
                     if (v === EMPTY || (this.activeColors & (1 << v)) === 0) continue;
                     if (provider(v, x, y) < 0) continue;
-                    tex.stamp(this.tileKey, undefined, x * c, y * c, { originX: 0, originY: 0 });
+                    const p = this.texPos(zoom, x, y);
+                    tex.stamp(tile, undefined, p.x, p.y, { originX: 0, originY: 0 });
                 }
             }
         }
@@ -440,15 +487,16 @@ export class BoardView {
     private drawGlyphOverlay(): void {
         const g = this.glyphGfx;
         g.clear();
-        if (!this.showGlyphs || this.cell < 14) return;
-        const r = this.cell * 0.26;
+        const { zoom } = this.view;
+        if (!this.showGlyphs || zoom.cell < 14) return;
+        const r = zoom.cell * 0.26;
         for (let y = 0; y < this.height; y++) {
             for (let x = 0; x < this.width; x++) {
                 const v = this.cells[y * this.width + x]!;
                 if (v === EMPTY) continue;
                 const art = this.art[v];
                 if (!art) continue;
-                const p = this.cellCenter(x, y);
+                const p = zoomCellCenter(zoom, x, y);
                 drawGlyph(g, art.glyph, p.x, p.y, r, art.deep, this.isDimmed(v) ? 0.85 * UNFOCUSED_ALPHA : 0.85);
             }
         }
@@ -464,8 +512,10 @@ export class BoardView {
         const p = this.cellCenter(x, y);
         m.life = MELT_MS;
         m.fade = this.isDimmed(color) ? UNFOCUSED_ALPHA : 1;
-        m.tile.setPosition(p.x, p.y).setTint(art.core).setScale(1).setAlpha(m.fade).setVisible(true);
-        m.flash.setPosition(p.x, p.y).setTint(art.glow).setScale((this.cell * 1.2) / 64).setAlpha(0.65 * m.fade).setVisible(true);
+        m.scale = this.zs;
+        m.cell = this.cellSize();
+        m.tile.setPosition(p.x, p.y).setTint(art.core).setScale(m.scale).setAlpha(m.fade).setVisible(true);
+        m.flash.setPosition(p.x, p.y).setTint(art.glow).setScale((m.cell * 1.2) / 64).setAlpha(0.65 * m.fade).setVisible(true);
     }
 
     private tickMelts(dt: number): void {
@@ -478,8 +528,8 @@ export class BoardView {
                 continue;
             }
             const t = 1 - m.life / MELT_MS;
-            m.tile.setScale(1 + 0.35 * t, 1 - 0.8 * t).setAlpha((1 - t) * m.fade);
-            m.flash.setScale((this.cell * (1.2 + 1.6 * t)) / 64).setAlpha(0.65 * (1 - t) * m.fade);
+            m.tile.setScale(m.scale * (1 + 0.35 * t), m.scale * (1 - 0.8 * t)).setAlpha((1 - t) * m.fade);
+            m.flash.setScale((m.cell * (1.2 + 1.6 * t)) / 64).setAlpha(0.65 * (1 - t) * m.fade);
         }
     }
 
@@ -513,32 +563,47 @@ export class BoardView {
     }
 
     private makeKey(k: KeyView): KeySprite {
-        const c = this.cellCenter(k.x, k.y);
-        const size = Math.max(12, this.cell);
-        const labels = this.cell >= MIN_LABEL_CELL;
+        const { zoom } = this.view;
+        const c = zoomCellCenter(zoom, k.x, k.y);
+        const size = Math.max(12, zoom.cell);
+        const labels = zoom.cell >= MIN_LABEL_CELL;
         const color = this.cells[k.y * this.width + k.x]!;
         const art = color === EMPTY ? undefined : this.art[color];
         const core = art?.core ?? COLORS.key;
         const glowColor = art?.glow ?? COLORS.key;
-        const glow = this.scene.add.image(c.x, c.y, TEX.glow).setBlendMode(BlendModes.ADD).setTint(glowColor).setScale((size * 1.6) / 64).setAlpha(0.6).setDepth(DEPTH.board + 0.3);
+        const glow = this.scene.add.image(0, 0, TEX.glow).setBlendMode(BlendModes.ADD).setTint(glowColor).setAlpha(0.6).setDepth(DEPTH.board + 0.3);
+        // Drawn around (0, 0) so the zoom tween can move and scale it as a whole.
         const icon = this.scene.add.graphics().setDepth(DEPTH.board + 0.32);
         icon.fillStyle(0x07041a, 0.8);
-        icon.fillCircle(c.x, c.y, size * 0.46);
+        icon.fillCircle(0, 0, size * 0.46);
         icon.lineStyle(Math.max(1.5, size * 0.06), core, 0.95);
-        icon.strokeCircle(c.x, c.y, size * 0.46);
-        drawCrystalKey(icon, c.x, c.y - (labels ? size * 0.08 : 0), size * 0.62, glowColor);
-        const sparkle = this.scene.add.image(c.x + size * 0.3, c.y - size * 0.3, TEX.star4).setBlendMode(BlendModes.ADD).setTint(0xffffff).setScale((size * 0.7) / 48).setDepth(DEPTH.board + 0.34);
+        icon.strokeCircle(0, 0, size * 0.46);
+        drawCrystalKey(icon, 0, -(labels ? size * 0.08 : 0), size * 0.62, glowColor);
+        const sparkle = this.scene.add.image(0, 0, TEX.star4).setBlendMode(BlendModes.ADD).setTint(0xffffff).setScale((size * 0.7) / 48).setDepth(DEPTH.board + 0.34);
         let label: GameObjects.Text | null = null;
         if (labels) {
-            label = ui(this.scene.add.text(c.x, c.y + size * 0.27, keyLetter(k.id), { ...font(Math.max(10, size * 0.26), '#ffffff'), stroke: '#05030c', strokeThickness: 3 }).setOrigin(0.5).setDepth(DEPTH.board + 0.36));
+            label = ui(this.scene.add.text(0, 0, keyLetter(k.id), { ...font(Math.max(10, size * 0.26), '#ffffff'), stroke: '#05030c', strokeThickness: 3 }).setOrigin(0.5).setDepth(DEPTH.board + 0.36));
         }
-        return { id: k.id, glow, icon, sparkle, label, color, phase: Math.random() * Math.PI * 2 };
+        const sprite = { id: k.id, glow, icon, sparkle, label, color, phase: Math.random() * Math.PI * 2, x: c.x, y: c.y, size };
+        this.placeKey(sprite);
+        return sprite;
+    }
+
+    /** Position (and scale) a key's parts for the shown view. */
+    private placeKey(k: KeySprite): void {
+        const s = this.zs;
+        const x = this.ztx + s * k.x;
+        const y = this.zty + s * k.y;
+        k.glow.setPosition(x, y).setScale((k.size * 1.6 * s) / 64);
+        k.icon.setPosition(x, y).setScale(s);
+        k.sparkle.setPosition(x + k.size * 0.3 * s, y - k.size * 0.3 * s);
+        k.label?.setPosition(x, y + k.size * 0.27 * s).setScale(s);
     }
 
     private animateKeys(dt: number): void {
         if (this.keySprites.length === 0) return;
-        const size = Math.max(12, this.cell);
         for (const k of this.keySprites) {
+            const size = k.size * this.zs;
             k.phase += dt / 1000;
             k.sparkle.setRotation(k.phase * 1.6);
             const tw = 0.5 + 0.5 * Math.sin(k.phase * 3.1);
@@ -546,6 +611,71 @@ export class BoardView {
             k.sparkle.setScale(((size * (0.45 + 0.45 * tw)) / 48)).setAlpha((0.5 + 0.5 * tw) * fade);
             k.glow.setAlpha((0.45 + 0.25 * Math.sin(k.phase * 2.3)) * fade);
         }
+    }
+
+    // ------------------------------------------------------------------ zoom
+
+    private stampView(zoom: BoardZoom): StampView {
+        return { zoom, tile: ensureTileTexture(this.scene, zoom.cell), core: ensureTileCoreTexture(this.scene, zoom.cell) };
+    }
+
+    /** The view on screen right now (mid-tween it is between the old view and `view.zoom`). */
+    private shownZoom(): BoardZoom {
+        const a = this.zoomAnim;
+        const to = this.view.zoom;
+        if (!a) return to;
+        const t = Math.min(1, a.ms / ZOOM_MS);
+        const e = t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+        return { x: a.from.x + (to.x - a.from.x) * e, y: a.from.y + (to.y - a.from.y) * e, cell: a.from.cell + (to.cell - a.from.cell) * e };
+    }
+
+    /** Re-check the zoom after cells changed, then advance the tween. Runs before tiles render so a new view stamps the same frame. */
+    private tickZoom(dt: number): void {
+        if (this.zoomDirty && !this.zoomAnim) this.checkZoom();
+        if (!this.zoomAnim) return;
+        this.zoomAnim.ms += dt;
+        if (this.zoomAnim.ms >= ZOOM_MS) {
+            this.zoomAnim = null;
+            this.distDirty = true;
+            this.zoomDirty = true;
+        }
+        this.applyZoomTransform();
+    }
+
+    private checkZoom(): void {
+        this.zoomDirty = false;
+        const bounds = cellBounds(this.cells, this.width, (v) => v !== EMPTY);
+        const next = nextZoom(this.layout, this.width, this.height, bounds, this.view.zoom);
+        const first = !this.zoomChecked;
+        if (bounds !== null) this.zoomChecked = true;
+        if (!next) return;
+        const from = this.shownZoom();
+        this.view = this.stampView(next);
+        for (const m of this.melts) m.tile.setTexture(this.view.tile);
+        this.zoomAnim = first || isReducedFx() ? null : { from, ms: 0 };
+        this.fullRedraw = true;
+        this.reachDirty = true;
+        this.reachMs = REACH_MS;
+        this.distDirty = true;
+        for (const k of this.keySprites) destroyKey(k);
+        this.keySprites = [];
+        this.keysDirty = true;
+        this.applyZoomTransform();
+    }
+
+    /** Move the render-space layers (board composite, reach, glyphs, keys) to the shown view. */
+    private applyZoomTransform(): void {
+        const shown = this.shownZoom();
+        const { zoom } = this.view;
+        this.zs = shown.cell / zoom.cell;
+        this.ztx = shown.x - this.zs * zoom.x;
+        this.zty = shown.y - this.zs * zoom.y;
+        const cx = this.ztx + this.zs * (this.rect.x + this.rect.w / 2);
+        const cy = this.zty + this.zs * (this.rect.y + this.rect.h / 2);
+        this.composite.setPosition(cx, cy).setScale(this.zs);
+        this.reachImage?.setPosition(cx, cy).setScale(this.zs);
+        this.glyphGfx.setPosition(this.ztx, this.zty).setScale(this.zs);
+        for (const k of this.keySprites) this.placeKey(k);
     }
 
     // ------------------------------------------------------------------ panel, frame, flare, hologram
@@ -610,7 +740,7 @@ export class BoardView {
     // ------------------------------------------------------------------ dev overlay
 
     private drawDist(): void {
-        const { cell } = this.layout.board;
+        const cell = this.cellSize();
         let used = 0;
         const provider = this.distProvider;
         if (this.showDist && provider !== null && cell >= MIN_LABEL_CELL * 0.6) {

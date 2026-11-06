@@ -90,7 +90,7 @@ describe('state store', () => {
     });
 
     test('run state: current level, completion, settings', () => {
-        const defaults = { sfx: 0.8, music: 0.6, reducedFx: false, colorBlind: false, speed: 1 as const, unlockAll: false };
+        const defaults = { sfx: 0.8, music: 0.6, reducedFx: false, colorBlind: true, speed: 1 as const, unlockAll: false };
         expect(getRunState()).toEqual({ currentLevelId: null, completed: {}, attempts: {}, settings: defaults, firstSeen: {}, unlockAll: false });
         runActions.setCurrentLevel('heart');
         runActions.recordAttempt('heart');
@@ -108,8 +108,8 @@ describe('state store', () => {
     test('run state notifies subscribers and exposes unlock + firstSeen', () => {
         let calls = 0;
         const off = onRunChange(() => calls++);
-        runActions.updateSettings({ colorBlind: true });
-        runActions.updateSettings({ colorBlind: true });
+        runActions.updateSettings({ colorBlind: false });
+        runActions.updateSettings({ colorBlind: false });
         expect(calls).toBe(1);
         expect(isLevelUnlocked('a', ['a', 'b'])).toBe(true);
         expect(isLevelUnlocked('b', ['a', 'b'])).toBe(false);

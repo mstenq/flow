@@ -34,7 +34,8 @@ export class KeyTether {
     constructor(
         scene: Scene,
         private readonly targets: KeyTetherTargets,
-        private readonly cell: number,
+        /** Current on-screen cell size (the board zooms). */
+        private readonly cellSize: () => number,
         private readonly fx?: Fx,
     ) {
         this.gfx = scene.add.graphics().setDepth(DEPTH.fx).setBlendMode(BlendModes.ADD);
@@ -52,8 +53,9 @@ export class KeyTether {
             this.podId = null;
             return;
         }
-        this.fx?.flash(from.x, from.y, COLORS.key, Math.max(60, this.cell * 3), 260);
-        this.fx?.ring(from.x, from.y, COLORS.key, Math.max(40, this.cell * 2.5), 420, 0.9, this.cell * 0.5);
+        const cell = this.cellSize();
+        this.fx?.flash(from.x, from.y, COLORS.key, Math.max(60, cell * 3), 260);
+        this.fx?.ring(from.x, from.y, COLORS.key, Math.max(40, cell * 2.5), 420, 0.9, cell * 0.5);
     }
 
     update(dtMs: number): void {
@@ -75,7 +77,7 @@ export class KeyTether {
         drawLightning(g, from.x, from.y, to.x, to.y, segments, 22, COLORS.key, 1.2, 0.55);
         // The key cell: a pulsing target so it reads even when cells are a few pixels wide.
         const pulse = 0.5 + 0.5 * Math.sin(this.ageMs / 120);
-        const r = Math.max(9, this.cell * 0.75);
+        const r = Math.max(9, this.cellSize() * 0.75);
         g.lineStyle(3, COLORS.key, 0.5 + 0.5 * pulse);
         g.strokeCircle(from.x, from.y, r + 4 * pulse);
         g.lineStyle(1.5, 0xffffff, 0.9);

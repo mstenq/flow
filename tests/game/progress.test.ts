@@ -36,7 +36,7 @@ describe('progress defaults and persistence', () => {
             version: PROGRESS_VERSION,
             completed: {},
             attempts: {},
-            settings: { music: 0.6, sfx: 0.8, reducedFx: false, colorBlind: false, speed: 1, unlockAll: false },
+            settings: { music: 0.6, sfx: 0.8, reducedFx: false, colorBlind: true, speed: 1, unlockAll: false },
             firstSeen: {},
         });
     });

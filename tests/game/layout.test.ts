@@ -5,12 +5,20 @@ import {
     LOGICAL_H,
     LOGICAL_W,
     QUEUE_AREA,
+    MAX_ZOOM_CELL,
     VISIBLE_PODS,
+    baseZoom,
     cellAt,
+    cellBounds,
     cellCenter,
+    clipPathToRect,
     columnAt,
     computeLayout,
+    fitZoom,
+    nextZoom,
     podSlot,
+    zoomCellCenter,
+    zoomShows,
 } from '@game/layout';
 
 const make = (width: number, height: number, columns = 4, lanes = 3) => computeLayout({ width, height, columns, lanes });
@@ -118,5 +126,58 @@ describe('layout', () => {
         expect(() => make(0, 5)).toThrow();
         expect(() => make(5, 5, 0)).toThrow();
         expect(() => make(5, 5, 3, 0)).toThrow();
+    });
+});
+
+describe('board zoom', () => {
+    test('base zoom matches the plain layout', () => {
+        const layout = make(30, 20);
+        const z = baseZoom(layout);
+        expect(zoomCellCenter(z, 3, 7)).toEqual(cellCenter(layout, 3, 7));
+        expect(fitZoom(layout, 30, 20, { x: 0, y: 0, w: 30, h: 20 })).toEqual(z);
+    });
+
+    test('cellBounds finds the filled box, or null', () => {
+        const cells = [0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0];
+        expect(cellBounds(cells, 4, (v) => v === 1)).toEqual({ x: 1, y: 1, w: 2, h: 2 });
+        expect(cellBounds([0, 0], 2, (v) => v === 1)).toBeNull();
+    });
+
+    test('fit zooms in on the remaining cells, keeps them inside the board rect, and caps the cell size', () => {
+        const layout = make(40, 40);
+        const bounds = { x: 18, y: 18, w: 4, h: 4 };
+        const z = fitZoom(layout, 40, 40, bounds);
+        expect(z.cell).toBe(MAX_ZOOM_CELL);
+        expect(zoomShows(layout, z, bounds)).toBe(true);
+        const mid = fitZoom(layout, 40, 40, { x: 5, y: 10, w: 20, h: 9 });
+        expect(mid.cell).toBe(Math.floor(680 / 21));
+        expect(zoomShows(layout, mid, { x: 5, y: 10, w: 20, h: 9 })).toBe(true);
+    });
+
+    test('bounds near a grid edge clamp the window to the grid', () => {
+        const layout = make(40, 40);
+        const z = fitZoom(layout, 40, 40, { x: 0, y: 0, w: 10, h: 10 });
+        expect(z.x).toBe(layout.board.rect.x);
+        expect(z.y).toBe(layout.board.rect.y);
+    });
+
+    test('nextZoom waits for a big enough step and refits when cells would be cut off', () => {
+        const layout = make(40, 40);
+        const base = baseZoom(layout);
+        expect(nextZoom(layout, 40, 40, null, base)).toBeNull();
+        expect(nextZoom(layout, 40, 40, { x: 1, y: 1, w: 37, h: 37 }, base)).toBeNull();
+        const zoomed = nextZoom(layout, 40, 40, { x: 10, y: 10, w: 20, h: 20 }, base);
+        expect(zoomed?.cell).toBe(Math.floor(680 / 21));
+        expect(nextZoom(layout, 40, 40, { x: 10, y: 10, w: 19, h: 19 }, zoomed!)).toBeNull();
+        expect(nextZoom(layout, 40, 40, { x: 0, y: 0, w: 40, h: 40 }, zoomed!)).toEqual(base);
+    });
+
+    test('clipPathToRect ends just past the edge where the path leaves the rect', () => {
+        const rect = { x: 0, y: 0, w: 100, h: 100 };
+        const path = [{ x: 50, y: 50 }, { x: 80, y: 50 }, { x: 120, y: 50 }, { x: 160, y: 50 }];
+        expect(clipPathToRect(path, rect, 10)).toEqual([{ x: 50, y: 50 }, { x: 80, y: 50 }, { x: 110, y: 50 }]);
+        const up = [{ x: 30, y: 20 }, { x: 30, y: -40 }];
+        expect(clipPathToRect(up, rect, 10)).toEqual([{ x: 30, y: 20 }, { x: 30, y: -10 }]);
+        expect(clipPathToRect([{ x: 5, y: 5 }], rect, 10)).toEqual([{ x: 5, y: 5 }]);
     });
 });

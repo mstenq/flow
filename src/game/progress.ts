@@ -71,7 +71,7 @@ export function defaultSettings(defaults: ProgressDefaults = {}): ProgressSettin
         music: DEFAULT_VOLUMES.music,
         sfx: DEFAULT_VOLUMES.sfx,
         reducedFx: defaults.reducedFx ?? false,
-        colorBlind: false,
+        colorBlind: true,
         speed: 1,
         unlockAll: false,
     };

@@ -216,3 +216,122 @@ export function podSlot(layout: Layout, column: number, index: number): Point2 &
     if (index >= VISIBLE_PODS) return { x, y: q.spawnY, scale: q.slotScale[VISIBLE_PODS - 1]! };
     return { x, y: q.slotY[index]!, scale: q.slotScale[index]! };
 }
+
+/**
+ * Board zoom: as the image is eaten away, the board view zooms in on what is left (inside the fixed board rect, so the
+ * frame never moves). Grid cell (0, 0)'s top-left lands at `(x, y)` and each cell is `cell` px (an integer, so tiles
+ * stay crisp).
+ */
+export interface BoardZoom {
+    x: number;
+    y: number;
+    cell: number;
+}
+
+/** Zoomed cells never grow past this (a lone cluster of a few cells should not fill the whole board). */
+export const MAX_ZOOM_CELL = 72;
+/** Breathing room around the remaining cells, in cells (split across both sides). */
+export const ZOOM_PAD = 1;
+/** Only re-zoom when the cells would grow by at least this factor (a zoom per claim would be seasick). */
+export const ZOOM_STEP = 1.25;
+
+/** The unzoomed view: the whole grid exactly fills the board rect. */
+export function baseZoom(layout: Layout): BoardZoom {
+    const { rect, cell } = layout.board;
+    return { x: rect.x, y: rect.y, cell };
+}
+
+/** Center of cell `(cx, cy)` under `zoom`. */
+export function zoomCellCenter(zoom: BoardZoom, cx: number, cy: number): Point2 {
+    return { x: zoom.x + (cx + 0.5) * zoom.cell, y: zoom.y + (cy + 0.5) * zoom.cell };
+}
+
+/**
+ * Largest view (integer cell, never below the base cell, capped at `MAX_ZOOM_CELL`) that shows `bounds` (in cells)
+ * inside the board rect, centered on them; the window is clamped to the grid so it never shows past an edge it
+ * could avoid.
+ */
+export function fitZoom(layout: Layout, gridW: number, gridH: number, bounds: Rect): BoardZoom {
+    const { rect, cell: base } = layout.board;
+    const fit = Math.floor(Math.min(rect.w / (bounds.w + ZOOM_PAD), rect.h / (bounds.h + ZOOM_PAD)));
+    const cell = Math.max(base, Math.min(MAX_ZOOM_CELL, fit));
+    return {
+        x: zoomAxis(rect.x, rect.w, gridW, bounds.x, bounds.w, cell),
+        y: zoomAxis(rect.y, rect.h, gridH, bounds.y, bounds.h, cell),
+        cell,
+    };
+}
+
+/** Grid origin on one axis: center the bounds in the window, then keep the grid covering the window where it can. */
+function zoomAxis(start: number, span: number, gridN: number, b0: number, bn: number, cell: number): number {
+    const gridPx = gridN * cell;
+    if (gridPx <= span) return Math.round(start + (span - gridPx) / 2);
+    const ideal = start + span / 2 - (b0 + bn / 2) * cell;
+    return Math.round(Math.min(start, Math.max(start + span - gridPx, ideal)));
+}
+
+/** True when every cell of `bounds` lies fully inside the board rect under `zoom`. */
+export function zoomShows(layout: Layout, zoom: BoardZoom, bounds: Rect): boolean {
+    const { rect } = layout.board;
+    const x0 = zoom.x + bounds.x * zoom.cell;
+    const y0 = zoom.y + bounds.y * zoom.cell;
+    return x0 >= rect.x && y0 >= rect.y && x0 + bounds.w * zoom.cell <= rect.x + rect.w && y0 + bounds.h * zoom.cell <= rect.y + rect.h;
+}
+
+/**
+ * Where the view should go next for the remaining cells `bounds` (null = board empty), or null to stay put: zoom in
+ * once the cells can grow by `ZOOM_STEP`, and refit at once if some cell would be cut off.
+ */
+export function nextZoom(layout: Layout, gridW: number, gridH: number, bounds: Rect | null, current: BoardZoom): BoardZoom | null {
+    if (bounds === null) return null;
+    const fit = fitZoom(layout, gridW, gridH, bounds);
+    if (!zoomShows(layout, current, bounds)) return fit;
+    if (fit.cell < current.cell * ZOOM_STEP) return null;
+    return fit;
+}
+
+/** Bounding box (in cells) of every cell where `filled(value)` holds, or null when there is none. */
+export function cellBounds(cells: ArrayLike<number>, width: number, filled: (value: number) => boolean): Rect | null {
+    let x0 = Infinity;
+    let y0 = Infinity;
+    let x1 = -1;
+    let y1 = -1;
+    for (let i = 0; i < cells.length; i++) {
+        if (!filled(cells[i]!)) continue;
+        const x = i % width;
+        const y = (i - x) / width;
+        if (x < x0) x0 = x;
+        if (x > x1) x1 = x;
+        if (y < y0) y0 = y;
+        if (y > y1) y1 = y;
+    }
+    if (x1 < 0) return null;
+    return { x: x0, y: y0, w: x1 - x0 + 1, h: y1 - y0 + 1 };
+}
+
+/**
+ * Cut a claim path (logical pixels) where it first leaves `rect`: the last point is where it crosses the edge, pushed
+ * `margin` further along the same segment (the neon frame). A path that never leaves `rect` is returned as is.
+ */
+export function clipPathToRect(points: Point2[], rect: Rect, margin: number): Point2[] {
+    const inside = (p: Point2) => p.x >= rect.x && p.x <= rect.x + rect.w && p.y >= rect.y && p.y <= rect.y + rect.h;
+    const out: Point2[] = [];
+    for (const p of points) {
+        const prev = out[out.length - 1];
+        if (inside(p) || prev === undefined) {
+            out.push(p);
+            continue;
+        }
+        const dx = p.x - prev.x;
+        const dy = p.y - prev.y;
+        const len = Math.hypot(dx, dy);
+        let t = 1;
+        if (dx > 0) t = Math.min(t, (rect.x + rect.w - prev.x) / dx);
+        if (dx < 0) t = Math.min(t, (rect.x - prev.x) / dx);
+        if (dy > 0) t = Math.min(t, (rect.y + rect.h - prev.y) / dy);
+        if (dy < 0) t = Math.min(t, (rect.y - prev.y) / dy);
+        out.push({ x: prev.x + dx * t + (dx / len) * margin, y: prev.y + dy * t + (dy / len) * margin });
+        return out;
+    }
+    return out;
+}

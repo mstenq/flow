@@ -181,7 +181,7 @@ export class Play extends Scene {
         this.tether = new KeyTether(
             this,
             { keyCenterFor: (podId) => board.keyCenterFor(podId), podCenter: (podId) => queue.podCenter(podId) },
-            this.layout.board.cell,
+            () => board.cellSize(),
             this.fx,
         );
         this.hud = new Hud(this, {

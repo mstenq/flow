@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import { GameFacade } from '@game/gameFacade';
-import { computeLayout } from '@game/layout';
+import { cellCenter, computeLayout } from '@game/layout';
 import type { SimEvent, ViewState } from '@game/types';
 import { PlaybackRunner, enqueuePlayback } from '../../src/phaser/PlaybackRunner';
 import type { PlaybackTargets } from '../../src/phaser/PlaybackRunner';
@@ -18,6 +18,8 @@ function fakes(snapshot: () => ViewState) {
         board: {
             sync: () => log.push('board.sync'),
             onClaimed: (e: { x: number; y: number }) => log.push(`board.claimed ${e.x},${e.y}`),
+            cellCenter: (x: number, y: number) => cellCenter(layout, x, y),
+            cellSize: () => layout.board.cell,
         },
         goo: {
             launch: (l: (typeof launches)[number]) => {

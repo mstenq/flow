@@ -15,7 +15,7 @@
  * key landing, denied tap, win / overload sequence start and end).
  */
 import type { Layout } from '@game/layout';
-import { cellCenter } from '@game/layout';
+import { clipPathToRect } from '@game/layout';
 import type { Point2 } from '@game/layout';
 import type { SimEvent, ViewState } from '@game/types';
 import { emptyLaneCount, waitingToFill } from '@game/waveState';
@@ -227,23 +227,18 @@ export class PlaybackRunner {
         for (const l of this.listeners) fn(l);
     }
 
-    /** Claim path in logical pixels. The final point (outside the grid) is pulled in to just past the board edge. */
+    /**
+     * Claim path in logical pixels (as the board is shown, zoom included). It is cut where it leaves the board rect and
+     * ends just past that edge, on the neon frame (zoomed in, the grid edge can lie far outside the frame).
+     */
     private worldPath(e: Extract<SimEvent, { t: 'claimed' }>): Point2[] {
-        const { layout } = this.t;
-        const points = e.path.map((p) => cellCenter(layout, p.x, p.y));
-        const n = points.length;
-        if (n < 2) return points;
-        const edge = points[n - 2]!;
-        const out = points[n - 1]!;
-        const len = Math.hypot(out.x - edge.x, out.y - edge.y);
-        if (len === 0) return points;
-        const reach = layout.board.cell / 2 + EXIT_MARGIN;
-        points[n - 1] = { x: edge.x + ((out.x - edge.x) / len) * reach, y: edge.y + ((out.y - edge.y) / len) * reach };
-        return points;
+        const { board, layout } = this.t;
+        const points = e.path.map((p) => board.cellCenter(p.x, p.y));
+        return clipPathToRect(points, layout.board.rect, EXIT_MARGIN);
     }
 
     private dispatch(e: SimEvent): void {
-        const { board, goo, lanes, queue, layout, palette, fx, grid } = this.t;
+        const { board, goo, lanes, queue, palette, fx, grid } = this.t;
         if (this.listeners.length > 0) this.notify((l) => l.event?.(e));
         switch (e.t) {
             case 'tapped': {
@@ -269,7 +264,7 @@ export class PlaybackRunner {
             case 'claimed': {
                 board.onClaimed(e);
                 const points = this.worldPath(e);
-                if (points.length === 0) points.push(cellCenter(layout, e.x, e.y));
+                if (points.length === 0) points.push(board.cellCenter(e.x, e.y));
                 const exit = points[points.length - 1]!;
                 points.push(lanes.slotCenter(e.lane));
                 const color = palette[e.color] ?? 0xffffff;
@@ -281,7 +276,7 @@ export class PlaybackRunner {
                     points,
                     color,
                     glow: mixColor(color, 0xffffff, 0.45),
-                    radius: Math.max(6, Math.min(9, layout.board.cell * 0.3)),
+                    radius: Math.max(6, Math.min(9, board.cellSize() * 0.3)),
                     rideFrame: true,
                     onArrive: () => {
                         lanes.pulse(lane, podId);
@@ -293,7 +288,7 @@ export class PlaybackRunner {
             case 'keyCollected': {
                 const to = queue.podCenter(e.podId);
                 if (!to) return;
-                const from = cellCenter(layout, e.x, e.y);
+                const from = board.cellCenter(e.x, e.y);
                 if (!fx) {
                     goo.launch({ points: [from, to], color: KEY_COLOR, radius: 11, speed: 700 });
                     return;
@@ -305,7 +300,7 @@ export class PlaybackRunner {
                     queue.releaseLock(podId);
                     grid?.applyImpulse(to.x, to.y, 380, 160);
                     this.notify((l) => l.keyArrived?.(podId));
-                }, Math.max(0.7, Math.min(1.2, layout.board.cell / 30)));
+                }, Math.max(0.7, Math.min(1.2, board.cellSize() / 30)));
                 return;
             }
             case 'unlocked':
