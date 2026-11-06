@@ -87,3 +87,12 @@ export function withoutReset(search: string): string {
     const rest = params.toString();
     return rest === '' ? '' : `?${rest}`;
 }
+
+/** The query string with `?level=` set to `levelId` (or removed when null), other params kept. */
+export function withLevel(search: string, levelId: string | null): string {
+    const params = new URLSearchParams(search);
+    if (levelId) params.set('level', levelId);
+    else params.delete('level');
+    const rest = params.toString();
+    return rest === '' ? '' : `?${rest}`;
+}

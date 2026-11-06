@@ -12,7 +12,7 @@ import {
 } from '@game/progress';
 import type { StorageLike } from '@game/progress';
 import { campaignIds, mergeLevelEntries, nextLevelId, parseLevelIndex } from '@game/levelList';
-import { parseProgressFlags, withoutReset } from '@game/urlParams';
+import { parseProgressFlags, withLevel, withoutReset } from '@game/urlParams';
 
 class MemoryStorage implements StorageLike {
     items = new Map<string, string>();
@@ -260,6 +260,13 @@ describe('level list + url helpers', () => {
         expect(withoutReset('?intro=off')).toBe('?intro=off');
         expect(withoutReset('?reset=1&level=heart')).toBe('?level=heart');
         expect(withoutReset('?reset=1')).toBe('');
+    });
+
+    test('withLevel sets or clears the level param and keeps the rest', () => {
+        expect(withLevel('', 'heart')).toBe('?level=heart');
+        expect(withLevel('?debug=1&level=heart', 'invader')).toBe('?debug=1&level=invader');
+        expect(withLevel('?debug=1&level=heart', null)).toBe('?debug=1');
+        expect(withLevel('?level=heart', null)).toBe('');
     });
 
     test('formatTime', () => {

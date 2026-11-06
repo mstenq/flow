@@ -23,6 +23,7 @@ import { getRunState, isLevelUnlocked, onRunChange } from '@game/state';
 import { fetchLevel, loadLevelList } from '../levels';
 import { COLORS, font } from '../theme';
 import { audioDirector } from '../audio';
+import { syncLevelParam } from '../bootstrap';
 import { Button } from '../ui/Button';
 import { ModalOverlay } from '../ui/ModalOverlay';
 import { settingsContent } from '../ui/SettingsOverlay';
@@ -148,6 +149,7 @@ export class LevelSelect extends Scene {
     }
 
     create() {
+        syncLevelParam(null);
         this.all = [];
         this.entries = [];
         this.views = [];

@@ -5,7 +5,7 @@
  */
 import { getRunState, onRunChange, runActions } from '@game/state';
 import type { StorageLike } from '@game/progress';
-import { parseProgressFlags, withoutReset } from '@game/urlParams';
+import { parseProgressFlags, withLevel, withoutReset } from '@game/urlParams';
 import { audioDirector } from './audio';
 import { fxOverride, reducedFxDefault, setReducedFx } from './fx/fxSettings';
 
@@ -47,4 +47,11 @@ export function bootstrap(): void {
     applySettings();
     audioDirector.installUnlock();
     audioDirector.installVisibility();
+}
+
+/** Mirror the current level in the address bar (`?level=<id>`, or none on level select) so a reload returns to it. */
+export function syncLevelParam(levelId: string | null): void {
+    const search = withLevel(window.location.search, levelId);
+    if (search === window.location.search) return;
+    window.history.replaceState(null, '', `${window.location.pathname}${search}${window.location.hash}`);
 }

@@ -22,6 +22,7 @@ import { fetchLevel, loadLevelList } from '../levels';
 import { PlaybackRunner, enqueuePlayback } from '../PlaybackRunner';
 import { COLORS, hexNum, keyLetter, paletteArtFromNums } from '../theme';
 import { audioDirector } from '../audio';
+import { syncLevelParam } from '../bootstrap';
 import { introContent } from '../ui/IntroCard';
 import { ModalOverlay } from '../ui/ModalOverlay';
 import { settingsContent } from '../ui/SettingsOverlay';
@@ -99,6 +100,7 @@ export class Play extends Scene {
 
     init(data: PlayData) {
         this.levelId = data.levelId ?? '';
+        syncLevelParam(this.levelId);
         this.retry = data.retry ?? false;
         this.ready = false;
         this.phase = 'playing';
