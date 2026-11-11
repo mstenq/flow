@@ -30,7 +30,6 @@ export class Sfx {
         switch (cue.sfx) {
             case 'tap': return this.tap(dest);
             case 'pushed': return this.pushed(dest);
-            case 'waveStart': return this.waveStart(dest);
             case 'claim': return this.claim(cue.color, dest, ctx);
             case 'tick': return this.tickLimiter.tryAcquire(ctx.currentTime) ? this.tick(dest) : undefined;
             case 'podComplete': return this.podComplete(dest);
@@ -57,12 +56,6 @@ export class Sfx {
     private pushed(d: AudioNode): void {
         tone(this.e(), d, { freq: 520, endFreq: 140, dur: 0.12, type: 'sawtooth', vol: 0.11 });
         tone(this.e(), d, { freq: 220, endFreq: 70, dur: 0.1, type: 'square', vol: 0.09 });
-    }
-
-    /** Fill-first: every lane is full and the wave lets go. A quick rising two-note release. */
-    private waveStart(d: AudioNode): void {
-        tone(this.e(), d, { freq: 220, endFreq: 440, dur: 0.14, type: 'sawtooth', vol: 0.08 });
-        tone(this.e(), d, { freq: 330, endFreq: 660, dur: 0.18, type: 'triangle', vol: 0.1, attack: 0.04 });
     }
 
     private claim(color: number, d: AudioNode, ctx: AudioContext): void {

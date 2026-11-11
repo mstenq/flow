@@ -5,7 +5,8 @@ import { EMPTY } from '@game/types';
 import { NEON_PALETTE } from '../../src/data/palette';
 import { boardFromAscii, replay } from '../../tools/gen/board';
 import { generateLevel } from '../../tools/gen/generate';
-import { EASY_CUTOFF, backgroundChance, outlineChance, podCaps, wideLanesFor } from '../../tools/gen/knobs';
+import { EASY_CUTOFF, outlineChance, podCaps, wideLanesFor } from '../../tools/gen/knobs';
+import { PATTERNS, backgroundStyle, paintBackground } from '../../tools/gen/backgrounds';
 import { addBackground, addOutlineRing, freeNeon } from '../../tools/gen/outline-ring';
 import type { SimplifiedImage } from '../../tools/gen/palette';
 import { neonsConflict } from '../../tools/gen/palette';
@@ -117,16 +118,24 @@ const INSET = `
 `;
 
 describe('background fill', () => {
-    test('fills every outside empty cell, seals the art and leaves enclosed holes empty', () => {
+    test('paints every outside empty cell in new colors, seals the art and leaves enclosed holes empty', () => {
         const img = simplified(INSET);
-        const out = addBackground(img, new Rng(3));
-        if (!out) throw new Error('expected a background');
-        const fill = img.palette.length;
-        expect([out.width, out.height]).toEqual([img.width, img.height]);
-        expect(artSealed(out, fill)).toBe(true);
-        const holes = out.cells.filter((v) => v === EMPTY).length;
-        expect(holes).toBe(2);
-        expect(out.counts[fill]).toBe(img.cells.filter((v) => v === EMPTY).length - holes);
+        for (let seed = 0; seed < 20; seed++) {
+            const out = addBackground(img, new Rng(seed));
+            if (!out) throw new Error('expected a background');
+            const fill = img.palette.length;
+            expect([out.width, out.height]).toEqual([img.width, img.height]);
+            expect(artSealed(out, fill)).toBe(true);
+            const holes = out.cells.filter((v) => v === EMPTY).length;
+            expect(holes).toBe(2);
+            const added = out.counts.slice(fill);
+            expect(added.reduce((a, b) => a + b, 0)).toBe(img.cells.filter((v) => v === EMPTY).length - holes);
+            for (const hex of out.palette.slice(fill)) {
+                expect(img.palette).not.toContain(hex);
+                for (const p of img.palette) expect(neonsConflict(p, hex)).toBe(false);
+            }
+            expect(new Set(out.palette).size).toBe(out.palette.length);
+        }
     });
 
     test('stacks outside a ring in a third color', () => {
@@ -144,7 +153,7 @@ describe('background fill', () => {
         if (!ringed) throw new Error('expected a ring');
         const both = addBackground(ringed, new Rng(2));
         if (!both) throw new Error('expected a background');
-        expect(both.palette.length).toBe(img.palette.length + 2);
+        expect(both.palette.length).toBeGreaterThanOrEqual(img.palette.length + 2);
         expect(new Set(both.palette).size).toBe(both.palette.length);
         expect(artSealed(both, img.palette.length)).toBe(true);
         // The ring is behind the background: unreachable for its color until the background drains.
@@ -158,8 +167,13 @@ describe('background fill', () => {
         expect(addBackground(framed, new Rng(1))).toBeNull();
     });
 
-    test('chance is half the outline chance', () => {
-        for (const [t, c] of [[0.2, 4], [0.4, 8], [0.9, 3]]) expect(backgroundChance(t, c)).toBe(outlineChance(t, c) / 2);
+    test('falls back to a single color when only one neon is free, and to none when none is', () => {
+        const all = NEON_PALETTE.map((n) => n.hex);
+        const cells = Array.from({ length: 40 }, (_, i) => i);
+        const one = paintBackground(8, 5, cells, all.slice(1).filter((h) => !neonsConflict(h, all[0])), backgroundStyle(false), new Rng(1));
+        expect(one?.pattern).toBe('solid');
+        expect(one?.colors).toEqual([all[0]]);
+        expect(paintBackground(8, 5, cells, all, backgroundStyle(false), new Rng(1))).toBeNull();
     });
 
     test('a generated level with a background is wide and replays', () => {
@@ -174,8 +188,54 @@ describe('background fill', () => {
         });
         const image: RgbaImage = { width: 8, height: 7, data };
         const r = generateLevel({ image, id: 'bg', name: 'Bg', difficulty: 0.6, seed: 9, outline: false, background: true, candidates: 6, climb: 4, quick: true });
-        expect(r.board.seals).toEqual([r.simplified.palette.length - 1]);
+        const seals = r.board.seals ?? [];
+        expect(seals.length).toBeGreaterThanOrEqual(1);
+        expect(seals[seals.length - 1]).toBe(r.simplified.palette.length - 1);
         expect(r.level.lanes).toBe(wideLanesFor(9));
         expect(replay(r.level).won).toBe(true);
+    });
+});
+
+describe('background patterns', () => {
+    const W = 24;
+    const H = 20;
+    const cells = Array.from({ length: W * H }, (_, i) => i);
+
+    test('every pattern paints bands in range on every cell and is deterministic', () => {
+        for (const def of PATTERNS) {
+            for (let colors = def.minColors; colors <= def.maxColors; colors++) {
+                const a = def.make(new Rng(7), { width: W, height: H, colors, cells });
+                const b = def.make(new Rng(7), { width: W, height: H, colors, cells });
+                const seen = new Set<number>();
+                for (const i of cells) {
+                    const x = i % W;
+                    const band = a(x, (i - x) / W);
+                    expect(band).toBe(b(x, (i - x) / W));
+                    expect(Number.isInteger(band) && band >= 0 && band < colors).toBe(true);
+                    seen.add(band);
+                }
+                // A full board shows every band of the pattern.
+                expect([def.name, seen.size]).toEqual([def.name, colors]);
+            }
+        }
+    });
+
+    test('easy levels only get plain 2-color patterns', () => {
+        const style = backgroundStyle(true);
+        const easy = new Set(PATTERNS.filter((p) => style.families.includes(p.family)).map((p) => p.name));
+        expect(style.families).not.toContain('gradient');
+        for (let seed = 0; seed < 40; seed++) {
+            const out = paintBackground(W, H, cells, ART_PALETTE, style, new Rng(seed));
+            if (!out) throw new Error('expected a background');
+            expect(easy.has(out.pattern) || out.pattern === 'solid').toBe(true);
+            expect(out.colors.length).toBeLessThanOrEqual(2);
+        }
+    });
+
+    test('picks a variety of patterns', () => {
+        const names = new Set<string>();
+        for (let seed = 0; seed < 200; seed++) names.add(paintBackground(W, H, cells, ART_PALETTE, backgroundStyle(false), new Rng(seed))?.pattern ?? 'none');
+        expect(names.size).toBeGreaterThan(20);
+        expect(names.has('none')).toBe(false);
     });
 });

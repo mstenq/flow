@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "rulesVersion": 3,
+  "rulesVersion": 4,
   "id": "planet",
   "name": "Ringed Planet",
   "width": 26,
@@ -41,7 +41,7 @@
       "longestDrainSec": 24.57,
       "minLanesProven": true
     },
-    "generatorVersion": "gen-3.6.0",
+    "generatorVersion": "gen-3.10.0",
     "sourceHash": "8fe4b734ec10c01a"
   }
 }

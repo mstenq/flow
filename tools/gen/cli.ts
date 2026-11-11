@@ -1,17 +1,13 @@
 /**
- * bun run gen <png> [--difficulty 0.4] [--seed 7] [--name X] [--id X] [--report] [--max-colors N] [--min-region N] [--max-pod N] [--outline 0|1] [--background 0|1] [--fill-first 0|1]
+ * bun run gen <png> [--difficulty 0.4] [--seed 7] [--name X] [--id X] [--report] [--max-colors N] [--min-region N] [--max-pod N] [--outline 0|1] [--background 0|1]
  *
  * Writes public/levels/<id>.json, regenerates public/levels/index.json, prints a summary.
  * Defaults come from the matching levels-src/levels.json entry (by id, else by file), then from the file name.
- * `--fill-first` sets fill-first eligibility; by default it matches gen:all (`fillFirstEligible` of the entry's
- * levels.json index), and a PNG that is not in levels.json is eligible.
  */
 import { basename, resolve } from 'node:path';
-import { fillFirstEligible } from './knobs.ts';
 import { entryId, idFromFile, loadEntries, runOne, writeIndex } from './output.ts';
 
-const USAGE =
-    'usage: bun run gen <png> [--difficulty 0.4] [--seed 7] [--name X] [--id X] [--report] [--max-colors N] [--min-region N] [--max-pod N] [--outline 0|1] [--background 0|1] [--fill-first 0|1]';
+const USAGE = 'usage: bun run gen <png> [--difficulty 0.4] [--seed 7] [--name X] [--id X] [--report] [--max-colors N] [--min-region N] [--max-pod N] [--outline 0|1] [--background 0|1]';
 
 function parseArgs(argv: string[]): { png: string; flags: Map<string, string | true> } {
     const flags = new Map<string, string | true>();
@@ -70,7 +66,6 @@ function main(): void {
         maxPod: num(flags, '--max-pod') ?? entry?.maxPod,
         outline: flags.has('--outline') ? num(flags, '--outline') === 1 : undefined,
         background: flags.has('--background') ? num(flags, '--background') === 1 : undefined,
-        fillFirst: flags.has('--fill-first') ? num(flags, '--fill-first') === 1 : fillFirstEligible(entry ? entries.indexOf(entry) : -1),
         report: flags.has('--report'),
     });
     console.log(run.summary.join('\n'));

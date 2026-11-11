@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "rulesVersion": 3,
+  "rulesVersion": 4,
   "id": "eye",
   "name": "Eye",
   "width": 18,
@@ -40,7 +40,7 @@
       "longestDrainSec": 7.02,
       "minLanesProven": true
     },
-    "generatorVersion": "gen-3.8.0",
+    "generatorVersion": "gen-3.10.0",
     "sourceHash": "e1ceecea32629fb3"
   }
 }

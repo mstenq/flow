@@ -4,10 +4,7 @@
  * is dispatched in one `pump()`, so claims animate concurrently. After dispatching, every view is refreshed
  * from the sim snapshot, so views cannot drift from the rules.
  *
- * Fill-first levels: while the board waits for every lane to fill, `syncNow` shows the `banner` and makes the empty lane
- * slots pulse; `waveStarted` punches the released lanes and dismisses the banner.
- *
- * Optional targets (`fx`, `grid`, `rig`, `banner`) add the neon flourishes (warp-grid impulses, key flights, win/overload
+ * Optional targets (`fx`, `grid`, `rig`) add the neon flourishes (warp-grid impulses, key flights, win/overload
  * sequences); without them the runner still drives the core views (unit tests use fakes for those only).
  *
  * Hooks for audio / other listeners: `addListener({ ... })` (see `PlaybackListener`). Every dispatched sim event is
@@ -18,14 +15,12 @@ import type { Layout } from '@game/layout';
 import { clipPathToRect } from '@game/layout';
 import type { Point2 } from '@game/layout';
 import type { SimEvent, ViewState } from '@game/types';
-import { emptyLaneCount, waitingToFill } from '@game/waveState';
 import { mixColor } from '@data/themeColors';
 import type { BoardView } from './view/BoardView';
 import type { GooStream } from './view/GooStream';
 import type { LaneView } from './view/LaneView';
 import type { QueueView } from './view/QueueView';
 import type { NeonGrid } from './view/NeonGrid';
-import type { WaveBanner } from './view/WaveBanner';
 import type { Fx } from './fx/Fx';
 import type { CameraRig } from './fx/CameraRig';
 import { playOverloadSequence, playWinSequence } from './fx/sequences';
@@ -42,7 +37,6 @@ export interface PlaybackTargets {
     fx?: Fx;
     grid?: NeonGrid;
     rig?: CameraRig;
-    banner?: WaveBanner;
 }
 
 export interface PlaybackHooks {
@@ -76,8 +70,6 @@ const EXIT_MARGIN = 10;
 
 export class PlaybackRunner {
     private pending: SimEvent[] = [];
-    /** Lanes of waves started in the current batch (released after the views sync, so the lane pods exist). */
-    private releases: number[][] = [];
     private forceSync = true;
     private readonly listeners: PlaybackListener[] = [];
 
@@ -121,8 +113,6 @@ export class PlaybackRunner {
         this.forceSync = false;
         for (const e of batch) this.dispatch(e);
         const snapshot = this.syncNow();
-        for (const lanes of this.releases) this.releaseLanes(lanes);
-        this.releases = [];
         if (batch.length > 0 && this.listeners.length > 0) this.notify((l) => l.batch?.(batch, snapshot));
         return true;
     }
@@ -133,7 +123,6 @@ export class PlaybackRunner {
         this.t.board.sync(s);
         this.t.lanes.sync(s.lanes);
         this.t.queue.sync(s.columns);
-        this.syncFillPrompt(s);
         return s;
     }
 
@@ -197,29 +186,9 @@ export class PlaybackRunner {
         );
     }
 
-    /** Fill-first: show the banner and pulse the empty slots while the board waits for the player. */
-    private syncFillPrompt(s: ViewState): void {
-        const waiting = waitingToFill(s);
-        this.t.lanes.setInvite?.(waiting);
-        const banner = this.t.banner;
-        if (!banner) return;
-        if (waiting) banner.show(emptyLaneCount(s));
-        else banner.hide();
-    }
-
-    private releaseLanes(lanes: readonly number[]): void {
-        const { grid, lanes: laneView } = this.t;
-        laneView.release?.(lanes);
-        for (const l of lanes) {
-            const c = laneView.slotCenter(l);
-            grid?.applyImpulse(c.x, c.y, 320, 200);
-        }
-    }
-
     dispose(): void {
         if (activeRunner === this) activeRunner = null;
         this.pending = [];
-        this.releases = [];
         this.listeners.length = 0;
     }
 
@@ -317,13 +286,6 @@ export class PlaybackRunner {
                 return;
             case 'revealed':
                 queue.onRevealed?.(e.podId);
-                return;
-            case 'waveStarted':
-                this.t.banner?.hide(true);
-                this.releases.push(e.lanes);
-                return;
-            case 'waveEnded':
-                // Silent: the next wait for the lanes is announced by `syncFillPrompt` once the state says so.
                 return;
         }
     }

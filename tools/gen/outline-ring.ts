@@ -3,7 +3,8 @@
  *
  *  - Outline ring: one cell thick around the art, like a sticker border. Art that touches the board edge is padded by
  *    a cell on that side so the ring fits, which makes it a frame for full-bleed scenes.
- *  - Background: every empty cell outside the art (and outside a ring, if there is one) is filled.
+ *  - Background: every empty cell outside the art (and outside a ring, if there is one) is painted in a pattern of
+ *    1-4 new colors (`backgrounds.ts`).
  *
  * Pods reach cells through empty cells and their own color only, so a seal hides everything inside it until its
  * pods drain holes in it. Seal cells drain nearest-to-the-board-edge first (bottom, then left on ties), so the
@@ -12,13 +13,13 @@
 import { MAX_DIM } from '@game/level';
 import type { Rng } from '@game/rng';
 import { EMPTY } from '@game/types';
-import { NEON_PALETTE } from '../../src/data/palette.ts';
+import type { BackgroundStyle } from './backgrounds.ts';
+import { backgroundStyle, freeNeons, paintBackground } from './backgrounds.ts';
 import type { SimplifiedImage } from './palette.ts';
-import { neonsConflict } from './palette.ts';
 
 /** A neon the level doesn't use and that is easy to tell apart from all of its colors, or null if none is left. */
 export function freeNeon(palette: readonly string[], rng: Rng): string | null {
-    const options = NEON_PALETTE.map((n) => n.hex).filter((hex) => !palette.includes(hex) && palette.every((p) => !neonsConflict(p, hex)));
+    const options = freeNeons(palette);
     if (options.length === 0) return null;
     return rng.pick(options);
 }
@@ -131,29 +132,31 @@ export function addOutlineRing(img: SimplifiedImage, rng: Rng): SimplifiedImage 
 }
 
 /**
- * `img` with every outside empty cell filled with a new color (index `img.palette.length`), or null when no neon is
- * free or there is no outside empty cell (full-bleed art, or a frame-shaped ring that filled the padding).
+ * `img` with every outside empty cell painted in a background pattern (see `backgrounds.ts`): 1-4 new colors at
+ * indexes `img.palette.length` and up. Null when no neon is free or there is no outside empty cell (full-bleed art,
+ * or a frame-shaped ring that filled the padding).
  */
-export function addBackground(img: SimplifiedImage, rng: Rng): SimplifiedImage | null {
-    const neon = freeNeon(img.palette, rng);
-    if (!neon) return null;
+export function addBackground(img: SimplifiedImage, rng: Rng, style: BackgroundStyle = backgroundStyle(false)): SimplifiedImage | null {
     const outside = outsideEmpty(img);
-    const fill = img.palette.length;
+    const targets: number[] = [];
+    for (let i = 0; i < outside.length; i++) if (outside[i]) targets.push(i);
+    const painted = paintBackground(img.width, img.height, targets, img.palette, style, rng);
+    if (!painted) return null;
+    const first = img.palette.length;
     const cells = img.cells.slice();
-    let added = 0;
-    for (let i = 0; i < cells.length; i++) {
-        if (!outside[i]) continue;
-        cells[i] = fill;
-        added++;
-    }
-    if (added === 0) return null;
+    const counts = new Array<number>(painted.colors.length).fill(0);
+    targets.forEach((i, j) => {
+        const band = painted.bands[j];
+        cells[i] = first + band;
+        counts[band]++;
+    });
     return {
         width: img.width,
         height: img.height,
         cells,
-        palette: [...img.palette, neon],
-        sourceColors: [...img.sourceColors, neon],
-        counts: [...img.counts, added],
-        log: [...img.log, `background: ${added} cells of ${neon}`],
+        palette: [...img.palette, ...painted.colors],
+        sourceColors: [...img.sourceColors, ...painted.colors],
+        counts: [...img.counts, ...counts],
+        log: [...img.log, `background: ${painted.pattern}, ${targets.length} cells in ${painted.colors.join(' ')} (${counts.join('/')})`],
     };
 }

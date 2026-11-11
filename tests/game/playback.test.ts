@@ -86,49 +86,6 @@ describe('PlaybackRunner', () => {
         runner.dispose();
     });
 
-    test('waveStarted dismisses the banner quickly and releases the lanes after the views sync', () => {
-        const { targets, log } = setup();
-        const banner = { show: (n: number) => log.push(`banner.show ${n}`), hide: (q?: boolean) => log.push(`banner.hide ${q === true}`) };
-        (targets.lanes as unknown as Record<string, unknown>).release = (l: number[]) => log.push(`lanes.release ${l.join(',')}`);
-        (targets.lanes as unknown as Record<string, unknown>).setInvite = (on: boolean) => log.push(`lanes.invite ${on}`);
-        (targets as unknown as Record<string, unknown>).banner = banner;
-        const runner = new PlaybackRunner(targets);
-        runner.pump();
-        log.length = 0;
-        runner.enqueue([{ t: 'waveStarted', lanes: [0, 1] }, { t: 'waveEnded' }]);
-        runner.pump();
-        expect(log).toEqual(['banner.hide true', 'board.sync', 'lanes.sync', 'queue.sync', 'lanes.invite false', 'banner.hide false', 'lanes.release 0,1']);
-        runner.dispose();
-    });
-
-    test('a fill-first board waiting for lanes shows the banner with the empty count and pulses the slots', () => {
-        const level = lvl('0011', [[[0, 2]], [[1, 2]]], 2, [], { fillFirst: true });
-        const facade = new GameFacade();
-        facade.load(level);
-        const { targets, log } = fakes(() => facade.snapshot());
-        (targets.lanes as unknown as Record<string, unknown>).setInvite = (on: boolean) => log.push(`lanes.invite ${on}`);
-        (targets as unknown as Record<string, unknown>).banner = {
-            show: (n: number) => log.push(`banner.show ${n}`),
-            hide: () => log.push('banner.hide'),
-        };
-        const runner = new PlaybackRunner(targets);
-        runner.pump();
-        expect(log.slice(-2)).toEqual(['lanes.invite true', 'banner.show 2']);
-        const result = facade.tap(0);
-        if (!result.ok) throw new Error('tap failed');
-        log.length = 0;
-        runner.enqueue(result.events);
-        runner.pump();
-        expect(log.slice(-2)).toEqual(['lanes.invite true', 'banner.show 1']);
-        const second = facade.tap(1);
-        if (!second.ok) throw new Error('tap failed');
-        log.length = 0;
-        runner.enqueue(second.events);
-        runner.pump();
-        expect(log.slice(-2)).toEqual(['lanes.invite false', 'banner.hide']);
-        runner.dispose();
-    });
-
     test('claims run concurrently: every claimed event launches goo that ends at its lane slot', () => {
         const { facade, targets, log, launches } = setup();
         const runner = new PlaybackRunner(targets);

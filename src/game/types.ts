@@ -86,12 +86,6 @@ export interface LevelData {
     cells: string;
     keys: KeySpec[];
     lanes: number;
-    /**
-     * Fill-first lanes: pods drain in waves. A wave starts once the player can't tap (every lane is full, or no
-     * legal tap is left) and runs the pods in lanes at that moment until none of them can drain. Pods tapped
-     * mid-wave are held for the next one (see `Sim`).
-     */
-    fillFirst?: true;
     /** Base drain speed (2x toggle halves it). */
     tickMs: number;
     /** `columns[i][0]` is the front. */
@@ -114,10 +108,6 @@ export type SimEvent =
     | { t: 'revealed'; podId: number }
     /** A pushy pod at a column front dropped into `lane` by itself (like a tap, but not the player's). */
     | { t: 'pushed'; podId: number; lane: number }
-    /** Fill-first: a wave started; these lanes drain until none of them can. */
-    | { t: 'waveStarted'; lanes: number[] }
-    /** Fill-first: no lane of the wave can drain any more; the next wave waits for the lanes to fill. */
-    | { t: 'waveEnded' }
     /** Emitted per pod; linked pairs emit both in the same tick. */
     | { t: 'podCompleted'; podId: number; lane: number }
     | { t: 'won' }
@@ -132,9 +122,8 @@ export type TapDenial = 'locked' | 'noLane' | 'partnerUnavailable' | 'empty';
  * - `draining`: has remaining capacity and a reachable cell of its color.
  * - `stalled`: has remaining capacity but nothing reachable right now.
  * - `waiting`: linked pod that is full and waiting for its partner.
- * - `held`: fill-first pod with something reachable that is not part of the running wave (drains in the next one).
  */
-export type LaneStatus = 'draining' | 'stalled' | 'waiting' | 'held';
+export type LaneStatus = 'draining' | 'stalled' | 'waiting';
 
 /** Runtime state of an occupied lane (internal + view). */
 export interface LaneState {
@@ -184,10 +173,6 @@ export interface ViewState {
     /** Pods still queued per column; index 0 is the front. */
     columns: PodState[][];
     settled: boolean;
-    /** Fill-first level (lanes drain in waves). */
-    fillFirst: boolean;
-    /** Fill-first: a wave is running. Always true on other levels. */
-    wave: boolean;
     won: boolean;
     dead: boolean;
     /** Ticks run since level start. */

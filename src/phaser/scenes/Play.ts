@@ -29,7 +29,6 @@ import { settingsContent } from '../ui/SettingsOverlay';
 import { solutionContent } from '../ui/SolutionOverlay';
 import { Toast } from '../ui/Toast';
 import { BoardView } from '../view/BoardView';
-import { WaveBanner } from '../view/WaveBanner';
 import { GooStream } from '../view/GooStream';
 import { Hud } from '../view/Hud';
 import { LaneView } from '../view/LaneView';
@@ -59,7 +58,7 @@ interface PlayData {
 export class Play extends Scene {
     private levelId = '';
     private retry = false;
-    private flags: UrlFlags = { debug: false, autoplay: 'off', speed: 1, pace: 1, introOff: false, fillFirst: false };
+    private flags: UrlFlags = { debug: false, autoplay: 'off', speed: 1, pace: 1, introOff: false };
     private layout!: Layout;
     private palette: number[] = [];
 
@@ -69,7 +68,6 @@ export class Play extends Scene {
     private queue!: QueueView;
     private tether!: KeyTether;
     private hud!: Hud;
-    private banner!: WaveBanner;
     private toast!: Toast;
     private modal!: ModalOverlay;
     private runner!: PlaybackRunner;
@@ -136,8 +134,7 @@ export class Play extends Scene {
             gameFacade.restart();
             return gameFacade.level;
         }
-        const fetched = await fetchLevel(this.levelId);
-        const level: LevelData = this.flags.fillFirst ? { ...fetched, fillFirst: true } : fetched;
+        const level = await fetchLevel(this.levelId);
         gameFacade.load(level);
         return level;
     }
@@ -190,7 +187,6 @@ export class Play extends Scene {
             onPause: () => this.openPause(),
             onSpeed: (next) => this.setSpeed(next),
         });
-        this.banner = new WaveBanner(this, 360, this.layout.toastY);
         this.toast = new Toast(this, 360, this.layout.toastY);
         this.modal = new ModalOverlay(this);
         this.board.setDistProvider((color, x, y) => gameFacade.distAt(color, x, y));
@@ -206,7 +202,6 @@ export class Play extends Scene {
                 fx: this.fx,
                 grid: this.grid,
                 rig: this.rig,
-                banner: this.banner,
             },
             { onWon: () => (this.winPending = true) },
         );
@@ -285,8 +280,6 @@ export class Play extends Scene {
         this.queue.update(time);
         this.tether.update(delta);
         this.lanes.update(delta);
-        this.banner.setCovered(this.modal.isOpen || this.toast.isShowing);
-        this.banner.update(delta);
         this.fx.update(delta);
         if (this.phase === 'playing') this.advanceClock(delta);
         this.runner.pump();
@@ -614,7 +607,6 @@ export class Play extends Scene {
         this.tether?.destroy();
         this.lanes?.destroy();
         this.hud?.destroy();
-        this.banner?.destroy();
         this.toast?.destroy();
         this.modal?.destroy();
         gameFacade.setPaused(false);

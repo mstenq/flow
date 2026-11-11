@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "rulesVersion": 3,
+  "rulesVersion": 4,
   "id": "invader",
   "name": "Invader",
   "width": 15,
@@ -40,7 +40,7 @@
       "longestDrainSec": 7.56,
       "minLanesProven": true
     },
-    "generatorVersion": "gen-3.7.0",
+    "generatorVersion": "gen-3.10.0",
     "sourceHash": "51005d22138cee6a"
   }
 }

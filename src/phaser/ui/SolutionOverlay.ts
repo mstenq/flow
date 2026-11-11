@@ -1,7 +1,7 @@
 /**
  * Solution walkthrough content for `ModalOverlay` (pause menu → SOLUTION; BACK returns to the pause menu, RESUME to the game). One row per stored-solution tap: step
  * number, a mini map of the queue columns with the one to tap lit, the pod at its front (plus a linked partner),
- * and how it ends up once the board settles (CLEARS / STALLS / WAITS). Paged in place, so flipping a page does not
+ * and how it ends up once the board settles (CLEARS / STALLS). Paged in place, so flipping a page does not
  * replay the modal's power-on. The step the round is on is outlined and opens on screen; steps already tapped dim.
  */
 import type { GameObjects, Scene } from 'phaser';
@@ -27,7 +27,6 @@ export const SOLUTION_HEIGHT = HEAD_H + ROWS * ROW_H + PAGER_H;
 const OUTCOME: Record<StepOutcome, { label: string; color: string }> = {
     clears: { label: 'CLEARS', color: COLORS.good },
     stalls: { label: 'STALLS', color: COLORS.warn },
-    waits: { label: 'WAITS', color: COLORS.accent },
 };
 
 interface SolutionOptions {

@@ -15,9 +15,8 @@ import type { Board, Layout, Trace } from './board.ts';
 import { boardFromCells, podCount, replay, toLevel, traceSolution } from './board.ts';
 import type { Knobs } from './knobs.ts';
 import {
-    FILL_FIRST_MAX_LANES,
+    EASY_CUTOFF,
     MAX_SEARCH_LANES,
-    backgroundFor,
     fewColorBoost,
     keyCountFor,
     knobsSummary,
@@ -29,10 +28,10 @@ import {
     sampleKnobs,
     wideLanesFor,
 } from './knobs.ts';
+import { backgroundStyle } from './backgrounds.ts';
 import { addBackground, addOutlineRing } from './outline-ring.ts';
-import type { Construction } from './construct.ts';
-import { ConstructStuck, construct } from './construct.ts';
-import { FILL_FIRST_SOLVER_BUDGET, PUSHY_SOLVER_BUDGET, addLock, addPushy, applyMechanics, hideShare, validatePlan } from './mechanics.ts';
+import { construct } from './construct.ts';
+import { PUSHY_SOLVER_BUDGET, addLock, addPushy, applyMechanics, hideShare, validatePlan } from './mechanics.ts';
 import type { Plan } from './plan.ts';
 import { clonePlan, planFromLayout, pushyCount, toLayout } from './plan.ts';
 import type { Measurement, MeasureOptions } from './difficulty.ts';
@@ -59,15 +58,10 @@ export interface GenerateInput {
     maxPod?: number;
     /** Force an outline ring on or off. Default: `outlineFor` (random per level seed). */
     outline?: boolean;
-    /** Force a background fill on or off. Default: `backgroundFor` (random per level seed, independent of the ring). */
+    /** Force the patterned background off (false). Default: on for every image with empty space around the art. */
     background?: boolean;
     /** Force this lane count (the climb keeps it). Default: wide for sealed levels and `laneCountFor`, else picked by the search. */
     lanes?: number;
-    /**
-     * Eligible for fill-first lanes (default false; gen:all passes `fillFirstEligible`): candidates with at most
-     * `FILL_FIRST_MAX_LANES` lanes are fill-first, the rest are not. Wide (fixed 4-5 lane) levels never are.
-     */
-    fillFirst?: boolean;
     /** Lighter measures everywhere (tests). */
     quick?: boolean;
 }
@@ -192,16 +186,6 @@ const MISSING_KEY_COST = 0.05;
 /** Each pushy pod a level ends up short of costs this much in `bestTopUp`. */
 const MISSING_PUSHY_COST = 0.03;
 
-/** `construct`, or null when a fill-first play-through got stuck (`ConstructStuck`; the candidate is skipped). */
-function tryConstruct(board: Board, knobs: Knobs, rng: Rng): Construction | null {
-    try {
-        return construct(board, knobs, rng);
-    } catch (e) {
-        if (e instanceof ConstructStuck) return null;
-        throw e;
-    }
-}
-
 export function generateLevel(input: GenerateInput): GenerateResult {
     const t0 = performance.now();
     const timings: Record<string, number> = {};
@@ -219,7 +203,9 @@ export function generateLevel(input: GenerateInput): GenerateResult {
 
     const maxColors = input.maxColors ?? maxColorsForDifficulty(target);
     const art = simplifyImage(input.image, { maxColors, minRegion: input.minRegion ?? DEFAULT_MIN_REGION });
-    // Some levels get seals in new colors around the picture: an outline ring, a background fill, or both (see outline-ring.ts).
+    // Seals in new colors around the picture (see outline-ring.ts): some levels get an outline ring, and every image with
+    // empty space around the art gets a patterned background (easy levels: plain 2-color patterns only).
+    const easy = target < EASY_CUTOFF;
     const seals: number[] = [];
     let simplified = art;
     const addSeal = (want: boolean, name: string, add: (img: SimplifiedImage, rng: Rng) => SimplifiedImage | null, salt: number) => {
@@ -229,12 +215,12 @@ export function generateLevel(input: GenerateInput): GenerateResult {
             log.push(`${name} skipped: no free neon or no room`);
             return;
         }
-        seals.push(simplified.palette.length);
+        for (let c = simplified.palette.length; c < sealed.palette.length; c++) seals.push(c);
         simplified = sealed;
         log.push(sealed.log[sealed.log.length - 1]);
     };
     addSeal(input.outline ?? outlineFor(target, art.palette.length, input.seed), 'outline ring', addOutlineRing, 0x6e656f6e);
-    addSeal(input.background ?? backgroundFor(target, art.palette.length, input.seed), 'background', addBackground, 0x6e656f6f);
+    addSeal(input.background ?? true, 'background', (img, rng) => addBackground(img, rng, backgroundStyle(easy)), 0x6e656f6f);
     const board = boardFromCells(simplified.width, simplified.height, simplified.cells, simplified.palette);
     if (seals.length > 0) board.seals = seals;
     lap('simplify');
@@ -256,51 +242,28 @@ export function generateLevel(input: GenerateInput): GenerateResult {
     const maxCandidates = input.candidates ?? 40;
     const wantKeys = keyCountFor(target, input.seed, boost);
     // Wide levels have a fixed lane count: the search finds traps that hold with that many lanes instead of cutting lanes.
-    // A seal traps through parked pods, which needs spare lanes: sealed levels are always wide (4 or 5 lanes).
-    const fixedLanes = input.lanes ?? (seals.length > 0 ? wideLanesFor(input.seed) : laneCountFor(target, input.seed));
+    // A seal traps through parked pods, which needs spare lanes: sealed levels are wide (4 or 5 lanes). Easy levels
+    // (backgrounds only, no keys) let the search pick their lanes like before.
+    const fixedLanes = input.lanes ?? (seals.length > 0 && !easy ? wideLanesFor(input.seed) : laneCountFor(target, input.seed));
     if (fixedLanes !== null) log.push(`lanes fixed at ${fixedLanes}`);
-    // Eligible levels: every candidate with few lanes drains in waves (see knobs.ts). Wide levels never qualify.
-    const fillFirst = input.fillFirst ?? false;
-    const ffStats = { candidates: 0, stuck: 0, resolved: 0, dropped: 0 };
     const pool: Candidate[] = [];
     for (let i = 0; i < maxCandidates * 3; i++) {
         if (i >= maxCandidates && pool.some((c) => isLosable(c.m.stats))) break;
         const r = rng.fork();
         const sampled = sampleKnobs(target, r, wantKeys, boost, fixedLanes);
         // Pushy pods only on candidates with enough lanes (the count itself is per level, see `pushyCountFor`).
-        const knobs: Knobs = { ...sampled, pushy: pushyCountFor(target, input.seed, sampled.lanes), maxPod };
-        if (fillFirst && sampled.lanes <= FILL_FIRST_MAX_LANES) knobs.fillFirst = true;
-        if (knobs.fillFirst) ffStats.candidates++;
-        const built = tryConstruct(board, knobs, r);
-        if (!built) {
-            ffStats.stuck++;
-            lap('construct');
-            continue;
-        }
+        const knobs = { ...sampled, pushy: pushyCountFor(target, input.seed, sampled.lanes), maxPod };
+        const built = construct(board, knobs, r);
         // Hidden pods are dealt after the search (see step 4): they don't change the score.
         const placed = applyMechanics(board, planFromLayout(board, built.layout), { ...knobs, hiddenShare: 0 }, r);
-        let plan = placed.plan;
-        let layout = toLayout(plan);
+        const layout = toLayout(placed.plan);
         lap('construct');
         if (!layout) continue;
-        let level = toLevel(board, layout, { id: input.id, name: input.name });
-        if (!replay(level).won) {
-            if (!knobs.fillFirst) throw new Error('internal: constructed level does not replay to a win');
-            // Fill-first construction mirrors the sim, so this is rare: let the solver find another tap order.
-            const ok = validatePlan(board, plan, quick ? 3000 : FILL_FIRST_SOLVER_BUDGET);
-            lap('construct');
-            if (!ok) {
-                ffStats.dropped++;
-                continue;
-            }
-            ffStats.resolved++;
-            plan = ok.plan;
-            layout = ok.layout;
-            level = toLevel(board, layout, { id: input.id, name: input.name });
-        }
+        const level = toLevel(board, layout, { id: input.id, name: input.name });
+        if (!replay(level).won) throw new Error('internal: constructed level does not replay to a win');
         const m = measure(level, screen);
         lap('screen');
-        pool.push({ plan, layout, knobs, m, note: `cand ${i}${knobs.fillFirst ? ' fill-first' : ''}` });
+        pool.push({ plan: placed.plan, layout, knobs, m, note: `cand ${i}` });
         const best = Math.min(...pool.map((c) => distance(c.m, searchTarget, c.layout.lanes)));
         if (i >= 11 && best < 0.03) break;
         if (elapsed() > budgetMs * 0.35) {
@@ -308,10 +271,6 @@ export function generateLevel(input: GenerateInput): GenerateResult {
             break;
         }
     }
-    if (ffStats.candidates > 0) {
-        log.push(`fill-first: ${ffStats.candidates} candidate(s), ${ffStats.stuck} stuck in construction, ${ffStats.resolved} re-solved, ${ffStats.dropped} unsolved`);
-    }
-    if (pool.length === 0) throw new Error('no candidate could be built');
     pool.sort((a, b) => distance(a.m, searchTarget, a.layout.lanes) - distance(b.m, searchTarget, b.layout.lanes));
     log.push(`screened ${pool.length} candidates, best screen score ${pool[0].m.score.toFixed(3)} (${knobsSummary(pool[0].knobs)})`);
 
@@ -341,7 +300,6 @@ export function generateLevel(input: GenerateInput): GenerateResult {
         maxPairs: caps.pairs,
         minLanes: fixedLanes ?? 2,
         maxLanes: fixedLanes ?? MAX_SEARCH_LANES,
-        fillFirstLanes: fillFirst ? FILL_FIRST_MAX_LANES : undefined,
         podCaps: sizeCaps,
     };
     // Deterministic work limit (count, not time) scaled to board size: measures cost roughly ∝ cells.

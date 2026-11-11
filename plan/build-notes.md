@@ -93,7 +93,7 @@ is completely buried, and a player who taps "whatever is showing" won most level
   Experiments (24 levels, 5 lanes): raw layouts without keys or pairs went from ~3% losable to ~5% with a ring and ~19%
   with ring + parking. Full generation: mean target miss 0.018 → 0.009, fewer pairs needed, ~40% faster.
   `bun run gen <png> --outline 0|1` forces it.
-- **Background fill (gen-3.5):** `backgroundFor` rolls separately at half the outline chance; a level can have a ring,
+- **Background fill (gen-3.5; patterned and on every level since gen-3.10.0, see below):** `backgroundFor` rolled separately at half the outline chance; a level can have a ring,
   a background, or both. Every empty cell outside the art (and outside the ring) becomes one more new neon, so the
   background drains in layers from the board edge inward before the art opens. Enclosed holes stay empty. Skipped when
   there is no outside empty cell (full-bleed art, or a ring frame that filled the padding). Ring and background are
@@ -101,24 +101,64 @@ is completely buried, and a player who taps "whatever is showing" won most level
   always wide. `--background 0|1` forces it. The level select shows open levels as a dimmed color image (not a
   wireframe), since a filled background would read as a solid block.
 
+## Patterned backgrounds on every level (gen-3.10.0, 2026-11-11)
+User request: every image with empty space around the art gets a background (not a random share), and the flat fill
+was boring, so backgrounds are patterns in neons the art doesn't use. `tools/gen/backgrounds.ts` holds the catalog
+(`PATTERNS`), the color pickers and `paintBackground`; `addBackground` (outline-ring.ts) paints the outside empty cells.
+- **Catalog:** simple (checkered, vertical/horizontal/diagonal stripes, bricks), marks (dots, staggered dots, dashes,
+  plus signs, x marks, corner marks), lines (grid, crosshatch, hollow squares, diamonds, zigzags, chevrons, plaid,
+  ladders), structured (basket weave, herringbone, scales, nested squares, speckles, confetti) and gradients
+  (horizontal/vertical/diagonal/mirrored fade, center glow, corner glow, square, diamond; half are Bayer-dithered).
+  Most are ASCII tiles centered on the board. Gradients stretch over the painted cells, so every band shows.
+- **Colors:** 2-color patterns pick a base from the darker half of the free neons (so the art pops) plus a mark;
+  stripes/speckles may use 3, plaid/confetti 3, gradients 3-4 taken as a run from `RAMPS` (ordered hue/lightness
+  ramps). All colors are free for the level (`freeNeons`: unused and no near-twin) and distinct from each other.
+- **Fallbacks:** a pattern is rejected if any band gets < 6 cells or < 6% of the background; after 16 tries, or when
+  colors run out, the background is one solid free neon; with no free neon there is none.
+- **Easy levels** (< `EASY_CUTOFF`) now get backgrounds too, but only 2-color `simple`/`marks` patterns
+  (`backgroundStyle`; 3-color stripes read as noise on the tiny tutorial boards), and they keep the free lane search
+  (seals force wide lanes only at or above the cutoff).
+- Every pattern color is a seal (`board.seals`). Gameplay: bands interleave (isolated marks open once the base around
+  them drains; stripes drain side by side; concentric gradients drain like nested seals). `backgroundChance` /
+  `backgroundFor` are gone; `--background 0` still turns it off.
+- **Result:** regenerated all 432 (5m19s on 15 workers, then the slow ones again with `--jobs 4` / `--jobs 2`). Mean
+  target miss 0.0101 (0.0107 before), 7 miss by > 0.05 (all near-max targets undershooting: voidling, egg-white,
+  02-dish-2, cage, compost-bin, zebra; rocket overshoots), none unlosable. Levels gained 0-4 colors (mostly 2).
+  12 big boards still hit the wall-clock budget even on 2 workers (`gen:all` now lists the ids it hit). Lanes now:
+  1 at 2, 17 at 3, 205 at 4, 209 at 5 — nearly every non-easy level is sealed now, so it's wide.
+
+## Fill-first lanes removed (gen-3.9.0, rules v4, 2026-11-11)
+Playtest verdict: fill-first (gen-3.7.0, below) wasn't fun and didn't add real difficulty, so it is gone. Reverted the
+code side of that commit: sim waves (`updateWave`, `TAG_WAVE`, `waveStarted`/`waveEnded`, `held` lane status), the
+`fillFirst` level field, `?fillFirst=1`, the FILL FIRST intro card, WaveBanner / lane invite pulse / wave-start punch
+and sfx, the solution walkthrough's WAITS outcome, and every generator path (`fillFirstEligible`, `FILL_FIRST_*`,
+PlaySim wave mode, `ConstructStuck`, `WaveStalls`, wave-aware mutations). Kept from that commit: the level select's
+lane count + difficulty pips (`lanes` in index.json) and `gen:all --only`.
+- **Result:** regenerated the 40 fill-first levels (`gen:all --only ... --force`; the 5 that hit the wall-clock budget
+  were rerun with `--jobs 3`). 36 are identical to their gen-3.6.0 versions; circuit-board, light-bulb, mailbox and
+  rocket differ (budget-sensitive big boards). frying-pan and circuit-board still hit the budget (they did before);
+  frying-pan sits at 0.128 vs target 0.22, same as gen-3.6.0. The other 392 levels and the dev-* fixtures were
+  restamped to rules v4 in place (cache keys refreshed, generatorVersion unchanged). Lanes now: 20 at 2, 19 at 3,
+  195 at 4, 198 at 5.
+
 ## Solution walkthrough (pause menu, 2026-11-05)
 Pause → SOLUTION shows the stored `level.solution` as steps (`src/phaser/ui/SolutionOverlay.ts`, paged 8 rows). Built by
 `solutionSteps` (`src/game/solutionGuide.ts`), which replays the solution in settled play: column, front pod (color,
-capacity, started hidden / locked), linked partner, and outcome after the settle (CLEARS / STALLS / fill-first WAITS).
+capacity, started hidden / locked), linked partner, and outcome after the settle (CLEARS / STALLS; a fill-first WAITS outcome was removed with fill-first).
 `gameFacade.solutionGuide()` adds the round's position (null once a tap left the path). All 432 levels replay in full,
 ≤5 ms each.
 
 ## 4-lane wide levels (gen-3.8.0, 2026-11-05)
 There were no 4-lane levels: sealed levels (ring or background) and `laneCountFor` wide levels were fixed at 5, and the
 free search cuts lanes, so it settles on 2-3. Now every fixed-lane level takes `wideLanesFor(seed)` (knobs.ts): 4 lanes
-for `FOUR_LANE_SHARE` (0.5) of seeds, else `WIDE_LANES` (5), on its own seed stream. 4 is above
-`FILL_FIRST_MAX_LANES`, so these levels are not fill-first, and pushy pods still apply (`MIN_PUSHY_LANES` 4).
+for `FOUR_LANE_SHARE` (0.5) of seeds, else `WIDE_LANES` (5), on its own seed stream. Pushy pods still apply
+(`MIN_PUSHY_LANES` 4).
 - **Result:** regenerated the 191 five-lane levels whose seed now picks 4 (`gen:all --only ... --force`, 2m01s wall on
   15 workers; 8 hit the wall-clock budget). Mean target miss 0.0107 (0.0135 at 5 lanes), 5 miss by > 0.05 (7 before),
   none unlosable; pod and pushy counts unchanged. The other 241 entries are byte-identical: cache keys refreshed,
   generatorVersion unchanged. Lanes now: 27 at 2, 17 at 3, 192 at 4, 200 at 5. Previous levels: /tmp/flow-levels-gen3.7.0.
 
-## Fill-first lanes (gen-3.7.0, rules v3, 2026-11-05)
+## Fill-first lanes (gen-3.7.0, rules v3, 2026-11-05) — REMOVED in gen-3.9.0, see below
 Asked for every 2–3 lane level to drain in waves, except the first 3 beginner levels (Heart, Invader, Mushroom).
 - **Rule (`src/game/sim.ts` header, `updateWave`):** level JSON `fillFirst?: true` (written right after `lanes`).
   Nothing drains until a wave starts: no wave running, some lane pod can drain, and the player has no legal tap (every

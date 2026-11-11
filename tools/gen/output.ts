@@ -78,7 +78,6 @@ export function formatLevel(level: LevelData): string {
         ['cells', j(level.cells)],
         ['keys', j(level.keys)],
         ['lanes', j(level.lanes)],
-        ...(level.fillFirst ? [['fillFirst', j(level.fillFirst)] as [string, string]] : []),
         ['tickMs', j(level.tickMs)],
         ['columns', `[\n${level.columns.map((c) => `    ${j(c)}`).join(',\n')}\n  ]`],
         ['solution', j(level.solution)],
@@ -137,10 +136,8 @@ export interface RunOptions {
     maxPod?: number;
     /** Force the outline ring on or off (default: random per level seed). */
     outline?: boolean;
-    /** Force the background fill on or off (default: random per level seed). */
+    /** Force the patterned background off (default: on whenever the art has empty space around it). */
     background?: boolean;
-    /** Eligible for fill-first lanes (`GenerateInput.fillFirst`; see `fillFirstEligible`). */
-    fillFirst?: boolean;
     report: boolean;
     /** Override the output directory (tests). */
     outDir?: string;
@@ -175,7 +172,6 @@ export function runOne(opts: RunOptions): RunResult {
         maxPod: opts.maxPod,
         outline: opts.outline,
         background: opts.background,
-        fillFirst: opts.fillFirst,
         sourceHash: sourceHash(opts.png),
         quick: opts.quick,
     });
@@ -192,7 +188,7 @@ export function runOne(opts: RunOptions): RunResult {
         `== ${level.name} (${level.id}) ==`,
         `board    ${level.width}x${level.height}, ${pods.reduce((s, p) => s + p.capacity, 0)} cells, ${level.palette.length} colors`,
         ...result.simplified.log.map((l) => `  simplify: ${l}`),
-        `pods     ${pods.length} in ${level.columns.length} columns (${level.columns.map((c) => c.length).join('/')}), ${level.lanes} lanes${level.fillFirst ? ' (fill-first)' : ''}, tick ${level.tickMs}ms, ${level.solution.length} solution taps`,
+        `pods     ${pods.length} in ${level.columns.length} columns (${level.columns.map((c) => c.length).join('/')}), ${level.lanes} lanes, tick ${level.tickMs}ms, ${level.solution.length} solution taps`,
         `mechanics ${mech}`,
         `knobs    (start) ${knobsSummary(result.knobs)}`,
         `stats    smart ${pct(stats.smartWinRate)}, greedy ${pct(stats.greedyWinRate)}, random ${pct(stats.randomWinRate)}, deadEnd ${stats.deadEndRatio.toFixed(3)}, ` +

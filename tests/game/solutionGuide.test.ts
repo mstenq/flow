@@ -37,11 +37,6 @@ describe('solutionSteps', () => {
         ]);
     });
 
-    test('fill-first: a pod that waits for the lanes to fill says so', () => {
-        const level = lvl('0011', [[[0, 2]], [[1, 2]]], 2, [], { solution: [0, 1], fillFirst: true });
-        expect(solutionSteps(level).map((s) => s.outcome)).toEqual(['waits', 'clears']);
-    });
-
     test('stops at the first tap the stored solution cannot make', () => {
         const level = lvl('0011', [[{ color: 1, capacity: 2, lock: 5 }], [[0, 2]]], 2, [{ id: 5, x: 0, y: 0 }], { solution: [0, 1] });
         expect(solutionSteps(level)).toEqual([]);

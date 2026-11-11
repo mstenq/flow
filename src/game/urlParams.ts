@@ -15,8 +15,6 @@ export interface UrlFlags {
     pace: number;
     /** `?intro=off` never shows the mechanic intro cards this session. */
     introOff: boolean;
-    /** `?fillFirst=1` forces fill-first lanes on whatever level loads (dev affordance; levels carry their own flag). */
-    fillFirst: boolean;
 }
 
 /** Decide which scene to start from a query string (with or without leading "?"). */
@@ -36,7 +34,6 @@ export function parseFlags(search: string): UrlFlags {
         speed: params.get('speed') === '2' ? 2 : 1,
         pace: parsePace(params.get('speed')),
         introOff: params.get('intro') === 'off',
-        fillFirst: params.get('fillFirst') === '1',
     };
 }
 

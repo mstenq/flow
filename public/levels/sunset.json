@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "rulesVersion": 3,
+  "rulesVersion": 4,
   "id": "sunset",
   "name": "Sunset",
   "width": 34,
@@ -42,7 +42,7 @@
       "longestDrainSec": 10.17,
       "minLanesProven": true
     },
-    "generatorVersion": "gen-3.6.0",
+    "generatorVersion": "gen-3.10.0",
     "sourceHash": "a661bb52fa75ae38"
   }
 }

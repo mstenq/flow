@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "rulesVersion": 3,
+  "rulesVersion": 4,
   "id": "planet-hard",
   "name": "Saturn Night",
   "width": 26,
@@ -42,7 +42,7 @@
       "longestDrainSec": 22.14,
       "minLanesProven": true
     },
-    "generatorVersion": "gen-3.8.0",
+    "generatorVersion": "gen-3.10.0",
     "sourceHash": "8fe4b734ec10c01a"
   }
 }

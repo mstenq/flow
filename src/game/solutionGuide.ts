@@ -10,9 +10,8 @@ import { Sim } from './sim';
  * How a step's pod ends up once the board settles:
  * - `clears`: it (and a linked partner) fills completely and leaves its lane.
  * - `stalls`: it stays in its lane, waiting for cells it can't reach yet.
- * - `waits`: fill-first only, it sits in its lane until every lane is full.
  */
-export type StepOutcome = 'clears' | 'stalls' | 'waits';
+export type StepOutcome = 'clears' | 'stalls';
 
 export interface StepPod {
     color: number;
@@ -37,7 +36,7 @@ function stepPod(spec: PodSpec): StepPod {
 
 /**
  * One entry per solution tap. Stops early (returns the steps so far) if the stored solution doesn't fit the level,
- * e.g. when a debug flag changed its rules.
+ * e.g. after a rules change made it stale.
  */
 export function solutionSteps(level: LevelData): SolutionStep[] {
     const specs = new Map<number, { spec: PodSpec; column: number }>();
@@ -57,16 +56,13 @@ export function solutionSteps(level: LevelData): SolutionStep[] {
             column,
             pod: stepPod(tapped.spec),
             partner: partner ? { ...stepPod(partner.spec), column: partner.column } : null,
-            outcome: outcomeOf(sim, events, ids),
+            outcome: outcomeOf(events, ids),
         });
     }
     return steps;
 }
 
-function outcomeOf(sim: Sim, events: SimEvent[], ids: number[]): StepOutcome {
+function outcomeOf(events: SimEvent[], ids: number[]): StepOutcome {
     const completed = new Set(events.flatMap((e) => (e.t === 'podCompleted' ? [e.podId] : [])));
-    if (ids.every((id) => completed.has(id))) return 'clears';
-    const lanes = sim.snapshot().lanes;
-    const held = ids.some((id) => lanes.some((lane) => lane !== null && lane.podId === id && lane.state === 'held'));
-    return held ? 'waits' : 'stalls';
+    return ids.every((id) => completed.has(id)) ? 'clears' : 'stalls';
 }

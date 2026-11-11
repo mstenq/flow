@@ -1,5 +1,5 @@
 /**
- * One-time mechanic intro card (hidden / locked / linked / pushy pods, fill-first lanes): a title, one line of text and a small
+ * One-time mechanic intro card (hidden / locked / linked pods): a title, one line of text and a small
  * illustration drawn with the real pod art (`podArt.ts`). Built as `ModalOverlay` content so it gets the same CRT
  * power-on, blocks input underneath, and is dismissed by tapping anywhere or the button.
  */
@@ -8,20 +8,7 @@ import type { MechanicId, MechanicInfo } from '@game/mechanics';
 import { COLORS, font, keyLetter } from '../theme';
 import type { PaletteArt } from '../theme';
 import { drawKeyGlyph } from './glyphs';
-import {
-    PUSHY_COLOR,
-    capsuleRadius,
-    drawCapsule,
-    drawColorPod,
-    drawGlassSheen,
-    drawHiddenPod,
-    drawLightning,
-    drawLinkRings,
-    drawLockedPod,
-    drawPushyBadge,
-    pushyBadgeCenter,
-    strokeDashedRoundedRect,
-} from '../view/podArt';
+import { PUSHY_COLOR, drawColorPod, drawHiddenPod, drawLightning, drawLinkRings, drawLockedPod, drawPushyBadge, pushyBadgeCenter } from '../view/podArt';
 import type { Destroyable, ModalContent } from './ModalOverlay';
 
 const POD_W = 132;
@@ -30,7 +17,7 @@ const POD_SCALE = 0.82;
 const ART_H = 176;
 const TEXT_H = 150;
 
-const TITLE_COLORS: Record<MechanicId, string> = { hidden: '#b9a8ff', locked: '#ffe600', linked: '#bff8ff', pushy: '#ff9a4a', fillFirst: '#7dff3a' };
+const TITLE_COLORS: Record<MechanicId, string> = { hidden: '#b9a8ff', locked: '#ffe600', linked: '#bff8ff', pushy: '#ff9a4a' };
 
 export const INTRO_HEIGHT = ART_H + TEXT_H;
 
@@ -74,10 +61,7 @@ function buildCard(scene: Scene, panel: GameObjects.Container, top: number, opts
         if (sub === '') return;
         root.add(scene.add.text(0, POD_H / 2 - 16, sub, { ...font(14, '#ffe600'), stroke: '#05030c', strokeThickness: 4 }).setOrigin(0.5));
     };
-    const caption = (x: number, y: number, label: string, color: string): void => {
-        add(scene.add.text(x, y, label, { ...font(14, color), stroke: '#05030c', strokeThickness: 4 }).setOrigin(0.5));
-    };
-    ILLUSTRATIONS[opts.info.id]({ gfx, pod, caption, cy, pick });
+    ILLUSTRATIONS[opts.info.id]({ gfx, pod, cy, pick });
 
     add(
         scene.add
@@ -91,7 +75,6 @@ function buildCard(scene: Scene, panel: GameObjects.Container, top: number, opts
 interface Canvas {
     gfx: GameObjects.Graphics;
     pod: (x: number, draw: (g: GameObjects.Graphics) => void, label: string, labelColor: string, sub?: string) => void;
-    caption: (x: number, y: number, label: string, color: string) => void;
     cy: number;
     pick: (i: number) => PaletteArt | undefined;
 }
@@ -147,33 +130,5 @@ const ILLUSTRATIONS: Record<MechanicId, (c: Canvas) => void> = {
         );
         arrow(gfx, 0, cy, PUSHY_COLOR);
         pod(120, (g) => drawColorPod(g, POD_W, POD_H, pick(3), true), '18', '#ffffff', 'LANE');
-    },
-    // Two lanes full and one still empty -> every lane full, and the whole row drains together.
-    fillFirst: ({ gfx, caption, cy, pick }) => {
-        const w = 44;
-        const h = 78;
-        const step = 54;
-        const lane = (x: number, art: PaletteArt | undefined, level: number): void => {
-            if (!art) {
-                strokeDashedRoundedRect(gfx, x, cy, w, h, capsuleRadius(w, h), 8, 6, 2, COLORS.frame, 0.7);
-                return;
-            }
-            drawCapsule(gfx, x, cy, w, h, { body: art.deep, bodyAlpha: 0.94, rim: art.core, rimAlpha: 1, rimWidth: 2.5, glowAlpha: 0.8 });
-            const fill = (h - 10) * level;
-            gfx.fillStyle(art.core, 0.78);
-            gfx.fillRoundedRect(x - w / 2 + 5, cy + h / 2 - 5 - fill, w - 10, fill, 5);
-            drawGlassSheen(gfx, x, cy, w, h);
-        };
-        const left = -135 - step;
-        const right = 135 + step;
-        lane(left, pick(0), 0.2);
-        lane(left + step, pick(2), 0.2);
-        lane(left + 2 * step, undefined, 0);
-        arrow(gfx, 0, cy, 0x7dff3a);
-        lane(right - 2 * step, pick(0), 0.85);
-        lane(right - step, pick(2), 0.85);
-        lane(right, pick(1), 0.85);
-        caption(left + step, cy + h / 2 + 18, 'FILL EVERY LANE', COLORS.accent);
-        caption(right - step, cy + h / 2 + 18, 'THEN DRAIN', '#7dff3a');
     },
 };

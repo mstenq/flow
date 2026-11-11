@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "rulesVersion": 3,
+  "rulesVersion": 4,
   "id": "rainbow-hard",
   "name": "Double Rainbow",
   "width": 30,
@@ -42,7 +42,7 @@
       "longestDrainSec": 10.53,
       "minLanesProven": true
     },
-    "generatorVersion": "gen-3.6.0",
+    "generatorVersion": "gen-3.10.0",
     "sourceHash": "2f6fc5235d29506c"
   }
 }
